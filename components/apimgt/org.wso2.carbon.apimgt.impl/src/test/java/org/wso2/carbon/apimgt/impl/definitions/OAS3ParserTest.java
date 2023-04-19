@@ -207,7 +207,7 @@ public class OAS3ParserTest extends OASTestBase {
         String faultySwagger = IOUtils.toString(
                 getClass().getClassLoader().getResourceAsStream("definitions" + File.separator + "oas3"
                         + File.separator + "openApi3_validation.json"),
-                StandardCharsets.UTF_8);
+                String.valueOf(StandardCharsets.UTF_8));
         APIDefinitionValidationResponse response = OASParserUtil.validateAPIDefinition(faultySwagger, true);
 
         Assert.assertFalse(response.isValid());

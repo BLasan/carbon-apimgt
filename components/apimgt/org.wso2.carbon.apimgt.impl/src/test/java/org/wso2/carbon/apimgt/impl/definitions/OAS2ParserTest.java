@@ -148,7 +148,7 @@ public class OAS2ParserTest extends OASTestBase {
     public void testSwaggerValidatorWithValidationLevel2() throws Exception {
         String faultySwagger = IOUtils.toString(
                 getClass().getClassLoader().getResourceAsStream("definitions" + File.separator + "oas2"
-                        + File.separator + "oas_util_test_faulty_swagger.json"), StandardCharsets.UTF_8);
+                        + File.separator + "oas_util_test_faulty_swagger.json"), String.valueOf(StandardCharsets.UTF_8));
         APIDefinitionValidationResponse response = OASParserUtil.validateAPIDefinition(faultySwagger, true);
         Assert.assertFalse(response.isValid());
         Assert.assertEquals(3, response.getErrorItems().size());
