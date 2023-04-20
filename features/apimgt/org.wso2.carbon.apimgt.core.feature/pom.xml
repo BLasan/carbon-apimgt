@@ -17,7 +17,7 @@
     <parent>
         <groupId>org.wso2.carbon.apimgt</groupId>
         <artifactId>apimgt-feature</artifactId>
-        <version>9.28.116.1-SNAPSHOT</version>
+        <version>9.28.116.2</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -91,7 +91,7 @@
                         </goals>
                         <configuration>
                             <tasks>
-                                <delete file="src/main/resources/repository/database/WSO2AM_DB.mv.db"/>
+                                <delete file="src/main/resources/repository/database/WSO2AM_DB.mv.db" />
                             </tasks>
                         </configuration>
                     </execution>
@@ -104,16 +104,16 @@
                         <configuration>
                             <tasks>
                                 <path id="h2.classpath">
-                                    <path refid="maven.compile.classpath"/>
+                                    <path refid="maven.compile.classpath" />
                                 </path>
-                                <echo message="########### Creating API Manager Database ##############"/>
+                                <echo message="########### Creating API Manager Database ##############" />
                                 <sql autocommit="true" driver="org.h2.Driver" onerror="continue" password="wso2carbon" url="jdbc:h2:${basedir}/src/main/resources/repository/database/WSO2AM_DB" userid="wso2carbon">
                                     <classpath>
-                                        <path refid="h2.classpath"/>
+                                        <path refid="h2.classpath" />
                                     </classpath>
-                                    <fileset file="${basedir}/src/main/resources/sql/h2.sql"/>
+                                    <fileset file="${basedir}/src/main/resources/sql/h2.sql" />
                                 </sql>
-                                <echo message="##################### END ########################"/>
+                                <echo message="##################### END ########################" />
                             </tasks>
                         </configuration>
                     </execution>
