@@ -2786,6 +2786,12 @@ public class ApisApiServiceImpl implements ApisApiService {
         APIDTO apiDTOFromProperties;
         try {
             apiDTOFromProperties = objectMapper.readValue(additionalProperties, APIDTO.class);
+            try {
+                APIUtil.validateAPIContext(apiDTOFromProperties.getContext(), apiDTOFromProperties.getName());
+            } catch (APIManagementException e) {
+                throw new APIManagementException(e.getMessage(),
+                        ExceptionCodes.from(ExceptionCodes.API_CONTEXT_MALFORMED_EXCEPTION, e.getMessage()));
+            }
         } catch (IOException e) {
             throw RestApiUtil.buildBadRequestException("Error while parsing 'additionalProperties'", e);
         }
@@ -2934,6 +2940,12 @@ public class ApisApiServiceImpl implements ApisApiService {
 
             // Minimum requirement name, version, context and endpointConfig.
             additionalPropertiesAPI = new ObjectMapper().readValue(additionalProperties, APIDTO.class);
+            try {
+                APIUtil.validateAPIContext(additionalPropertiesAPI.getContext(), additionalPropertiesAPI.getName());
+            } catch (APIManagementException e) {
+                throw new APIManagementException(e.getMessage(),
+                        ExceptionCodes.from(ExceptionCodes.API_CONTEXT_MALFORMED_EXCEPTION, e.getMessage()));
+            }
             String username = RestApiCommonUtil.getLoggedInUsername();
             additionalPropertiesAPI.setProvider(username);
             additionalPropertiesAPI.setType(APIDTO.TypeEnum.fromValue(implementationType));
@@ -3318,6 +3330,7 @@ public class ApisApiServiceImpl implements ApisApiService {
             }
 
             additionalPropertiesAPI = new ObjectMapper().readValue(additionalProperties, APIDTO.class);
+            APIUtil.validateAPIContext(additionalPropertiesAPI.getContext(), additionalPropertiesAPI.getName());
             additionalPropertiesAPI.setType(APIDTO.TypeEnum.GRAPHQL);
             String organization = RestApiUtil.getValidatedOrganization(messageContext);
             APIProvider apiProvider = RestApiCommonUtil.getLoggedInUserProvider();
@@ -3340,6 +3353,9 @@ public class ApisApiServiceImpl implements ApisApiService {
             URI createdApiUri = new URI(RestApiConstants.RESOURCE_PATH_APIS + "/" + createdApiDTO.getId());
             return Response.created(createdApiUri).entity(createdApiDTO).build();
         } catch (APIManagementException e) {
+            if (e.getMessage().contains(ExceptionCodes.API_CONTEXT_MALFORMED_EXCEPTION.getErrorMessage())) {
+                RestApiUtil.handleBadRequest(e.getMessage(), e, log);
+            }
             String errorMessage = "Error while adding new API : " + additionalPropertiesAPI.getProvider() + "-" +
                 additionalPropertiesAPI.getName() + "-" + additionalPropertiesAPI.getVersion() + " - " + e.getMessage();
             RestApiUtil.handleInternalServerError(errorMessage, e, log);
@@ -3902,6 +3918,12 @@ public class ApisApiServiceImpl implements ApisApiService {
             if (apiDTOFromProperties.getType() == null) {
                 RestApiUtil.handleBadRequest("Required property protocol is not specified for the Async API", log);
             }
+            try {
+                APIUtil.validateAPIContext(apiDTOFromProperties.getContext(), apiDTOFromProperties.getName());
+            } catch (APIManagementException e) {
+                throw new APIManagementException(e.getMessage(),
+                        ExceptionCodes.from(ExceptionCodes.API_CONTEXT_MALFORMED_EXCEPTION, e.getMessage()));
+            }
         } catch (IOException e) {
             throw RestApiUtil.buildBadRequestException("Error while parsing 'additionalProperties'", e);
         }
@@ -4044,6 +4066,7 @@ public class ApisApiServiceImpl implements ApisApiService {
             if (service == null) {
                 RestApiUtil.handleResourceNotFoundError("Service", serviceKey, log);
             }
+            APIUtil.validateAPIContext(apiDto.getContext(), apiDto.getName());
             APIDTO createdApiDTO = null;
             String organization = RestApiUtil.getValidatedOrganization(messageContext);
             if (ServiceEntry.DefinitionType.OAS2.equals(service.getDefinitionType()) ||
@@ -4076,6 +4099,10 @@ public class ApisApiServiceImpl implements ApisApiService {
         } catch (APIManagementException e) {
             if (RestApiUtil.isDueToResourceNotFound(e)) {
                 RestApiUtil.handleResourceNotFoundError("Service", serviceKey, e, log);
+            } else if (e.getMessage().contains(ExceptionCodes.API_CONTEXT_MALFORMED_EXCEPTION.getErrorMessage())) {
+                RestApiUtil.handleBadRequest(e.getMessage(), e, log);
+            } else if (e.getMessage().contains("duplicate API context")) {
+                RestApiUtil.handleBadRequest(e.getMessage(), e, log);
             } else {
                 String errorMessage = "Error while creating API using Service with Id : " + serviceKey
                         + " from Service Catalog";
