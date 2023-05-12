@@ -1240,7 +1240,7 @@ public class ApisApiServiceImpl implements ApisApiService {
 
             DocumentationContent docContent = apiProvider.getDocumentationContent(apiId, documentId, organization);
             if (docContent == null) {
-                RestApiUtil.handleResourceNotFoundError(RestApiConstants.RESOURCE_DOCUMENTATION, documentId, log);
+                RestApiUtil.handleResourceNotFoundError(RestApiConstants.RESOURCE_DOCUMENTATION, documentId);
                 return null;
             }
 
