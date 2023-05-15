@@ -491,6 +491,7 @@ public final class APIUtil {
      */
     public static CloseableHttpResponse executeHTTPRequestWithRetries(HttpRequestBase method, HttpClient httpClient)
             throws IOException, APIManagementException {
+
         CloseableHttpResponse httpResponse = null;
         long retryDuration = retrievalTimeout;
         int retryCount = 0;
@@ -523,7 +524,6 @@ public final class APIUtil {
                     log.error("Failed to retrieve from remote endpoint. Maximum retry count exceeded."
                             + ex.getMessage());
                     throw ex;
-
                 }
             }
         } while (retry);
