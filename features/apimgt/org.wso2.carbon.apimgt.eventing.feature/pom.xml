@@ -18,7 +18,7 @@
     <parent>
         <artifactId>apimgt-feature</artifactId>
         <groupId>org.wso2.carbon.apimgt</groupId>
-        <version>9.28.116.23</version>
+        <version>9.28.116.24-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
