@@ -39,6 +39,8 @@ public final class APIConstants {
     //key value of the APIImpl rxt
     public static final String API_KEY = "api";
 
+    public static final String VERSION_PLACEHOLDER = "{version}";
+
     //governance registry apimgt root location
     public static final String APIMGT_REGISTRY_LOCATION = "/apimgt";
 
@@ -1469,8 +1471,6 @@ public final class APIConstants {
     public static final String API_MANAGER_HOSTNAME = "HostName";
     public static final String API_MANAGER_HOSTNAME_UNKNOWN = "UNKNOWN_HOST";
 
-    public static final String VERSION_PLACEHOLDER = "{version}";
-
     public enum SupportedHTTPVerbs {
         GET,
         POST,
@@ -1944,6 +1944,7 @@ public final class APIConstants {
         public static final String EVALUATED_CONDITIONS = "evaluatedConditions";
         public static final String TRUE = "true";
         public static final String ADD = "add";
+        public static final String DELETE = "delete";
         public static final String ENABLE_POLICY_DEPLOYMENT = "EnablePolicyDeployment";
     }
 
@@ -2601,7 +2602,8 @@ public final class APIConstants {
         SCOPE,
         CERTIFICATE,
         GA_CONFIG,
-        CORRELATION_CONFIG
+        CORRELATION_CONFIG,
+        KEY_TEMPLATE
     }
 
     // Supported Event Types
@@ -2631,7 +2633,10 @@ public final class APIConstants {
         ENDPOINT_CERTIFICATE_REMOVE,
         GA_CONFIG_UPDATE,
         UDATE_API_LOG_LEVEL,
-        UPDATE_CORRELATION_CONFIGS
+        UPDATE_CORRELATION_CONFIGS,
+        CUSTOM_POLICY_ADD,
+        CUSTOM_POLICY_DELETE,
+        CUSTOM_POLICY_UPDATE
     }
 
     public enum EventAction {
@@ -2646,6 +2651,8 @@ public final class APIConstants {
         public static final String SAVER_CONFIG = "ArtifactSaver";
         public static final String RETRIEVER_CONFIG = "ArtifactRetriever";
         public static final String RETRY_DUARTION = "RetryDuration";
+        public static final String MAX_RETRY_COUNT = "MaxRetryCount";
+        public static final String RETRY_PROGRESSION_FACTOR = "RetryProgressionFactor";
         public static final String PUBLISH_DIRECTLY_TO_GW_CONFIG = "PublishDirectlyToGW";
         public static final String GATEWAY_LABELS_CONFIG = "GatewayLabels";
         public static final String LABEL_CONFIG = "Label";
@@ -2971,4 +2978,7 @@ public final class APIConstants {
     public static final String CASE_SENSITIVE_CHECK_PATH =    "caseSensitiveRoleValidation";
     public static final String MIGRATE = "migrate";
     public static final String SWAGGER_RELAXED_VALIDATION = "swaggerRelaxedValidation";
+
+    //Property for enabling tenant aware sub claims when invoking APIs with API key
+    public static final String ENABLE_TENANT_AWARE_SUB_CLAIM= "enable.tenant.aware.subclaim";
 }
