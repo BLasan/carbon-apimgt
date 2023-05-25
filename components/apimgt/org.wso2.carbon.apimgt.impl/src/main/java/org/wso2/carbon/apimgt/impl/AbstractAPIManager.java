@@ -361,10 +361,6 @@ public abstract class AbstractAPIManager implements APIManager {
             DocumentationContent docContent = null;
             if (content != null) {
                 docContent = DocumentMapper.INSTANCE.toDocumentationContent(content);
-            } else {
-                String msg = "Failed to get the document content. Artifact corresponding to document id " + docId
-                        + " does not exist";
-                throw new APIMgtResourceNotFoundException(msg);
             }
             return docContent;
         } catch (DocumentationPersistenceException e) {
