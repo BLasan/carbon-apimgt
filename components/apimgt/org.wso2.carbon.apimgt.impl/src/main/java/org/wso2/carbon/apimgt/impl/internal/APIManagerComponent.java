@@ -338,13 +338,19 @@ public class APIManagerComponent {
                 }
             }
             bundleContext.registerService(ScopeValidator.class, new SystemScopesIssuer(), null);
+
+            // Check if API level policy support feature is enabled or not
+            String isAPIPoliciesEnabledConfig = configuration.getFirstProperty(APIConstants.ENABLE_API_POLICIES);
+            boolean isPolicyTableExists = ApiMgtDAO.getInstance().isTableExists("AM_API_POLICY_MAPPING");
+            boolean isAPIPoliciesEnabled = Boolean.parseBoolean(isAPIPoliciesEnabledConfig) && isPolicyTableExists;
+            ServiceReferenceHolder.getInstance().setAPIPoliciesEnabled(isAPIPoliciesEnabled);
+
         } catch (APIManagementException e) {
             log.error("Error while initializing the API manager component", e);
         } catch (APIManagerDatabaseException e) {
             log.fatal("Error while Creating the database", e);
         }
     }
-
 
     @Deactivate
     protected void deactivate(ComponentContext componentContext) {

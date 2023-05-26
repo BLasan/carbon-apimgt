@@ -1504,4 +1504,9 @@
           <CorrelationLogComponent>{{component}}</CorrelationLogComponent>
       {% endfor %}
       </CorrelationLogComponents>
+
+      <!-- Specifies whether API level policy support feature should be enabled or not. -->
+      {% if apim.policy is defined %}
+          <EnableAPIPolicies>{{apim.policy.enable_api_level_policies}}</EnableAPIPolicies>
+      {% endif %}
 </APIManager>
