@@ -642,10 +642,10 @@ public class APIAuthenticationHandler extends AbstractHandler implements Managed
         // as the response.
         axis2MC.setProperty(PassThroughConstants.MESSAGE_BUILDER_INVOKED, Boolean.TRUE);
         try {
-            RelayUtils.consumeAndDiscardMessage(axis2MC);
+            RelayUtils.discardSourceRequest(axis2MC);
         } catch (AxisFault axisFault) {
             //In case of an error it is logged and the process is continued because we're setting a fault message in the payload.
-            log.error("Error occurred while consuming and discarding the message", axisFault);
+            log.error("Error occurred while executing discardSourceRequest method", axisFault);
         }
         axis2MC.setProperty(Constants.Configuration.MESSAGE_TYPE, "application/soap+xml");
         int status;
