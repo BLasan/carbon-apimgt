@@ -675,12 +675,13 @@ public class ImportUtils {
                                 // A common policy is found for specified policy. This will be validated
                                 // according to the provided attributes and added to API policy list
                                 OperationPolicySpecification commonPolicySpec = commonPolicyData.getSpecification();
-                                if (provider.validateAppliedPolicyWithSpecification(commonPolicySpec, policy, api.getType())) {
+                                if (provider.validateAppliedPolicyWithSpecification(commonPolicySpec, policy,
+                                        api.getType())) {
                                     policy.setPolicyId(commonPolicyData.getPolicyId());
                                     validatedOperationPolicies.add(policy);
                                     if (log.isDebugEnabled()) {
                                         log.debug("Policy was referenced and a common policy is found for "
-                                                        + policy.getPolicyName() + "_" + policy.getPolicyName());
+                                                + policy.getPolicyName() + "_" + policy.getPolicyName());
                                     }
                                 }
                             }
