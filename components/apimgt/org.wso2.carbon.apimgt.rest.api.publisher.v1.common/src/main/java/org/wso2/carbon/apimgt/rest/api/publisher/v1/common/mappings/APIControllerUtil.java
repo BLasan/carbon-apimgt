@@ -41,6 +41,7 @@ import org.wso2.carbon.apimgt.impl.importexport.ImportExportConstants;
 import org.wso2.carbon.apimgt.impl.importexport.utils.CommonUtil;
 import org.wso2.carbon.apimgt.rest.api.publisher.v1.dto.APIDTO;
 import org.wso2.carbon.apimgt.rest.api.publisher.v1.dto.APIInfoAdditionalPropertiesDTO;
+import org.wso2.carbon.apimgt.rest.api.publisher.v1.dto.APIInfoAdditionalPropertiesMapDTO;
 import org.wso2.carbon.apimgt.rest.api.publisher.v1.dto.APIProductDTO;
 
 import java.io.File;
@@ -1119,6 +1120,7 @@ public class APIControllerUtil {
 
         JsonArray definedAdditionalProperties = additionalProperties.getAsJsonArray();
         List<APIInfoAdditionalPropertiesDTO> propertiesListToAdd = new ArrayList<>();
+        Map<String, APIInfoAdditionalPropertiesMapDTO> additionalPropertiesMap = new HashMap<>();
         for (JsonElement definedAdditionalProperty : definedAdditionalProperties) {
             if (!definedAdditionalProperty.isJsonNull()) {
                 JsonElement propertyName = (((JsonObject) definedAdditionalProperty).get("name"));
@@ -1126,6 +1128,13 @@ public class APIControllerUtil {
                 JsonElement propertyDisplay = (((JsonObject) definedAdditionalProperty).get("display"));
                 if (propertyName != null && propertyValue != null && propertyDisplay != null
                         && !propertyName.isJsonNull() && !propertyValue.isJsonNull() && !propertyDisplay.isJsonNull()) {
+                    APIInfoAdditionalPropertiesMapDTO apiInfoAdditionalPropertiesMapDTO =
+                            new APIInfoAdditionalPropertiesMapDTO();
+                    apiInfoAdditionalPropertiesMapDTO.setName(propertyName.getAsString());
+                    apiInfoAdditionalPropertiesMapDTO.setValue(propertyValue.getAsString());
+                    apiInfoAdditionalPropertiesMapDTO.setDisplay(propertyDisplay.getAsBoolean());
+                    additionalPropertiesMap.put(propertyName.getAsString(), apiInfoAdditionalPropertiesMapDTO);
+
                     APIInfoAdditionalPropertiesDTO additionalPropertiesDTO = new APIInfoAdditionalPropertiesDTO();
                     additionalPropertiesDTO.setName(propertyName.getAsString());
                     additionalPropertiesDTO.setValue(propertyValue.getAsString());
@@ -1137,11 +1146,13 @@ public class APIControllerUtil {
         // If the properties are not defined in params file, the values in the api.yaml should be considered.
         // Hence, this if statement will prevent setting the properties in api.yaml to an empty array if the properties
         // are not properly defined in the params file
-        if (propertiesListToAdd.size() > 0) {
+        if (propertiesListToAdd.size() > 0 && additionalPropertiesMap.size() > 0) {
             if (importedApiDto != null) {
                 importedApiDto.setAdditionalProperties(propertiesListToAdd);
+                importedApiDto.setAdditionalPropertiesMap(additionalPropertiesMap);
             } else {
                 importedApiProductDto.setAdditionalProperties(propertiesListToAdd);
+                importedApiProductDto.setAdditionalPropertiesMap(additionalPropertiesMap);
             }
         }
     }
