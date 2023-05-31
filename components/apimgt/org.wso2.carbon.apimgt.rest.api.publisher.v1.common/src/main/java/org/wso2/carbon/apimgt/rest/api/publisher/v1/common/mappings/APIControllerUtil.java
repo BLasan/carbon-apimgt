@@ -39,8 +39,8 @@ import org.wso2.carbon.apimgt.impl.importexport.APIImportExportException;
 import org.wso2.carbon.apimgt.impl.importexport.ExportFormat;
 import org.wso2.carbon.apimgt.impl.importexport.ImportExportConstants;
 import org.wso2.carbon.apimgt.impl.importexport.utils.CommonUtil;
-import org.wso2.carbon.apimgt.rest.api.publisher.v1.dto.APIAdditionalPropertiesDTO;
 import org.wso2.carbon.apimgt.rest.api.publisher.v1.dto.APIDTO;
+import org.wso2.carbon.apimgt.rest.api.publisher.v1.dto.APIInfoAdditionalPropertiesDTO;
 import org.wso2.carbon.apimgt.rest.api.publisher.v1.dto.APIProductDTO;
 
 import java.io.File;
@@ -1118,7 +1118,7 @@ public class APIControllerUtil {
             APIProductDTO importedApiProductDto) {
 
         JsonArray definedAdditionalProperties = additionalProperties.getAsJsonArray();
-        List<APIAdditionalPropertiesDTO> propertiesListToAdd = new ArrayList<>();
+        List<APIInfoAdditionalPropertiesDTO> propertiesListToAdd = new ArrayList<>();
         for (JsonElement definedAdditionalProperty : definedAdditionalProperties) {
             if (!definedAdditionalProperty.isJsonNull()) {
                 JsonElement propertyName = (((JsonObject) definedAdditionalProperty).get("name"));
@@ -1126,7 +1126,7 @@ public class APIControllerUtil {
                 JsonElement propertyDisplay = (((JsonObject) definedAdditionalProperty).get("display"));
                 if (propertyName != null && propertyValue != null && propertyDisplay != null
                         && !propertyName.isJsonNull() && !propertyValue.isJsonNull() && !propertyDisplay.isJsonNull()) {
-                    APIAdditionalPropertiesDTO additionalPropertiesDTO = new APIAdditionalPropertiesDTO();
+                    APIInfoAdditionalPropertiesDTO additionalPropertiesDTO = new APIInfoAdditionalPropertiesDTO();
                     additionalPropertiesDTO.setName(propertyName.getAsString());
                     additionalPropertiesDTO.setValue(propertyValue.getAsString());
                     additionalPropertiesDTO.setDisplay(propertyDisplay.getAsBoolean());
