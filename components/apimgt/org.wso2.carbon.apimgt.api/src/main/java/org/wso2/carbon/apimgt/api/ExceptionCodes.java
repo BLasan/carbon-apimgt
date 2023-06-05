@@ -532,7 +532,8 @@ public enum ExceptionCodes implements ErrorHandler {
             "Policy cannot be imported due to the missing Gateway files."),
     ERROR_VALIDATING_API_POLICY(902011, "Error while validating API policies enforced for the API", 400,
             "Error while validating the API policies enforced for the API"),
-
+    API_POLICY_SUPPORT_DISABLED(902012, "API level policy support disabled", 400,
+            "API level policy support is disabled in the system. Please enable it and try again"),
     SUBSCRIPTION_TIER_NOT_ALLOWED(902002, "Subscription Tier is not allowed for user", 403, "Subscription Tier %s is" +
             " not allowed for user %s ", false),
     INVALID_KEY_MANAGER_REQUEST(902003, "Invalid Request sent to Key Manager.", 400, "Invalid Request sent to Key Manager.Error from Backend : %s", false),

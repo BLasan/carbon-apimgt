@@ -18836,7 +18836,8 @@ public class ApiMgtDAO {
         // Cloned common policy UUID is mandatory if it's a clone as without it restore will be broken.
         if (policyData != null) {
             if (log.isDebugEnabled()) {
-                log.debug("API specific policy " + policyData.getSpecification().getName() + ":" + policyData.getSpecification()
+                log.debug("API specific policy " + policyData.getSpecification()
+                        .getName() + ":" + policyData.getSpecification()
                         .getVersion() + " is cloned for API revision " + revisionUUID);
             }
             return addAPISpecificOperationPolicy(connection, policyData, apiUUID, revisionUUID, revisionedPolicyId,
@@ -20261,7 +20262,7 @@ public class ApiMgtDAO {
             connection = APIMgtDBUtil.getConnection();
             databaseMetaData = connection.getMetaData();
 
-            resultSet = databaseMetaData.getTables(null, null, tableName, null);
+            resultSet = databaseMetaData.getTables(null, null, tableName.toLowerCase(), null);
             if (resultSet.next()) {
                 isExists = true;
             }

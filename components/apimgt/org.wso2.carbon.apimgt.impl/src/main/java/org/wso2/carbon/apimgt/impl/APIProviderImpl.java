@@ -1562,9 +1562,15 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
         }
 
         // Validate API level policies
-        if (api.getApiPolicies() != null && !api.getApiPolicies().isEmpty() && isAPILevelPolicySupportEnabled) {
-            List<OperationPolicy> validatedPolicies = validatePolicies(api.getApiPolicies(), api, tenantDomain);
-            api.setApiPolicies(validatedPolicies);
+        if (api.getApiPolicies() != null && !api.getApiPolicies().isEmpty()) {
+            if (isAPILevelPolicySupportEnabled) {
+                List<OperationPolicy> validatedPolicies = validatePolicies(api.getApiPolicies(), api, tenantDomain);
+                api.setApiPolicies(validatedPolicies);
+            } else {
+                throw new APIManagementException("API level policy validation failed. Detected the usage of " +
+                        "API level policies even though the feature is disabled.",
+                        ExceptionCodes.API_POLICY_SUPPORT_DISABLED);
+            }
         }
 
         // Validate operation level policies
@@ -1602,7 +1608,8 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
                                 .getName() + ". Validating the policy");
                     }
                     if (policyData.isRevision()) {
-                        throw new APIManagementException("Invalid policy selected. " + policyId + " policy is not found.",
+                        throw new APIManagementException(
+                                "Invalid policy selected. " + policyId + " policy is not found.",
                                 ExceptionCodes.INVALID_OPERATION_POLICY);
                     }
 
@@ -1663,8 +1670,8 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
                                     policy.getPolicyVersion(), tenantDomain, false);
                     if (commonPolicyData != null) {
                         log.info(commonPolicyData.getPolicyId());
-                        // A common policy is found for specified policy. This will be validated according to the provided
-                        // attributes and added to API policy list
+                        // A common policy is found for specified policy. This will be validated according to the
+                        // provided attributes and added to API policy list
                         if (log.isDebugEnabled()) {
                             log.debug("Policy Id is not defined and a common policy is found for "
                                     + policy.getPolicyName() + ". Validating the policy");
