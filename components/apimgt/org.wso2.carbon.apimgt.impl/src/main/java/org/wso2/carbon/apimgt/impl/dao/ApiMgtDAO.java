@@ -20016,7 +20016,8 @@ public class ApiMgtDAO {
 
             // API level policies
             if (isAPILevelPolicySupportEnabled) {
-                List<OperationPolicy> apiLevelPolicies = getAPIPolicyMapping(apiRevision.getApiUUID(), null);
+                List<OperationPolicy> apiLevelPolicies = getAPIPolicyMapping(apiRevision.getApiUUID(), null,
+                        connection);
                 for (OperationPolicy policy : apiLevelPolicies) {
                     handlePolicyCloningWhenRevisioning(policy, apiRevision.getApiUUID(), apiRevision.getRevisionUUID(),
                             clonedPolicyMap, toBeClonedPolicyDetails);
@@ -20138,15 +20139,10 @@ public class ApiMgtDAO {
                 }
             }
 
-            if (isAPILevelPolicySupportEnabled) {
-                deleteApiLevelMappingsStatement.setString(1, apiRevision.getApiUUID());
-                deleteApiLevelMappingsStatement.execute();
-            }
-
             // API level policies
             if (isAPILevelPolicySupportEnabled) {
                 List<OperationPolicy> apiLevelPolicies = getAPIPolicyMapping(apiRevision.getApiUUID(),
-                        apiRevision.getRevisionUUID());
+                        apiRevision.getRevisionUUID(), connection);
                 for (OperationPolicy policy : apiLevelPolicies) {
                     if (!restoredPolicyMap.keySet().contains(policy.getPolicyName())) {
                         String restoredPolicyId = restoreOperationPolicyRevision(connection, apiRevision.getApiUUID(),
@@ -20178,6 +20174,11 @@ public class ApiMgtDAO {
             operationPolicyMappingStatement.executeBatch();
 
             if (isAPILevelPolicySupportEnabled) {
+                // Delete API Policy mappings
+                deleteApiLevelMappingsStatement.setString(1, apiRevision.getApiUUID());
+                deleteApiLevelMappingsStatement.execute();
+
+                // Insert API Policy mappings
                 apiLevelPolicyMappingStatement.executeBatch();
             }
 
@@ -20261,8 +20262,13 @@ public class ApiMgtDAO {
         try {
             connection = APIMgtDBUtil.getConnection();
             databaseMetaData = connection.getMetaData();
+            String driverName = databaseMetaData.getDriverName();
 
-            resultSet = databaseMetaData.getTables(null, null, tableName.toLowerCase(), null);
+            if (!driverName.contains("Oracle")) {
+                tableName = tableName.toLowerCase();
+            }
+
+            resultSet = databaseMetaData.getTables(null, null, tableName, null);
             if (resultSet.next()) {
                 isExists = true;
             }
