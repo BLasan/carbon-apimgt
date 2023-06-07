@@ -153,7 +153,10 @@ import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSession;
 
-import static org.wso2.carbon.apimgt.common.gateway.util.CommonAPIUtil.*;
+import static org.wso2.carbon.apimgt.common.gateway.util.CommonAPIUtil.ALLOW_ALL;
+import static org.wso2.carbon.apimgt.common.gateway.util.CommonAPIUtil.DEFAULT_AND_LOCALHOST;
+import static org.wso2.carbon.apimgt.common.gateway.util.CommonAPIUtil.HOST_NAME_VERIFIER;
+import static org.wso2.carbon.apimgt.common.gateway.util.CommonAPIUtil.STRICT;
 
 @Component(
          name = "org.wso2.apimgt.impl.services",
