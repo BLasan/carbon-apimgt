@@ -20264,7 +20264,7 @@ public class ApiMgtDAO {
             databaseMetaData = connection.getMetaData();
             String driverName = databaseMetaData.getDriverName();
 
-            if (!driverName.contains("Oracle")) {
+            if (!driverName.contains("Oracle") && !driverName.contains("H2")) {
                 tableName = tableName.toLowerCase();
             }
 
