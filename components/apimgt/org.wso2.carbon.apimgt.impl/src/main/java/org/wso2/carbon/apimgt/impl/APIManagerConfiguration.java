@@ -392,7 +392,7 @@ public class APIManagerConfiguration {
                 if (redisPassword != null) {
                     redisConfig.setPassword(MiscellaneousUtil.resolve(redisPassword, secretResolver).toCharArray());
                 }
-                if (redisDatabaseId != null){{
+                if (redisDatabaseId != null) {
                     redisConfig.setDatabaseId(Integer.parseInt(redisDatabaseId.getText()));
                 }
                 if (redisConnectionTimeout != null) {
