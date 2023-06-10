@@ -505,32 +505,35 @@ public enum ExceptionCodes implements ErrorHandler {
             "Invalid Endpoint Security credentials. %s", false),
     INVALID_TENANT_CONFIG(902001, "Invalid tenant-config found", 400, "Invalid tenant-config found with error %s", false),
 
-    //Operation Policies related error codes
-    INVALID_OPERATION_POLICY(902005, "Cannot find the selected operation policy", 400,
-            "Selected operation policy is not found"),
-    INVALID_OPERATION_POLICY_SPECIFICATION(902006, "Invalid operation policy specification found", 400,
-            "Invalid operation policy specification. %s", false),
+    // Operation level/API level policies related error codes
+    INVALID_OPERATION_POLICY(902005, "Cannot find the selected policy", 400,
+            "Selected policy is not found"),
+    INVALID_OPERATION_POLICY_SPECIFICATION(902006, "Invalid policy specification found", 400,
+            "Invalid policy specification. %s", false),
 
-    INVALID_OPERATION_POLICY_PARAMETERS(902007, "Missing required parameters for operation policy specification", 400,
-            "Required parameter(s) %s for operation policy specification %s are either missing or empty"),
-    OPERATION_POLICY_NOT_ALLOWED_IN_THE_APPLIED_FLOW(902008, "Operation policy is not allowed in the applied flow", 400,
-            "%s policy is not allowed in response flow"),
-    MISSING_MANDATORY_POLICY_ATTRIBUTES(902009, "Missing mandatory operation policy attribute", 400,
-            "Required attributes(s) %s for operation policy specification %s are either missing or empty"),
-    OPERATION_POLICY_NOT_FOUND(902010, "Operation Policy Not Found", 404,
-            "Requested operation policy with id '%s' not found"),
+    INVALID_OPERATION_POLICY_PARAMETERS(902007, "Missing required parameters for policy specification", 400,
+            "Required parameter(s) %s for policy specification %s are either missing or empty"),
+    OPERATION_POLICY_NOT_ALLOWED_IN_THE_APPLIED_FLOW(902008, "Policy is not allowed in the applied flow", 400,
+            "%s policy is not allowed in applied flow"),
 
-    OPERATION_POLICY_ALREADY_EXISTS(903001, "The Operation Policy already exists.", 409, "An Operation Policy with name '%s' and version '%s' already exists"),
+    MISSING_MANDATORY_POLICY_ATTRIBUTES(902009, "Missing mandatory operation/api policy attribute", 400,
+            "Required attributes(s) %s for policy specification %s are either missing or empty"),
+    OPERATION_POLICY_NOT_FOUND(902010, "Operation/API Policy Not Found", 404,
+            "Requested operation/api policy with id '%s' not found"),
 
-    OPERATION_POLICY_NOT_FOUND_WITH_NAME_AND_VERSION(903004, "Operation Policy Not Found with given name and version", 404,
-            "Requested operation policy with name '%s' and version '%s not found"),
+    OPERATION_POLICY_ALREADY_EXISTS(903001, "Policy already exists.", 409,
+            "Policy with name '%s' and version '%s' already exists"),
+
+    OPERATION_POLICY_NOT_FOUND_WITH_NAME_AND_VERSION(903004, "Policy with given name and version not found", 404,
+            "Requested policy with name '%s' and version '%s not found"),
 
     OPERATION_POLICY_GATEWAY_ERROR(903008,
             "Either Synapse or Choreo Gateway Definition files or both should be present", 400,
-            "Operation Policy cannot be imported due to the missing Gateway files."),
+            "Policy cannot be imported due to the missing Gateway files."),
     ERROR_VALIDATING_API_POLICY(902011, "Error while validating API policies enforced for the API", 400,
             "Error while validating the API policies enforced for the API"),
-
+    API_POLICY_SUPPORT_DISABLED(902012, "API level policy support disabled", 400,
+            "API level policy support is disabled in the system. Please enable it and try again"),
     SUBSCRIPTION_TIER_NOT_ALLOWED(902002, "Subscription Tier is not allowed for user", 403, "Subscription Tier %s is" +
             " not allowed for user %s ", false),
     INVALID_KEY_MANAGER_REQUEST(902003, "Invalid Request sent to Key Manager.", 400, "Invalid Request sent to Key Manager.Error from Backend : %s", false),
