@@ -122,8 +122,8 @@ public class ThrottleHandler extends AbstractHandler implements ManagedLifecycle
     /**
      * Created throttle handler object.
      */
-    private String sandboxUnitTime = "1000";
-    private String productionUnitTime = "1000";
+    private String sandboxUnitTime = "60000"; // >> increase to 60000 to make it a minute
+    private String productionUnitTime = "60000";
     private String sandboxMaxCount;
     private String productionMaxCount;
     private RoleBasedAccessRateController roleBasedAccessController;
@@ -856,7 +856,7 @@ public class ThrottleHandler extends AbstractHandler implements ManagedLifecycle
             if (APIThrottleConstants.MIN.equalsIgnoreCase(unitTime)) {
                 spikeArrestWindowUnitTime = 60000;
             } else {
-                spikeArrestWindowUnitTime = 1000;
+                spikeArrestWindowUnitTime = 60000;
             }
             try {
                 synchronized (this) {

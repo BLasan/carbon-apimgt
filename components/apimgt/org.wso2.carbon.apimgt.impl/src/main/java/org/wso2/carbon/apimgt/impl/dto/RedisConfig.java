@@ -18,6 +18,8 @@
 
 package org.wso2.carbon.apimgt.impl.dto;
 
+import javax.xml.namespace.QName;
+
 /**
  * RedisConfig Model class for connection properties of a Redis Server
  */
@@ -42,6 +44,8 @@ public class RedisConfig {
     private long minEvictableIdleTimeMillis = 60000L;
     private long timeBetweenEvictionRunsMillis = 30000L;
     private int numTestsPerEvictionRun = -1;
+
+    private String gatewayId;
 
     public int getMaxTotal() {
 
@@ -228,5 +232,13 @@ public class RedisConfig {
     public void setSslEnabled(boolean sslEnabled) {
 
         isSslEnabled = sslEnabled;
+    }
+
+    public void setGatewayId(String gatewayId) {
+        this.gatewayId = gatewayId;
+    }
+
+    public String getGatewayId() {
+        return gatewayId;
     }
 }

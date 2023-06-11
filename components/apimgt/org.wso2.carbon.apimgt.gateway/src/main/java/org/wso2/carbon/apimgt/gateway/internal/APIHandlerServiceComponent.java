@@ -19,6 +19,8 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.commons.throttle.core.DistributedCounterManager;
+import org.apache.synapse.commons.throttle.core.internal.DistributedThrottleProcessor;
+import org.apache.synapse.commons.throttle.core.internal.ThrottleServiceDataHolder;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
 import org.osgi.service.component.ComponentContext;
@@ -34,6 +36,7 @@ import org.wso2.carbon.apimgt.common.gateway.jwtgenerator.APIMgtGatewayJWTGenera
 import org.wso2.carbon.apimgt.common.gateway.jwtgenerator.APIMgtGatewayUrlSafeJWTGeneratorImpl;
 import org.wso2.carbon.apimgt.common.gateway.jwtgenerator.AbstractAPIMgtGatewayJWTGenerator;
 import org.wso2.carbon.apimgt.gateway.APIMgtGatewayConstants;
+import org.wso2.carbon.apimgt.gateway.HybridThrottleProcessor;
 import org.wso2.carbon.apimgt.gateway.RedisBaseDistributedCountManager;
 import org.wso2.carbon.apimgt.gateway.handlers.security.keys.APIKeyValidatorClientPool;
 import org.wso2.carbon.apimgt.gateway.jwt.RevokedJWTMapCleaner;
@@ -125,12 +128,24 @@ public class APIHandlerServiceComponent {
         RedisConfig redisConfig =
                 ServiceReferenceHolder.getInstance().getAPIManagerConfiguration().getRedisConfig();
         if (redisConfig.isRedisEnabled()) {
+            ServiceReferenceHolder.getInstance().setRedisPool(getJedisPool(redisConfig));
             RedisBaseDistributedCountManager redisBaseDistributedCountManager =
                     new RedisBaseDistributedCountManager(ServiceReferenceHolder.getInstance().getRedisPool());
             context.getBundleContext().registerService(DistributedCounterManager.class,
                     redisBaseDistributedCountManager, null);
-            ServiceReferenceHolder.getInstance().setRedisPool(getJedisPool(redisConfig));
         }
+
+        if (ThrottleServiceDataHolder.getInstance().getThrottleProperties().isThrottleSyncAsyncHybridModeEnabled()) {
+            HybridThrottleProcessor hybridDistributedThrottleProcessor =
+                    new HybridThrottleProcessor();
+            context.getBundleContext().registerService(DistributedThrottleProcessor.class,
+                    hybridDistributedThrottleProcessor, null);
+        }
+
+        // Create "sync-mode-initiation-channel"
+        // if feature enabled
+
+
 
         // Create caches for the super tenant
         ServerConfiguration.getInstance().overrideConfigurationProperty("Cache.ForceLocalCache", "true");

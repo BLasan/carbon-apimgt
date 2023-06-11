@@ -79,6 +79,16 @@ public class ServiceReferenceHolder {
     private Map<String, APIDefinition> apiDefinitionMap = new HashMap<>();
     private WorkflowTaskService workflowTaskService;
 
+    public int getGatewayCount() {
+        return gatewayCount;
+    }
+
+    public void setGatewayCount(int gatewayCount) {
+        this.gatewayCount = gatewayCount;
+    }
+
+    private int gatewayCount = 1;
+
     private ServiceReferenceHolder() {
 
     }
