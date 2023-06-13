@@ -19686,11 +19686,12 @@ public class ApiMgtDAO {
             throws APIManagementException {
         boolean isAPILevelPolicySupportEnabled = APIUtil.isAPILevelPolicySupportEnabled();
 
-        try (PreparedStatement operationPolicyMappingStatement = connection.prepareStatement(
-                SQLConstants.OperationPolicyConstants.ADD_API_OPERATION_POLICY_MAPPING);
-                PreparedStatement apiLevelPolicyMappingStatement = connection.prepareStatement(
-                        SQLConstants.OperationPolicyConstants.ADD_API_POLICY_MAPPING)) {
+        try {
             connection.setAutoCommit(false);
+
+            PreparedStatement apiLevelPolicyMappingStatement = null;
+            PreparedStatement operationPolicyMappingStatement = connection.prepareStatement(
+                    SQLConstants.OperationPolicyConstants.ADD_API_OPERATION_POLICY_MAPPING);
 
             Map<String, String> updatedPoliciesMap = new HashMap<>();
             Set<String> usedClonedPolicies = new HashSet<>();
@@ -19721,6 +19722,8 @@ public class ApiMgtDAO {
 
             // Handle API policies
             if (apiPolicies != null && !apiPolicies.isEmpty() && isAPILevelPolicySupportEnabled) {
+                apiLevelPolicyMappingStatement = connection.prepareStatement(
+                        SQLConstants.OperationPolicyConstants.ADD_API_POLICY_MAPPING);
                 for (OperationPolicy policy : apiPolicies) {
                     handlePolicyCloning(policy, apiUUID, tenantDomain, connection, updatedPoliciesMap,
                             usedClonedPolicies, toBeClonedPolicyDetails);
@@ -19749,7 +19752,9 @@ public class ApiMgtDAO {
 
             operationPolicyMappingStatement.executeBatch();
             if (isAPILevelPolicySupportEnabled) {
-                apiLevelPolicyMappingStatement.executeBatch();
+                if (apiLevelPolicyMappingStatement != null) {
+                    apiLevelPolicyMappingStatement.executeBatch();
+                }
             }
             cleanUnusedClonedOperationPolicies(connection, usedClonedPolicies, apiUUID);
         } catch (SQLException e) {
@@ -19770,12 +19775,12 @@ public class ApiMgtDAO {
             List<OperationPolicy> apiLevelPolicies, String tenantDomain) throws APIManagementException {
         // No need to delete the Operation policy mapping as they will be removed from the db when the url template
         // rows are deleted.
-        String deleteOldAPILevelMappingsQuery = SQLConstants.OperationPolicyConstants.DELETE_API_POLICY_MAPPING;
         boolean isAPILevelPolicySupportEnabled = APIUtil.isAPILevelPolicySupportEnabled();
-        try (Connection connection = APIMgtDBUtil.getConnection();
-                PreparedStatement prepStmt = connection.prepareStatement(deleteOldAPILevelMappingsQuery)) {
+        try (Connection connection = APIMgtDBUtil.getConnection()) {
             connection.setAutoCommit(false);
             if (isAPILevelPolicySupportEnabled) {
+                String deleteOldAPILevelMappingsQuery = SQLConstants.OperationPolicyConstants.DELETE_API_POLICY_MAPPING;
+                PreparedStatement prepStmt = connection.prepareStatement(deleteOldAPILevelMappingsQuery);
                 prepStmt.setString(1, apiUUID);
                 prepStmt.execute();
             }
@@ -19981,11 +19986,12 @@ public class ApiMgtDAO {
             Map<String, URITemplate> uriTemplates, Connection connection) throws SQLException, APIManagementException {
 
         boolean isAPILevelPolicySupportEnabled = APIUtil.isAPILevelPolicySupportEnabled();
-        try (PreparedStatement operationPolicyMappingStatement = connection
-                .prepareStatement(SQLConstants.OperationPolicyConstants.ADD_API_OPERATION_POLICY_MAPPING);
-                PreparedStatement apiLevelPolicyMappingStatement = connection
-                        .prepareStatement(SQLConstants.OperationPolicyConstants.ADD_API_POLICY_MAPPING)) {
+        try {
             connection.setAutoCommit(false);
+
+            PreparedStatement apiLevelPolicyMappingStatement = null;
+            PreparedStatement operationPolicyMappingStatement = connection
+                    .prepareStatement(SQLConstants.OperationPolicyConstants.ADD_API_OPERATION_POLICY_MAPPING);
 
             Map<String, String> clonedPolicyMap = new HashMap<>();
             List<ClonePolicyMetadataDTO> toBeClonedPolicyDetails = new ArrayList<>();
@@ -20016,6 +20022,9 @@ public class ApiMgtDAO {
 
             // API level policies
             if (isAPILevelPolicySupportEnabled) {
+                apiLevelPolicyMappingStatement = connection
+                        .prepareStatement(SQLConstants.OperationPolicyConstants.ADD_API_POLICY_MAPPING);
+
                 List<OperationPolicy> apiLevelPolicies = getAPIPolicyMapping(apiRevision.getApiUUID(), null,
                         connection);
                 for (OperationPolicy policy : apiLevelPolicies) {
