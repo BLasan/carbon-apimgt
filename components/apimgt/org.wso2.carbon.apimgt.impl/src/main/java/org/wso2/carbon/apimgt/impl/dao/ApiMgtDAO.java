@@ -19685,13 +19685,11 @@ public class ApiMgtDAO {
             String tenantDomain, Connection connection)
             throws APIManagementException {
         boolean isAPILevelPolicySupportEnabled = APIUtil.isAPILevelPolicySupportEnabled();
+        PreparedStatement apiLevelPolicyMappingStatement = null;
 
-        try {
+        try (PreparedStatement operationPolicyMappingStatement = connection.prepareStatement(
+                SQLConstants.OperationPolicyConstants.ADD_API_OPERATION_POLICY_MAPPING)) {
             connection.setAutoCommit(false);
-
-            PreparedStatement apiLevelPolicyMappingStatement = null;
-            PreparedStatement operationPolicyMappingStatement = connection.prepareStatement(
-                    SQLConstants.OperationPolicyConstants.ADD_API_OPERATION_POLICY_MAPPING);
 
             Map<String, String> updatedPoliciesMap = new HashMap<>();
             Set<String> usedClonedPolicies = new HashSet<>();
@@ -19759,6 +19757,14 @@ public class ApiMgtDAO {
             cleanUnusedClonedOperationPolicies(connection, usedClonedPolicies, apiUUID);
         } catch (SQLException e) {
             handleException("Error while adding api level policies for API : " + apiUUID, e);
+        } finally {
+            if (apiLevelPolicyMappingStatement != null) {
+                try {
+                    apiLevelPolicyMappingStatement.close();
+                } catch (SQLException e) {
+                    log.warn("Database error. Error while closing prepared statement." + e.getMessage(), e);
+                }
+            }
         }
     }
 
@@ -19776,11 +19782,12 @@ public class ApiMgtDAO {
         // No need to delete the Operation policy mapping as they will be removed from the db when the url template
         // rows are deleted.
         boolean isAPILevelPolicySupportEnabled = APIUtil.isAPILevelPolicySupportEnabled();
+        PreparedStatement prepStmt = null;
         try (Connection connection = APIMgtDBUtil.getConnection()) {
             connection.setAutoCommit(false);
             if (isAPILevelPolicySupportEnabled) {
                 String deleteOldAPILevelMappingsQuery = SQLConstants.OperationPolicyConstants.DELETE_API_POLICY_MAPPING;
-                PreparedStatement prepStmt = connection.prepareStatement(deleteOldAPILevelMappingsQuery);
+                prepStmt = connection.prepareStatement(deleteOldAPILevelMappingsQuery);
                 prepStmt.setString(1, apiUUID);
                 prepStmt.execute();
             }
@@ -19789,6 +19796,14 @@ public class ApiMgtDAO {
             connection.commit();
         } catch (SQLException e) {
             handleException("Error while adding api level policies for API : " + apiUUID, e);
+        } finally {
+            if (prepStmt != null) {
+                try {
+                    prepStmt.close();
+                } catch (SQLException e) {
+                    log.warn("Database error. Error while closing prepared statement." + e.getMessage(), e);
+                }
+            }
         }
     }
 
@@ -19986,12 +20001,11 @@ public class ApiMgtDAO {
             Map<String, URITemplate> uriTemplates, Connection connection) throws SQLException, APIManagementException {
 
         boolean isAPILevelPolicySupportEnabled = APIUtil.isAPILevelPolicySupportEnabled();
-        try {
-            connection.setAutoCommit(false);
+        PreparedStatement apiLevelPolicyMappingStatement = null;
 
-            PreparedStatement apiLevelPolicyMappingStatement = null;
-            PreparedStatement operationPolicyMappingStatement = connection
-                    .prepareStatement(SQLConstants.OperationPolicyConstants.ADD_API_OPERATION_POLICY_MAPPING);
+        try (PreparedStatement operationPolicyMappingStatement = connection
+                .prepareStatement(SQLConstants.OperationPolicyConstants.ADD_API_OPERATION_POLICY_MAPPING);) {
+            connection.setAutoCommit(false);
 
             Map<String, String> clonedPolicyMap = new HashMap<>();
             List<ClonePolicyMetadataDTO> toBeClonedPolicyDetails = new ArrayList<>();
@@ -20060,6 +20074,14 @@ public class ApiMgtDAO {
             }
         } catch (APIManagementException e) {
             handleException("Error while revisioning the API policies.", e);
+        } finally {
+            if (apiLevelPolicyMappingStatement != null) {
+                try {
+                    apiLevelPolicyMappingStatement.close();
+                } catch (SQLException e) {
+                    log.warn("Database error. Error while closing prepared statement." + e.getMessage(), e);
+                }
+            }
         }
     }
 
