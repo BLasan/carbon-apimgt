@@ -384,11 +384,15 @@ public class APIManagerConfiguration {
                 OMElement redisIsSslEnabled = element.getFirstChildWithName(new QName(APIConstants.CONFIG_REDIS_IS_SSL_ENABLED));
                 OMElement propertiesElement = element.getFirstChildWithName(new QName(APIConstants.CONFIG_REDIS_PROPERTIES));
                 OMElement gatewayId = element.getFirstChildWithName(new QName(APIConstants.CONFIG_REDIS_GATEWAY_ID));
+                OMElement minGatewayCount = element.getFirstChildWithName(new QName(APIConstants.CONFIG_REDIS_GATEWAY_ID));
                 redisConfig.setRedisEnabled(true);
                 redisConfig.setHost(redisHost.getText());
                 redisConfig.setPort(Integer.parseInt(redisPort.getText()));
                 if (gatewayId != null) {
                     redisConfig.setGatewayId(gatewayId.getText());
+                }
+                if (minGatewayCount != null) {
+                    redisConfig.setMinGatewayCount(Integer.parseInt(minGatewayCount.getText()));
                 }
                 if (redisUser != null && redisPassword != null && redisDatabaseId != null
                         && redisConnectionTimeout != null && redisIsSslEnabled != null) {

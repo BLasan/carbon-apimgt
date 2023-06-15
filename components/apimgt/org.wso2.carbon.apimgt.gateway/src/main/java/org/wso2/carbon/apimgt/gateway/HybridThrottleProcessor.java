@@ -91,7 +91,7 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
 
         ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
         String gatewayCountCheckingFrequency = "30000";
-        //TODO: make the second arg of scheduleAtFixedRate() configurable
+        //TODO: make the first and second arg of scheduleAtFixedRate() configurable
         executor.scheduleAtFixedRate(new ChannelSubscriptionCounterTask(), 15000,
                 Integer.parseInt(gatewayCountCheckingFrequency), TimeUnit.MILLISECONDS);
 
@@ -501,7 +501,7 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
             log.info("/////////////////   INITIAL ** sharedTimestamp :" + getReadableTime(sharedTimestamp) + " sharedNextWindow :" + getReadableTime(sharedNextWindow) + " localFirstAccessTime :" + getReadableTime(localFirstAccessTime) + "  callerContext.getUnitTime():" + callerContext.getUnitTime() + " Thread name:" + Thread.currentThread().getName());
 
             log.info("///////////////// localCounter:" + callerContext.getLocalCounter() + ", globalCounter:" + callerContext.getGlobalCounter() + ", localHits:" + callerContext.getLocalHits());
-            if (localFirstAccessTime < sharedTimestamp) {  // TODO:  this condition needs review
+            if (localFirstAccessTime < sharedTimestamp) {  // If this is a new time window
                 log.info("///////////////// Hit if ***** A1");
                 long distributedCounter = SharedParamManager.getDistributedCounter(callerId);
                 log.info("distributedCounter :" + distributedCounter);
@@ -509,7 +509,7 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
                 callerContext.setNextTimeWindow(sharedNextWindow);
                 callerContext.setGlobalCounter(distributedCounter);
                 if (log.isDebugEnabled()) {
-                    log.debug("///////////////// Setting time windows of caller context when window already set=" + callerId);
+                    log.debug("///////////////// Setting time windows of caller context " + callerId + " when window already set at another GW");
                 }
                 //If some request comes to a nodes after some node set the shared timestamp then this
                 // check whether the first access time of local is in between the global time window
@@ -583,6 +583,9 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
     public void setLocalQuota(CallerContext callerContext, CallerConfiguration configuration) {
         long maxRequests = configuration.getMaximumRequestPerUnitTime();
         int gatewayCount = ServiceReferenceHolder.getInstance().getGatewayCount();
+
+        //if min GW count is defined
+
         long localQuota = (maxRequests - maxRequests * 20 / 100) / gatewayCount;
         log.info("### Set local quota to " + localQuota + " for " + callerContext.getId() + " in hybrid throttling");
         callerContext.setLocalQuota(localQuota);

@@ -47,6 +47,8 @@ public class RedisConfig {
 
     private String gatewayId;
 
+    private int minGatewayCount;
+
     public int getMaxTotal() {
 
         return maxTotal;
@@ -240,5 +242,12 @@ public class RedisConfig {
 
     public String getGatewayId() {
         return gatewayId;
+    }
+
+    public void setMinGatewayCount(int minGatewayCount) {
+        this.minGatewayCount = minGatewayCount;
+    }
+    public int getMinGatewayCount() {
+        return minGatewayCount;
     }
 }
