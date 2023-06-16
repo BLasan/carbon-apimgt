@@ -14472,6 +14472,10 @@ public class ApiMgtDAO {
                         if (isAPILevelPolicySupportEnabled) {
                             populateAPIPoliciesToProductResource(apiProductResource, urlMappingId, uriTemplate,
                                     apiToAPIPolicyMap, connection);
+                        } else {
+                            List<OperationPolicy> operationPolicies = getOperationPoliciesOfURITemplate(connection,
+                                    urlMappingId);
+                            uriTemplate.setOperationPolicies(operationPolicies);
                         }
 
                         urlMappingList.add(uriTemplate);
@@ -20128,12 +20132,11 @@ public class ApiMgtDAO {
             Connection connection) throws SQLException, APIManagementException {
 
         boolean isAPILevelPolicySupportEnabled = APIUtil.isAPILevelPolicySupportEnabled();
+        PreparedStatement apiLevelPolicyMappingStatement = null;
+        PreparedStatement deleteApiLevelMappingsStatement = null;
+
         try (PreparedStatement operationPolicyMappingStatement = connection.prepareStatement(
-                SQLConstants.OperationPolicyConstants.ADD_API_OPERATION_POLICY_MAPPING);
-                PreparedStatement apiLevelPolicyMappingStatement = connection.prepareStatement(
-                        SQLConstants.OperationPolicyConstants.ADD_API_POLICY_MAPPING);
-                PreparedStatement deleteApiLevelMappingsStatement = connection.prepareStatement(
-                        SQLConstants.OperationPolicyConstants.DELETE_API_POLICY_MAPPING)) {
+                SQLConstants.OperationPolicyConstants.ADD_API_OPERATION_POLICY_MAPPING)) {
             connection.setAutoCommit(false);
 
             Map<String, String> restoredPolicyMap = new HashMap<>();
@@ -20172,6 +20175,9 @@ public class ApiMgtDAO {
 
             // API level policies
             if (isAPILevelPolicySupportEnabled) {
+                apiLevelPolicyMappingStatement = connection.prepareStatement(
+                        SQLConstants.OperationPolicyConstants.ADD_API_POLICY_MAPPING);
+
                 List<OperationPolicy> apiLevelPolicies = getAPIPolicyMapping(apiRevision.getApiUUID(),
                         apiRevision.getRevisionUUID(), connection);
                 for (OperationPolicy policy : apiLevelPolicies) {
@@ -20206,6 +20212,8 @@ public class ApiMgtDAO {
 
             if (isAPILevelPolicySupportEnabled) {
                 // Delete API Policy mappings
+                deleteApiLevelMappingsStatement = connection.prepareStatement(
+                        SQLConstants.OperationPolicyConstants.DELETE_API_POLICY_MAPPING);
                 deleteApiLevelMappingsStatement.setString(1, apiRevision.getApiUUID());
                 deleteApiLevelMappingsStatement.execute();
 
@@ -20216,6 +20224,21 @@ public class ApiMgtDAO {
             cleanUnusedClonedOperationPolicies(connection, usedClonedPolicies, apiRevision.getApiUUID());
         } catch (APIManagementException e) {
             handleException("Error while restoring API policies.", e);
+        } finally {
+            if (apiLevelPolicyMappingStatement != null) {
+                try {
+                    apiLevelPolicyMappingStatement.close();
+                } catch (SQLException e) {
+                    log.warn("Database error. Error while closing prepared statement." + e.getMessage(), e);
+                }
+            }
+            if (deleteApiLevelMappingsStatement != null) {
+                try {
+                    deleteApiLevelMappingsStatement.close();
+                } catch (SQLException e) {
+                    log.warn("Database error. Error while closing prepared statement." + e.getMessage(), e);
+                }
+            }
         }
     }
 
