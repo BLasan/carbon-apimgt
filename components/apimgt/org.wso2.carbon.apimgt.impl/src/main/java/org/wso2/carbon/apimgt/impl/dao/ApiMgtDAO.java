@@ -14472,6 +14472,10 @@ public class ApiMgtDAO {
                         if (isAPILevelPolicySupportEnabled) {
                             populateAPIPoliciesToProductResource(apiProductResource, urlMappingId, uriTemplate,
                                     apiToAPIPolicyMap, connection);
+                        } else {
+                            List<OperationPolicy> operationPolicies = getOperationPoliciesOfURITemplate(connection,
+                                    urlMappingId);
+                            uriTemplate.setOperationPolicies(operationPolicies);
                         }
 
                         urlMappingList.add(uriTemplate);
