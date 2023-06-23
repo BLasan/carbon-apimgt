@@ -36,7 +36,7 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
     JedisPool redisPool;
 
     public RedisBaseDistributedCountManager(JedisPool redisPool) {
-        log.info("### RedisBaseDistributedCountManager instantiated !!!");
+       // log.debug("### RedisBaseDistributedCountManager instantiated !!!");
         this.redisPool = redisPool;
 
 //        JedisPubSub jedisPubSub = new JedisPubSub() {
@@ -44,20 +44,20 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
 //            @Override
 //            public void onSubscribe(String channel, int subscribedChannels) {
 //                super.onSubscribe(channel, subscribedChannels);
-//                log.info("Client is Subscribed to " + channel);
-//                log.info("Client is Subscribed to "+ subscribedChannels + " no. of channels");
+//                log.debug("Client is Subscribed to " + channel);
+//                log.debug("Client is Subscribed to "+ subscribedChannels + " no. of channels");
 //            }
 //        };
 //
 //       // this.redisPool.getResource().subscribe(jedisPubSub, "wso2_sync_mode_init");
 //        Map<String, String> sync_mode_init_channel = this.redisPool.getResource().pubsubNumSub("sync_mode_init_channel");
-//        log.info("GGGGGG");
+//        log.debug("GGGGGG");
 //        // iterate over the map entries
 //        for (Map.Entry<String, String> entry : sync_mode_init_channel.entrySet()) {
 //            // access each entry
 //            String channel = entry.getKey();
 //            String count = entry.getValue();
-//            log.info(">>> channel:" + channel + " count:" + count);
+//            log.debug(">>> channel:" + channel + " count:" + count);
 //        }
 
     }
@@ -85,7 +85,7 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
                     log.debug("RedisBaseDistributedCountManager*****.getCounter**1 Redis getCounter:" + l);
                     return l;
                 } else {
-                    log.info(String.format("RedisBaseDistributedCountManager***** %s KEY DOES NOT EXIST !!!", key));
+                    log.debug(String.format("RedisBaseDistributedCountManager***** %s KEY DOES NOT EXIST !!!", key));
                 }
                 log.debug("shared counter key didn't exist. But returning:" + 0);
                 return 0;
@@ -100,13 +100,13 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
 
     @Override
     public void setCounter(String key, long value) {
-        log.info("Checking ttl before calling setCounter. TTL:" + getTtl(key));
+        log.debug("Checking ttl before calling setCounter. TTL:" + getTtl(key));
         long startTime = 0;
         try {
             startTime = System.currentTimeMillis();
 
             asyncGetAndAlterCounter(key, value); // this should remove the expiry time as new key is created by this
-            log.info("RedisBaseDistributedCountManager*****.setCounter ** : key:" + key + ", value:" + value);
+            log.debug("RedisBaseDistributedCountManager*****.setCounter ** : key:" + key + ", value:" + value);
         } finally {
             if (log.isDebugEnabled()) {
                 //     log.debug("Time Taken to setDistributedCounter :" + (System.currentTimeMillis() - startTime));
@@ -114,7 +114,7 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
 
         }
         long xx = getCounter(key);
-        log.info("Key: " + key + " Set counter: at end check by getting the counter:" + xx +
+        log.debug("Key: " + key + " Set counter: at end check by getting the counter:" + xx +
                 " Thread name:" + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId() + " TTL:" + getTtl(key));
     }
 
@@ -160,7 +160,7 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
                 if (log.isDebugEnabled()) {
                     log.debug(String.format("%s Key Removed", key));
                 }
-                log.info("RedisBaseDistributedCountManager*****Counter Key Removed:" + key + " current timestamp:" + System.currentTimeMillis());
+                log.debug("RedisBaseDistributedCountManager*****Counter Key Removed:" + key + " current timestamp:" + System.currentTimeMillis());
             }
         } finally {
             if (log.isDebugEnabled()) {
@@ -187,7 +187,7 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
                     current = Long.parseLong(currentValue.get());
                 }
                 if (log.isDebugEnabled()) {
-                    log.info(String.format("RedisBaseDistributedCountManager*****asyncGetAndAddCounter** %s Key increased from %s to %s", key, current, incrementedValue.get()));
+                    log.debug(String.format("RedisBaseDistributedCountManager*****asyncGetAndAddCounter** %s Key increased from %s to %s", key, current, incrementedValue.get()));
                 }
                 return current;
             }
@@ -216,7 +216,7 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
                     incrementedValue = responseValue.get();
                 }
                 if (log.isDebugEnabled()) {
-                    log.info(String.format("RedisBaseDistributedCountManager*****asyncAddCounter** %s Key increased from %s to %s", key, incrementedValue - value, incrementedValue));
+                    log.debug(String.format("RedisBaseDistributedCountManager*****asyncAddCounter** %s Key increased from %s to %s", key, incrementedValue - value, incrementedValue));
                 }
                 return incrementedValue;
             }
@@ -248,7 +248,7 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
                     current = Long.parseLong(currentValue.get());
                 }
                 if (log.isDebugEnabled()) {
-                    log.info(String.format("RedisBaseDistributedCountManager*****asyncGetAndAlterCounter %s Key increased from %s to %s", key, current, incrementedValue.get()));
+                    log.debug(String.format("RedisBaseDistributedCountManager*****asyncGetAndAlterCounter %s Key increased from %s to %s", key, current, incrementedValue.get()));
                 }
                 return current;
             }
@@ -272,12 +272,12 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
                 transaction.exec();
 
                 if (response != null && response.get() != null) {
-                    log.info("RedisBaseDistributedCountManager*****getTimestamp. key:" + key + ". Timestamp not null ** getTimestamp:" + getReadableTime(Long.parseLong(response.get())) + "(" + response.get() + ")");
+                    log.debug("RedisBaseDistributedCountManager*****getTimestamp. key:" + key + ". Timestamp not null ** getTimestamp:" + getReadableTime(Long.parseLong(response.get())) + "(" + response.get() + ")");
 
                     return Long.parseLong(response.get());
 
                 } else {
-                    log.info("RedisBaseDistributedCountManager*****TIMESTAMP NOT EXIST !!!. key: " + key + "  So set to 0. ** :");
+                    log.debug("RedisBaseDistributedCountManager*****TIMESTAMP NOT EXIST !!!. key: " + key + "  So set to 0. ** :");
                 }
                 return 0;
             }
@@ -300,10 +300,10 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
 
                 String timeStamp = jedis.get(key);
                 if (timeStamp != null) {
-                    log.info("getTimestamp. key:" + key + ". Timestamp not null ** getTimestamp:" + getReadableTime(Long.parseLong(timeStamp)) + "(" + timeStamp + ")");
+                    log.debug("getTimestamp. key:" + key + ". Timestamp not null ** getTimestamp:" + getReadableTime(Long.parseLong(timeStamp)) + "(" + timeStamp + ")");
                     return Long.parseLong(timeStamp);
                 } else {
-                    log.info("getTimestamp :" + key + ". Timestamp null. So set to 0. ** :");
+                    log.debug("getTimestamp :" + key + ". Timestamp null. So set to 0. ** :");
                 }
                 return 0;
             }
@@ -318,7 +318,7 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
 
     @Override
     public void setTimestamp(String key, long timeStamp) {
-        log.info("Checking ttl before calling timestamp. TTL:" + getTtl(key));
+        log.debug("Checking ttl before calling timestamp. TTL:" + getTtl(key));
         long startTime = 0;
         try {
             startTime = System.currentTimeMillis();
@@ -336,7 +336,7 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
                 //   log.debug("Time Taken to setTimestamp :" + (System.currentTimeMillis() - startTime));
             }
         }
-        log.info("key:" + key + "  After setting timestamp .getTimestamp : " + getTimestamp(key) + " TTL:" + getTtl(key));
+        log.debug("key:" + key + "  After setting timestamp .getTimestamp : " + getTimestamp(key) + " TTL:" + getTtl(key));
     }
 
     @Override
@@ -351,7 +351,7 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
                 Transaction transaction = jedis.multi();
                 transaction.del(key);
                 transaction.exec();
-                log.info("RedisBaseDistributedCountManager*****shared timestamp key removed key : " + key + "current timestamp:" + System.currentTimeMillis());
+                log.debug("RedisBaseDistributedCountManager*****shared timestamp key removed key : " + key + "current timestamp:" + System.currentTimeMillis());
 
             }
         } finally {
@@ -367,7 +367,7 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
 //        try {
 //            try (Jedis jedis = redisPool.getResource()) {
 //                long expiryTime = jedis.expireTime(key);
-//                log.info("(negative value is returned in order to signal an error: -1 if the key exists but has no associated expiration time, and -2 if the key does not exist.)");
+//                log.debug("(negative value is returned in order to signal an error: -1 if the key exists but has no associated expiration time, and -2 if the key does not exist.)");
 //                return expiryTime;
 //            }
 //        } finally {
@@ -383,18 +383,18 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
     public void setExpiry(String key, long expiryTimeStamp) {
         long currentTime = System.currentTimeMillis();
 
-        log.info("\n\n setting expiry of key :" + key + " to:" + getReadableTime(expiryTimeStamp) + " (" + expiryTimeStamp + ")" + " current timestamp:" +
+        log.debug("\n\n setting expiry of key :" + key + " to:" + getReadableTime(expiryTimeStamp) + " (" + expiryTimeStamp + ")" + " current timestamp:" +
                 getReadableTime(currentTime) + " (" + currentTime + ")" + "  Thread name:" + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
 
         long startTime = 0;
 
-        log.info("Initially Checking if the key:" + key + " exists");
+        log.debug("Initially Checking if the key:" + key + " exists");
         if (key.startsWith("sharedCounter")) {
             getCounter(key);
         } else if (key.startsWith("startedTime")) {
             getTimestamp(key);
         } else {
-            log.info("key:" + key + " does not start with sharedCounter or startedTime");
+            log.debug("key:" + key + " does not start with sharedCounter or startedTime");
         }
 
 
@@ -405,15 +405,15 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
                 Transaction transaction = jedis.multi();
                 Response<Long> x = transaction.pexpireAt(key, expiryTimeStamp);
                 transaction.exec();
-//                log.info("RedisBaseDistributedCountManager.setExpiry state " + x.get() + " of key:" + key +
+//                log.debug("RedisBaseDistributedCountManager.setExpiry state " + x.get() + " of key:" + key +
 //                        "  (1 if the pexpire was set, 0 if the timeout was not set. e.g. key doesn't exist, " +
 //                        "or operation skipped due to the provided arguments.)");
                 if (x.get() == 1) {
-                    log.info("pexpire timeout was set. state " + x.get() + " of key:" + key);
+                    log.debug("pexpire timeout was set. state " + x.get() + " of key:" + key);
                 } else if (x.get() == 0) {
-                    log.info("pexpire timeout was not set. state: " + x.get() + " of key:" + key + " e.g. key doesn't exist, or operation skipped due to the provided arguments.");
+                    log.debug("pexpire timeout was not set. state: " + x.get() + " of key:" + key + " e.g. key doesn't exist, or operation skipped due to the provided arguments.");
                 } else {
-                    log.info("pexpire timeout was not set. else value");
+                    log.debug("pexpire timeout was not set. else value");
                 }
             }
         } finally {
@@ -422,19 +422,19 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
             }
         }
 
-        log.info("RedisBaseDistributedCountManager*****After setting expiry Checking the TTL of the key:" + key + " . TTL : " + getTtl(key));
+        log.debug("RedisBaseDistributedCountManager*****After setting expiry Checking the TTL of the key:" + key + " . TTL : " + getTtl(key));
 
-        log.info("\nAfter setting expiry Checking if the key:" + key + " exists");
+        log.debug("\nAfter setting expiry Checking if the key:" + key + " exists");
         if (key.startsWith("sharedCounter")) {
             getCounter(key);
         } else if (key.startsWith("startedTime")) {
             getTimestamp(key);
         } else {
-            log.info("key:" + key + " does not start with sharedCounter or sharedTimestamp");
+            log.debug("key:" + key + " does not start with sharedCounter or sharedTimestamp");
         }
 
-        log.info("Again at the end of setExpiry() method checking the TTL of key " + key + " . TTL : " + getTtl(key));
-        log.info("\n");
+        log.debug("Again at the end of setExpiry() method checking the TTL of key " + key + " . TTL : " + getTtl(key));
+        log.debug("\n");
 
     }
 
@@ -447,9 +447,9 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
                 transaction.exec();
                 ttl = pttl.get();
                 if (ttl == -2) {
-                    log.info("RedisBaseDistributedCountManager*****TTL of key :" + key + " : " + ttl + " (Key does not exists)");
+                    log.debug("RedisBaseDistributedCountManager*****TTL of key :" + key + " : " + ttl + " (Key does not exists)");
                 } else if (ttl == -1) {
-                    log.info("RedisBaseDistributedCountManager*****TTL of key :" + key + " : " + ttl + " (Key does not have an associated expire)");
+                    log.debug("RedisBaseDistributedCountManager*****TTL of key :" + key + " : " + ttl + " (Key does not have an associated expire)");
                 }
                 return ttl;
             }
