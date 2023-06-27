@@ -1032,7 +1032,7 @@ public class APIManagerComponent {
             String proxyUsername = configuration.getFirstProperty(APIConstants.PROXY_USERNAME);
             String proxyPassword = configuration.getFirstProperty(APIConstants.PROXY_PASSWORD);
             String nonProxyHostsString = configuration.getFirstProperty(APIConstants.NON_PROXY_HOSTS);
-            String[] nonProxyHosts = configuration.getFirstProperty(nonProxyHostsString) != null ?
+            String[] nonProxyHosts = nonProxyHostsString != null ?
                     nonProxyHostsString.split("\\|") : null;
             String proxyProtocol = configuration.getFirstProperty(APIConstants.PROXY_PROTOCOL);
             builder = builder.withProxy(proxyHost, proxyPort, proxyUsername, proxyPassword, proxyProtocol,
