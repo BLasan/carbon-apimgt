@@ -21,6 +21,7 @@ package org.wso2.carbon.apimgt.gateway;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.commons.throttle.core.DistributedCounterManager;
+import org.wso2.carbon.apimgt.impl.dto.RedisConfig;
 import redis.clients.jedis.*;
 
 import java.text.DateFormat;
@@ -34,10 +35,16 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
 
     private static final Log log = LogFactory.getLog(RedisBaseDistributedCountManager.class);
     JedisPool redisPool;
+    long keyLockRetrievalTimeout;
+   // String gatewayId;
 
     public RedisBaseDistributedCountManager(JedisPool redisPool) {
        // log.debug("### RedisBaseDistributedCountManager instantiated !!!");
         this.redisPool = redisPool;
+        RedisConfig redisConfig = org.wso2.carbon.apimgt.impl.internal.ServiceReferenceHolder.
+                getInstance().getAPIManagerConfigurationService().getAPIManagerConfiguration().getRedisConfig();
+        keyLockRetrievalTimeout = redisConfig.getKeyLockRetrievalTimeout();
+      //  gatewayId = redisConfig.getGatewayId();
 
 //        JedisPubSub jedisPubSub = new JedisPubSub() {
 //
@@ -460,6 +467,34 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
         }
     }
 
+    public long setLock(String key, String value) {
+        log.debug("Checking ttl before calling ..:" + getTtl(key));
+        long startTime = 0;
+        try {
+            startTime = System.currentTimeMillis();
+
+            try (Jedis jedis = redisPool.getResource()) {
+
+                Transaction transaction = jedis.multi();
+                Response<Long> response = transaction.setnx(key, value);
+                transaction.exec();
+                long responseCode = response.get();
+                if (responseCode == 1) {
+                    log.debug("Key was set");
+                } else if (responseCode == 0) {
+                    log.debug("Key was not set. It is already available");
+
+                }
+                log.debug("RedisBaseDistributedCountManager*****.setLock*****  Thread name:" + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
+                return responseCode;
+            }
+        } finally {
+            if (log.isDebugEnabled()) {
+                //   log.debug("Time Taken to setLock :" + (System.currentTimeMillis() - startTime));
+            }
+        }
+    }
+
     @Override
 
     public boolean isEnable() {
@@ -478,6 +513,30 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
         Date date = new Date(time);
         String formattedTime = dateFormat.format(date);
         return formattedTime;
+    }
+
+    @Override
+    public long getKeyLockRetrievalTimeout() {
+        return keyLockRetrievalTimeout;
+    }
+
+    @Override
+    public void removeLock(String key) {
+        long startTime = 0;
+        try {
+            startTime = System.currentTimeMillis();
+
+            try (Jedis jedis = redisPool.getResource()) {
+
+                Transaction transaction = jedis.multi();
+                transaction.del(key);
+                transaction.exec();
+            }
+        } finally {
+            if (log.isDebugEnabled()) {
+                log.debug("Time Taken to remove lock :" + (System.currentTimeMillis() - startTime));
+            }
+        }
     }
 }
 

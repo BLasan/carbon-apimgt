@@ -1420,6 +1420,8 @@ public final class APIConstants {
 
     public static final String CONFIG_REDIS_MIN_GATEWAY_COUNT = "MinGatewayCount";
 
+    public static final String CONFIG_REDIS_KEY_LOCK_RETRIEVAL_TIMEOUT = "KeyLockRetrievalTimeout";
+
 
     // Primary/Secondary Login configuration
     public static final String USERID_LOGIN = "UserIdLogin";

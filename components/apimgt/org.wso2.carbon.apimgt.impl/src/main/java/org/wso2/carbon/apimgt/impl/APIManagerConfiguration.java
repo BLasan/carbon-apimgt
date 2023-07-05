@@ -385,6 +385,8 @@ public class APIManagerConfiguration {
                 OMElement propertiesElement = element.getFirstChildWithName(new QName(APIConstants.CONFIG_REDIS_PROPERTIES));
                 OMElement gatewayId = element.getFirstChildWithName(new QName(APIConstants.CONFIG_REDIS_GATEWAY_ID));
                 OMElement minGatewayCount = element.getFirstChildWithName(new QName(APIConstants.CONFIG_REDIS_MIN_GATEWAY_COUNT));
+                OMElement keyLockRetrievalTimeout = element.getFirstChildWithName(new QName(APIConstants.CONFIG_REDIS_KEY_LOCK_RETRIEVAL_TIMEOUT));
+
                 redisConfig.setRedisEnabled(true);
                 redisConfig.setHost(redisHost.getText());
                 redisConfig.setPort(Integer.parseInt(redisPort.getText()));
@@ -394,6 +396,9 @@ public class APIManagerConfiguration {
                 if (minGatewayCount != null) {
                     redisConfig.setMinGatewayCount(Integer.parseInt(minGatewayCount.getText()));
                 } // TODO : set default values properly, etc
+                if (keyLockRetrievalTimeout != null) {
+                    redisConfig.setKeyLockRetrievalTimeout(Integer.parseInt(keyLockRetrievalTimeout.getText()));
+                }
                 if (redisUser != null && redisPassword != null && redisDatabaseId != null
                         && redisConnectionTimeout != null && redisIsSslEnabled != null) {
                     redisConfig.setUser(redisUser.getText());

@@ -49,6 +49,8 @@ public class RedisConfig {
 
     private int minGatewayCount;
 
+    private long keyLockRetrievalTimeout;
+
     public int getMaxTotal() {
 
         return maxTotal;
@@ -249,5 +251,13 @@ public class RedisConfig {
     }
     public int getMinGatewayCount() {
         return minGatewayCount;
+    }
+
+    public void setKeyLockRetrievalTimeout(long keyLockRetrievalTimeout) {
+        this.keyLockRetrievalTimeout = keyLockRetrievalTimeout;
+    }
+
+    public long getKeyLockRetrievalTimeout() {
+        return keyLockRetrievalTimeout;
     }
 }
