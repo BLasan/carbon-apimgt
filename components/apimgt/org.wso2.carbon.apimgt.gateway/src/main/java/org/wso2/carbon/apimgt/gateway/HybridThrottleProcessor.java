@@ -68,14 +68,25 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
                         // sync throttle params to redis to consider local unpublished request counts in distributed counters
                         // RoleBaseCallerContext roleBaseCallerContext = new RoleBaseCallerContext(message);
 
+
                         if (dataHolder != null) {
                             log.info("******************* dataHolder is not null so running syncing tasks" + " message:" + syncModeInitMsg + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
                             CallerContext callerContext = dataHolder.getCallerContext(callerContextId);
+                            // TODO: can remove these syncing
                             if (callerContext != null) {
                                 log.info("******************* running forced syncing tasks for callerContext: " + callerContext.getId()
                                         + " message:" + syncModeInitMsg + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
-                                forceSyncThrottleWindowParams(callerContext);
-                                syncThrottleCounterParams(callerContext, false, System.currentTimeMillis());
+                                if (SharedParamManager.lockSharedKeys(callerContext.getId(), gatewayId)) {
+                                    long syncingStartTime = System.currentTimeMillis();
+                                    forceSyncThrottleWindowParams(callerContext);
+                                    syncThrottleCounterParams(callerContext, false, System.currentTimeMillis());
+                                    SharedParamManager.releaseSharedKeys(callerContext.getId());
+                                    long timeNow = System.currentTimeMillis();
+                                    log.info("current time:" + timeNow + "(" + getReadableTime(timeNow) + ")" + "In force syncing process, Lock released in " + (timeNow - syncingStartTime) + " ms for callerContext: " + callerContext.getId() + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
+                                } else {
+                                    log.info("current time:" + System.currentTimeMillis() + "(" + getReadableTime(System.currentTimeMillis()) + ")" + "******************* failed to acquire lock for callerContext: " + callerContext.getId()
+                                            + " message:" + syncModeInitMsg + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
+                                }
                             } else {
                                 log.info("******************* callerContext is null so not running syncing tasks" + " message:" + syncModeInitMsg + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
                             }
@@ -146,8 +157,10 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
             log.info("&&&  CCcA localHits:" + callerContext.getLocalHits() + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
         }
 
-
-        if (callerContext.getLocalHits() == callerContext.getLocalQuota()) {// TODO: can use "if (callerContext.getLocalHits() == callerContext.getLocalQuota() && canAccess == true)" instead of this if
+        // convert the sync mode to sync and publish mode-changing message to redis only if the syncing mode is still async and requests are not yet throttled.
+        // "canAccess == true" condition is checked to avoid unnecessary syncings and redis publish messages when the requests are already throttled. (after the
+        // requests are throttled, next requests are processed in async mode)
+        if (callerContext.getLocalHits() == callerContext.getLocalQuota() && !callerContext.isThrottleParamSyncingModeSync() && canAccess == true) {
             log.info("\n\n ///////////////// quota reached. SWITCHED TO SYNC MODE !!!. callerContext.getLocalHits()  : "
                     + callerContext.getLocalHits() + "\n" + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
             callerContext.setIsThrottleParamSyncingModeSync(true);
@@ -156,8 +169,16 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
 
             if (dataHolder != null) {
                 log.info("******************* dataHolder is not null so running syncing tasks" + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
-                syncThrottleWindowParams(callerContext);
-                syncThrottleCounterParams(callerContext, false, currentTime);
+                if (SharedParamManager.lockSharedKeys(callerContext.getId(), gatewayId)) {
+                    long syncingStartTime = System.currentTimeMillis();
+                    syncThrottleWindowParams(callerContext);
+                    syncThrottleCounterParams(callerContext, false, currentTime);
+                    SharedParamManager.releaseSharedKeys(callerContext.getId());
+                    long timeNow = System.currentTimeMillis();
+                    log.info("current time:" + timeNow + "(" + getReadableTime(timeNow) + ")" + "In canAccessBasedOnUnitTime, Lock released in " + (timeNow - syncingStartTime) + " ms for callerContext: " + callerContext.getId() + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
+                } else {
+                    log.warn("current time:" + System.currentTimeMillis() + "(" + getReadableTime(System.currentTimeMillis()) + ")" + "canAccessBasedOnUnitTime Syncing Throttle params, skipped. Failed to lock shared keys, hence skipped syncing tasks. key: " + callerContext.getId()+ " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
+                }
             }
             syncModeNotifiedMap.put(callerContext.getId(), String.valueOf(callerContext.getNextTimeWindow()));
             try (Jedis jedis = redisPool.getResource()) {
@@ -179,8 +200,9 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
                 if (nextTimeWindowOfSyncMessage >= currentTime) { // still within the time window that the sync message was sent by some other GW node or mode switched by own node
                     callerContext.setIsThrottleParamSyncingModeSync(true);
                     callerContext.setSyncModeLastUpdatedTime(currentTime); // TODO: can remove this SyncModeLastUpdatedTime property
+                    log.info("/////////////////  ### Set ThrottleParamSyncingModeSync to true for callerContext: " + callerContext.getId() + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
                 }
-                log.info("/////////////////  ### Set ThrottleParamSyncingModeSync to true for callerContext: " + callerContext.getId() + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
+                //log.info("/////////////////  ### Set ThrottleParamSyncingModeSync to true for callerContext: " + callerContext.getId() + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
             }
         } else { // isThrottleParamSyncingModeSync = true ; handle if the syncMode was set to true in a previous time window
             log.info("/////////////////  ### ThrottleParamSyncingModeSync is already true for callerContext: " + callerContext.getId() + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
@@ -196,7 +218,7 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
 //            }
             if (currentTime > callerContext.getNextTimeWindow()) { // previous time window is exceeded and this is the first request in new window
                 // normally SyncModeLastUpdatedTime is less than NextTimeWindow. If so we need to check if this nextTimeWindow is an old one too. (previous window is passed now)
-                log.info("/////////////////  ### But the last updated time is in a previous time window. So setting it to false. So setting it to false." + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
+                log.info("/////////////////  ### currentTime has exceeded NextTimeWindow. So setting it to false. So setting it to false." + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
                 callerContext.setIsThrottleParamSyncingModeSync(false);
             }
         }
@@ -212,9 +234,19 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
         if (maxRequest != 0) {
             if (callerContext.isThrottleParamSyncingModeSync() /*&& callerContext.getLocalHits() >= callerContext.getLocalQuota()*/) {
                 log.info("&&&  Going to run throttle param syncing in sync mode" + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId()); // local count is incremented in here
-                syncThrottleWindowParams(callerContext);
-                syncThrottleCounterParams(callerContext, true, currentTime); // add piled items and new request item to shared-counter (increments before allowing the request)
+                if (SharedParamManager.lockSharedKeys(callerContext.getId(), gatewayId)) {
+                    long syncingStartTime = System.currentTimeMillis();
+                    syncThrottleWindowParams(callerContext);
+                    syncThrottleCounterParams(callerContext, true, currentTime); // add piled items and new request item to shared-counter (increments before allowing the request)
+                    SharedParamManager.releaseSharedKeys(callerContext.getId());
+                    long timeNow = System.currentTimeMillis();
+                    log.info("current time:" + timeNow + "(" + getReadableTime(timeNow) + ")" + "In canAccessIfUnitTimeNotOver Lock released in " + (System.currentTimeMillis() - syncingStartTime) + " ms for callerContext: " + callerContext.getId() + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
+                } else {
+                    log.warn("current time:" + System.currentTimeMillis() + "(" + getReadableTime(System.currentTimeMillis()) + ")" + " In canAccessIfUnitTimeNotOver : Failed to lock shared keys, hence skipped syncing tasks. key=" + callerContext.getId() + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
+                    callerContext.incrementLocalCounter(); // increment local counter since, sync tasks didn't run where incrementing should have happened (https://github.com/wso2/api-manager/issues/1982#issuecomment-1624920455)
+                }
             } else { //async mode
+                log.info("&&& In canAccessIfUnitTimeNotOver Serving api calls in async mode" + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
                 callerContext.incrementLocalCounter();
                 localCounterReseted = false;
             }
@@ -371,8 +403,20 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
 
         if (callerContext.isThrottleParamSyncingModeSync()) { // TODO: may be possible to shift this block of code to a method
             log.info("&&&  Going to run throttle param syncing" + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
-            syncThrottleWindowParams(callerContext);
-            syncThrottleCounterParams(callerContext, true, currentTime); // add piled items and new request item to shared-counter (increments before allowing the request)
+            if (SharedParamManager.lockSharedKeys(callerContext.getId(), gatewayId)) {
+                long syncingStartTime = System.currentTimeMillis();
+                syncThrottleWindowParams(callerContext);
+                syncThrottleCounterParams(callerContext, true, currentTime); // add piled items and new request item to shared-counter (increments before allowing the request)
+                SharedParamManager.releaseSharedKeys(callerContext.getId());
+                long timeNow = System.currentTimeMillis();
+
+                log.info("current time:" + timeNow + "(" + getReadableTime(timeNow) + ")" + "In canAccessIfUnitTimeOver Lock released in " + (timeNow - syncingStartTime) + " ms for callerContext: " + callerContext.getId() + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
+            } else {
+                log.warn("current time:" + System.currentTimeMillis() + "(" + getReadableTime(System.currentTimeMillis()) + ")" + " In canAccessIfUnitTimeOver : Failed to lock shared keys, hence skipped syncing tasks. key=" + callerContext.getId() + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
+                callerContext.incrementLocalCounter(); // increment local counter since, sync tasks didn't run where incrementing should have happened (https://github.com/wso2/api-manager/issues/1982#issuecomment-1624920455)
+            }
+        } else {
+            log.info("&&& In canAccessIfUnitTimeOver  Serving api calls in async mode" + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
         }
         if (maxRequest != 0) {
             // first req, after exceeding previous window if, in previous window the max limit was not exceeded
@@ -410,9 +454,18 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
                             + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
                 }
                 if (isThrottleParamSyncingModeSync_local) { //TODO : remove this condition considering localHit
-                    log.info("%%% Going to run throttle param syncing in sync mode" + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
-                    syncThrottleWindowParams(callerContext);
-                    syncThrottleCounterParams(callerContext, true, currentTime);
+                    if (SharedParamManager.lockSharedKeys(callerContext.getId(), gatewayId)) {
+                        log.info("%%% In canAccessIfUnitTimeOver : In condition isThrottleParamSyncingModeSync_local part 1: Going to run throttle param syncing tasks. " + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
+                        long syncingStartTime = System.currentTimeMillis();
+                        syncThrottleWindowParams(callerContext);
+                        syncThrottleCounterParams(callerContext, true, currentTime);
+                        SharedParamManager.releaseSharedKeys(callerContext.getId());
+                        long timeNow = System.currentTimeMillis();
+
+                        log.info("current time:" + timeNow + "(" + getReadableTime(timeNow) + ")" + "In canAccessIfUnitTimeOver : In condition isThrottleParamSyncingModeSync_local part 1: Lock released in " + (timeNow - syncingStartTime) + " ms for callerContext: " + callerContext.getId() + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
+                    } else {
+                        log.warn("current time:" + System.currentTimeMillis() + "(" + getReadableTime(System.currentTimeMillis()) + ")" + " In canAccessIfUnitTimeOver : In condition isThrottleParamSyncingModeSync_local part 1: Failed to lock shared keys, hence skipped syncing tasks. key:" + callerContext.getId() + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
+                    }
                 }
                 if (callerContext.getGlobalCounter() <= maxRequest) {
                     canAccess = true;
@@ -460,9 +513,18 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
                                 + "time is over" + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
                     }
                     if (isThrottleParamSyncingModeSync_local) { // TODO: remove this condition considering localHits
-                        log.info("%%% Going to run throttle param syncing in sync mode" + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
-                        syncThrottleWindowParams(callerContext);
-                        syncThrottleCounterParams(callerContext, true, currentTime);
+                        if (SharedParamManager.lockSharedKeys(callerContext.getId(), gatewayId)) {
+                            long syncingStartTime = System.currentTimeMillis();
+                            log.info("%%% In canAccessIfUnitTimeOver : In condition isThrottleParamSyncingModeSync_local part 2: Going to run throttle param syncing tasks. " + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
+                            syncThrottleWindowParams(callerContext);
+                            syncThrottleCounterParams(callerContext, true, currentTime);
+                            SharedParamManager.releaseSharedKeys(callerContext.getId());
+                            long timeNow = System.currentTimeMillis();
+
+                            log.info("current time:" + timeNow + "(" + getReadableTime(timeNow) + ")" + "In canAccessIfUnitTimeOver : In condition isThrottleParamSyncingModeSync_local part 2: Lock released in " + (timeNow - syncingStartTime) + " ms for callerContext: " + callerContext.getId() + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
+                        } else {
+                            log.info("current time:" + System.currentTimeMillis() + "(" + getReadableTime(System.currentTimeMillis()) + ")" + "%%% In canAccessIfUnitTimeOver : In condition isThrottleParamSyncingModeSync_local part 2: Failed to lock shared keys, hence skipped syncing tasks. key: " + callerContext.getId() + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
+                        }
                     }
                     if (callerContext.getGlobalCounter() <= maxRequest) {
                         canAccess = true;
@@ -501,11 +563,11 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
     public void syncThrottleCounterParams(CallerContext callerContext, boolean isInvocationFlow, long currentTime) {
         log.info("\n\n///////////////// &&& Running throttleCounterParamSync(). Thread name:" + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
         synchronized (callerContext.getId().intern()) {
-            if (!SharedParamManager.lockSharedKeys(callerContext.getId(), gatewayId)) {
+            /*if (!SharedParamManager.lockSharedKeys(callerContext.getId(), gatewayId)) {
                 log.warn("Syncing throttle counter params skipped. Shared keys are locked. Thread name:" + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
                 return;
-            }
-            long syncingStartTime = System.currentTimeMillis();
+            }*/
+            //long syncingStartTime = System.currentTimeMillis();
             log.debug("CallerContext.getNextTimeWindow() :" + callerContext.getNextTimeWindow()
                     + "(" + getReadableTime(callerContext.getNextTimeWindow()) + ")" + " Thread name:" + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
             if (callerContext.getNextTimeWindow() > currentTime) {
@@ -544,8 +606,8 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
             } else {
                 log.info("Counter Sync task skipped" + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId() + "\n");
             }
-            SharedParamManager.releaseSharedKeys(callerContext.getId());
-            log.info("In syncThrottleCounterParams Lock released in " + (System.currentTimeMillis() - syncingStartTime) + " ms for callerContext: " + callerContext.getId() + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
+           // SharedParamManager.releaseSharedKeys(callerContext.getId());
+           // log.info("In syncThrottleCounterParams Lock released in " + (System.currentTimeMillis() - syncingStartTime) + " ms for callerContext: " + callerContext.getId() + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
 
         }
     }
@@ -553,11 +615,11 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
     @Override
     public void syncThrottleWindowParams(CallerContext callerContext) {
         synchronized (callerContext.getId().intern()) {
-            if (!SharedParamManager.lockSharedKeys(callerContext.getId(), gatewayId)) {
+            /*if (!SharedParamManager.lockSharedKeys(callerContext.getId(), gatewayId)) {
                 log.warn("Syncing Throttle window params, skipped. Shared keys are locked. Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
                 return;
-            }
-            long syncingStartTime = System.currentTimeMillis();
+            }*/
+            //long syncingStartTime = System.currentTimeMillis();
             log.info("\n\n /////////////////  5 - Running throttleWindowParamSync" + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
 
             // ThrottleWindowReplicator run() method
@@ -655,8 +717,8 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
                     + getReadableTime(SharedParamManager.getSharedTimestamp(callerId)) +
                     " sharedNextWindow :" + getReadableTime(sharedNextWindow) + " localFirstAccessTime :"
                     + getReadableTime(localFirstAccessTime) + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
-            SharedParamManager.releaseSharedKeys(callerId);
-            log.info("In syncThrottleWindowParams Lock released in " + (System.currentTimeMillis() - syncingStartTime) + " ms for callerContext: " + callerContext.getId() + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
+            //SharedParamManager.releaseSharedKeys(callerId);
+           // log.info("In syncThrottleWindowParams Lock released in " + (System.currentTimeMillis() - syncingStartTime) + " ms for callerContext: " + callerContext.getId() + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
         }
     }
 
@@ -664,11 +726,11 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
     public void forceSyncThrottleWindowParams(CallerContext callerContext) {
         synchronized (callerContext.getId().intern()) {
             // if the lock acquiring is not successful after multiple tries, then syncing won't happen
-            if (!SharedParamManager.lockSharedKeys(callerContext.getId(), gatewayId)) {
+           /* if (!SharedParamManager.lockSharedKeys(callerContext.getId(), gatewayId)) {
                 log.warn("forceSyncThrottleWindowParams skipped ! Could not acquire lock for callerContext: " + callerContext.getId() + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
                 return;
-            }
-            long syncingStartTime = System.currentTimeMillis();
+            }*/
+           // long syncingStartTime = System.currentTimeMillis();
             log.info("\n\n /////////////////  5 - Running forceSyncThrottleWindowParams. "  + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
 
             String callerId = callerContext.getId();
@@ -766,14 +828,15 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
                     + getReadableTime(localFirstAccessTime) + " Thread name: " + Thread.currentThread().getName()
                     + " Thread id: " + Thread.currentThread().getId());
 
-            SharedParamManager.releaseSharedKeys(callerId);
-            log.info("In ForcesyncThrottleWindowParams Lock released in " + (System.currentTimeMillis() - syncingStartTime) + " ms for callerContext: " + callerContext.getId() + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
+           // SharedParamManager.releaseSharedKeys(callerId);
+           // log.info("In ForcesyncThrottleWindowParams Lock released in " + (System.currentTimeMillis() - syncingStartTime) + " ms for callerContext: " + callerContext.getId() + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
         }
     }
 
 
     /**
-     * Calculate and set the local quota to the caller context
+     * Calculate and set the local quota to the caller context. This is done for each request since the gateway count
+     * can be changed dynamically.
      *
      * @param callerContext
      * @param configuration
