@@ -832,8 +832,6 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
         updateAPI(api, tenantId, userNameWithoutChange);
         updateProductResourceMappings(api, organization, productResources);
 
-        updateAPIPolicies(api, tenantDomain);
-
         if (log.isDebugEnabled()) {
             log.debug("Successfully updated the API: " + api.getId() + " in the database");
         }
@@ -991,6 +989,8 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
         }
         validateAndUpdateURITemplates(api, tenantId);
         apiMgtDAO.updateURITemplates(api, tenantId);
+        updateAPIPolicies(api, tenantDomain);
+
         if (log.isDebugEnabled()) {
             log.debug("Successfully updated the URI templates of API: " + apiIdentifier + " in the database");
         }
@@ -2024,13 +2024,8 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
         apiMgtDAO.cloneAPISpecificPoliciesForVersioning(oldAPIUuid, newAPI.getUuid(), newAPI.getOrganization(),
                 toBeClonedPolicyDetails);
 
-        if (uriTemplates != null) {
-            apiMgtDAO.addOperationPolicyMapping(uriTemplates);
-        }
-        if (extractedAPILevelPolicies != null && isAPILevelPolicySupportEnabled) {
-            apiMgtDAO.addAPILevelPolicies(extractedAPILevelPolicies, newAPI.getUuid(), null,
-                    newAPI.getOrganization());
-        }
+        apiMgtDAO.addPolicyMappingsForNewAPIVersion(uriTemplates, extractedAPILevelPolicies, newAPI,
+                isAPILevelPolicySupportEnabled);
     }
 
     public String retrieveServiceKeyByApiId(int apiId, int tenantId) throws APIManagementException {
