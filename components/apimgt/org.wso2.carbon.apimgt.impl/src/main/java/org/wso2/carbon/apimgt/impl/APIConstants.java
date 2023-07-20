@@ -1421,6 +1421,7 @@ public final class APIConstants {
     public static final String CONFIG_REDIS_MIN_GATEWAY_COUNT = "MinGatewayCount";
 
     public static final String CONFIG_REDIS_KEY_LOCK_RETRIEVAL_TIMEOUT = "KeyLockRetrievalTimeout";
+    public static final String CONFIG_IS_PRODUCTION_UNIT_TIME_IN_SEC = "IsProductionTimeUnitInSec"; //TODO: Remove this debugging config
 
 
     // Primary/Secondary Login configuration

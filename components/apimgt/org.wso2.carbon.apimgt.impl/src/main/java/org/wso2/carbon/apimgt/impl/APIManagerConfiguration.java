@@ -386,6 +386,7 @@ public class APIManagerConfiguration {
                 OMElement gatewayId = element.getFirstChildWithName(new QName(APIConstants.CONFIG_REDIS_GATEWAY_ID));
                 OMElement minGatewayCount = element.getFirstChildWithName(new QName(APIConstants.CONFIG_REDIS_MIN_GATEWAY_COUNT));
                 OMElement keyLockRetrievalTimeout = element.getFirstChildWithName(new QName(APIConstants.CONFIG_REDIS_KEY_LOCK_RETRIEVAL_TIMEOUT));
+                OMElement isProductionUnitTimeSec = element.getFirstChildWithName(new QName(APIConstants.CONFIG_IS_PRODUCTION_UNIT_TIME_IN_SEC));//TODO: remove
 
                 redisConfig.setRedisEnabled(true);
                 redisConfig.setHost(redisHost.getText());
@@ -399,14 +400,24 @@ public class APIManagerConfiguration {
                 if (keyLockRetrievalTimeout != null) {
                     redisConfig.setKeyLockRetrievalTimeout(Integer.parseInt(keyLockRetrievalTimeout.getText()));
                 }
-                if (redisUser != null && redisPassword != null && redisDatabaseId != null
-                        && redisConnectionTimeout != null && redisIsSslEnabled != null) {
+                redisConfig.setProductionUnitTimeInSec(Boolean.parseBoolean(isProductionUnitTimeSec.getText())); //TODO: remove
+
+                if (redisUser != null) {
                     redisConfig.setUser(redisUser.getText());
+                }
+                if (redisPassword != null) {
                     redisConfig.setPassword(MiscellaneousUtil.resolve(redisPassword, secretResolver).toCharArray());
+                }
+                if (redisDatabaseId != null) {
                     redisConfig.setDatabaseId(Integer.parseInt(redisDatabaseId.getText()));
+                }
+                if (redisConnectionTimeout != null) {
                     redisConfig.setConnectionTimeout(Integer.parseInt(redisConnectionTimeout.getText()));
+                }
+                if (redisIsSslEnabled != null) {
                     redisConfig.setSslEnabled(Boolean.parseBoolean(redisIsSslEnabled.getText()));
                 }
+
                 if (propertiesElement !=null){
                     Iterator<OMElement> properties = propertiesElement.getChildElements();
                     if (properties != null) {

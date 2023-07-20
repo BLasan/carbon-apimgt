@@ -66,6 +66,7 @@ import org.wso2.carbon.sequences.services.SequenceAdmin;
 import org.wso2.carbon.utils.Axis2ConfigurationContextObserver;
 import org.wso2.carbon.utils.CarbonUtils;
 import org.wso2.carbon.utils.ConfigurationContextService;
+import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisMonitor;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
@@ -493,11 +494,14 @@ public class APIHandlerServiceComponent {
             jedisPool = new JedisPool(jedisPoolConfig, redisConfig.getHost(), redisConfig.getPort(),
                     redisConfig.getConnectionTimeout(), redisConfig.getUser(),
                     String.valueOf(redisConfig.getPassword()), redisConfig.isSslEnabled());
+        } else if (redisConfig.getPassword() != null) {
+            jedisPool = new JedisPool(jedisPoolConfig, redisConfig.getHost(), redisConfig.getPort(),
+                    redisConfig.getConnectionTimeout(), String.valueOf(redisConfig.getPassword()), redisConfig.isSslEnabled());
         } else {
             jedisPool = new JedisPool(jedisPoolConfig, redisConfig.getHost(), redisConfig.getPort(),
                     redisConfig.getConnectionTimeout(), redisConfig.isSslEnabled());
-
         }
+
         return jedisPool;
     }
 }
