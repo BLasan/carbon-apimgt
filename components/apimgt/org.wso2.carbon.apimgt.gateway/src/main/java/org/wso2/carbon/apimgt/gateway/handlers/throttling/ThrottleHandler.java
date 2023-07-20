@@ -62,6 +62,7 @@ import org.wso2.carbon.apimgt.gateway.throttling.ThrottleDataHolder;
 import org.wso2.carbon.apimgt.gateway.utils.GatewayUtils;
 import org.wso2.carbon.apimgt.impl.APIConstants;
 import org.wso2.carbon.apimgt.impl.dto.ConditionDto;
+import org.wso2.carbon.apimgt.impl.dto.RedisConfig;
 import org.wso2.carbon.apimgt.impl.dto.VerbInfoDTO;
 import org.wso2.carbon.apimgt.impl.utils.APIUtil;
 import org.wso2.carbon.apimgt.tracing.TracingSpan;
@@ -136,6 +137,13 @@ public class ThrottleHandler extends AbstractHandler implements ManagedLifecycle
         }
         this.roleBasedAccessController = new RoleBasedAccessRateController();
 
+        // TODO: debuging config; remove
+        RedisConfig redisConfig = org.wso2.carbon.apimgt.impl.internal.ServiceReferenceHolder.
+                getInstance().getAPIManagerConfigurationService().getAPIManagerConfiguration().getRedisConfig();
+        boolean isProductionUnitTimeInSec = redisConfig.isProductionUnitTimeInSec();
+        if (!isProductionUnitTimeInSec) {
+            productionUnitTime = "60000";
+        }
     }
 
 
