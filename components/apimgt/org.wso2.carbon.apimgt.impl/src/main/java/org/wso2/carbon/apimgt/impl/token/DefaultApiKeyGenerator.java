@@ -35,8 +35,10 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.cert.Certificate;
+import java.security.cert.CertificateEncodingException;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -157,7 +159,7 @@ public class DefaultApiKeyGenerator implements ApiKeyGenerator {
             jwtHeader.append("\"}");
             return jwtHeader.toString();
 
-        } catch (Exception e) {
+        } catch (NoSuchAlgorithmException | CertificateEncodingException e) {
             throw new APIManagementException("Error in generating public certificate thumbprint", e);
         }
     }

@@ -49,8 +49,10 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.cert.Certificate;
+import java.security.cert.CertificateEncodingException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
@@ -428,7 +430,7 @@ public abstract class AbstractJWTGenerator implements TokenGenerator {
             jwtHeader.append("}");
             return jwtHeader.toString();
 
-        } catch (Exception e) {
+        } catch (NoSuchAlgorithmException | CertificateEncodingException e) {
             throw new APIManagementException("Error in generating public certificate thumbprint", e);
         }
     }
