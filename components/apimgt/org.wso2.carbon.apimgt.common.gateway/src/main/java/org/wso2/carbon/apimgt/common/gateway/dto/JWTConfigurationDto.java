@@ -42,16 +42,7 @@ public class JWTConfigurationDto {
     private Certificate publicCert;
     private PrivateKey privateKey;
     private long ttl;
-
-    private boolean useKid;
-
-    public boolean useKid() {
-        return useKid;
-    }
-
-    public void setUseKid(boolean useKid) {
-        this.useKid = useKid;
-    }
+    private boolean useKid = false;
 
     public JWTConfigurationDto(JWTConfigurationDto jwtConfigurationDto) {
 
@@ -188,6 +179,14 @@ public class JWTConfigurationDto {
     public long getTTL() {
 
         return ttl;
+    }
+
+    public boolean useKid() {
+        return useKid;
+    }
+
+    public void setUseKid(boolean useKid) {
+        this.useKid = useKid;
     }
 
 }
