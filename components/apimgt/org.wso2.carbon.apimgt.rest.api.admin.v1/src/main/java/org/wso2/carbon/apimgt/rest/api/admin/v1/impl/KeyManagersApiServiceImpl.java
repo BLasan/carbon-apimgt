@@ -13,14 +13,18 @@ import org.wso2.carbon.apimgt.api.APIAdmin;
 import org.wso2.carbon.apimgt.api.APIManagementException;
 import org.wso2.carbon.apimgt.api.ExceptionCodes;
 import org.wso2.carbon.apimgt.api.dto.KeyManagerConfigurationDTO;
+import org.wso2.carbon.apimgt.api.model.*;
 import org.wso2.carbon.apimgt.impl.APIAdminImpl;
 import org.wso2.carbon.apimgt.impl.APIConstants;
+import org.wso2.carbon.apimgt.impl.dao.ApiMgtDAO;
 import org.wso2.carbon.apimgt.impl.kmclient.ApacheFeignHttpClient;
 import org.wso2.carbon.apimgt.impl.kmclient.KMClientErrorDecoder;
 import org.wso2.carbon.apimgt.impl.kmclient.model.OpenIDConnectDiscoveryClient;
 import org.wso2.carbon.apimgt.impl.kmclient.model.OpenIdConnectConfiguration;
 import org.wso2.carbon.apimgt.impl.utils.APIUtil;
-import org.wso2.carbon.apimgt.rest.api.admin.v1.KeyManagersApiService;
+import org.wso2.carbon.apimgt.persistence.dto.*;
+import org.wso2.carbon.apimgt.persistence.exceptions.*;
+import org.wso2.carbon.apimgt.rest.api.admin.v1.*;
 import org.wso2.carbon.apimgt.rest.api.admin.v1.dto.KeyManagerDTO;
 import org.wso2.carbon.apimgt.rest.api.admin.v1.dto.KeyManagerListDTO;
 import org.wso2.carbon.apimgt.rest.api.admin.v1.dto.KeyManagerWellKnownResponseDTO;
@@ -158,6 +162,37 @@ public class KeyManagersApiServiceImpl implements KeyManagersApiService {
         } catch (URISyntaxException e) {
             String error = "Error while Creating Key Manager configuration in organization " + organization;
             throw new APIManagementException(error, e, ExceptionCodes.INTERNAL_ERROR);
+        }
+    }
+
+
+    @Override
+    public Response keyManagersUsagesKeyManagerIdGet(String keyManagerId, Integer start, Integer offset, Integer limit,
+                                                     MessageContext messageContext)
+            throws APIManagementException {
+
+        String organization = RestApiUtil.getOrganization(messageContext);
+        offset = offset != null ? offset : RestApiConstants.PAGINATION_OFFSET_DEFAULT;
+        APIAdminImpl apiAdmin = new APIAdminImpl();
+        KeyManagerConfigurationDTO keyManager = apiAdmin.getKeyManagerConfigurationById(organization, keyManagerId);
+        String KeyManagerName;
+        if (keyManager != null) {
+            KeyManagerName = keyManager.getName();
+        } else {
+            throw new APIManagementException("Requested KeyManager not found", ExceptionCodes.KEY_MANAGER_NOT_FOUND);
+        }
+        AdminContentSearchResult result =
+                apiAdmin.getAPIUsagesByKeyManager(organization, KeyManagerName, start, offset, limit);
+
+        ApiMgtDAO apiMgtDAO = ApiMgtDAO.getInstance();
+        List<Application> applications = apiMgtDAO.getAllApplicationsOfKeyManager(keyManagerId);
+        result.setApplicationCount(applications.size());
+        result.setApplications(applications);
+
+        if (result != null) {
+            return Response.ok().entity(result).build();
+        } else {
+            throw new APIManagementException("Requested KeyManager not found", ExceptionCodes.KEY_MANAGER_NOT_FOUND);
         }
     }
 }
