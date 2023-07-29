@@ -5236,6 +5236,7 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
                         api.setContextTemplate(publiserAPI.getContext());
                         api.setStatus(publiserAPI.getStatus());
                         api.setThumbnailUrl(publiserAPI.getThumbnailUri());
+                        api.setAdvertiseOnly(publiserAPI.getAdvertiseOnly());
                         apiSet.add(api);
                     } else if ("APIProduct".equals(item.getType())) {
 
