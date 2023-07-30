@@ -845,13 +845,20 @@ public class APIAdminImpl implements APIAdmin {
     public void deleteKeyManagerConfigurationById(String organization, KeyManagerConfigurationDTO kmConfig)
             throws APIManagementException {
         if (kmConfig != null) {
-            if (!APIConstants.KeyManager.DEFAULT_KEY_MANAGER.equals(kmConfig.getName())) {
-                deleteIdentityProvider(organization, kmConfig);
-                apiMgtDAO.deleteKeyManagerConfigurationById(kmConfig.getUuid(), organization);
-                new KeyMgtNotificationSender()
-                        .notify(kmConfig, APIConstants.KeyManager.KeyManagerEvent.ACTION_DELETE);
+            AdminContentSearchResult usage = getAPIUsagesByKeyManager(kmConfig.getName(),
+                    organization, 0, 0, Integer.MAX_VALUE);
+            if (usage != null && usage.getApiCount() < 0 && usage.getApiCount() < 0) {
+                if (!APIConstants.KeyManager.DEFAULT_KEY_MANAGER.equals(kmConfig.getName())) {
+                    deleteIdentityProvider(organization, kmConfig);
+                    apiMgtDAO.deleteKeyManagerConfigurationById(kmConfig.getUuid(), organization);
+                    new KeyMgtNotificationSender()
+                            .notify(kmConfig, APIConstants.KeyManager.KeyManagerEvent.ACTION_DELETE);
+                } else {
+                    throw new APIManagementException(APIConstants.KeyManager.DEFAULT_KEY_MANAGER + " couldn't delete",
+                            ExceptionCodes.INTERNAL_ERROR);
+                }
             } else {
-                throw new APIManagementException(APIConstants.KeyManager.DEFAULT_KEY_MANAGER + " couldn't delete",
+                throw new APIManagementException("Key Manager is already used by an API or and Application.",
                         ExceptionCodes.INTERNAL_ERROR);
             }
         }

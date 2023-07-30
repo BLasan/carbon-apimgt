@@ -19506,7 +19506,6 @@ public class ApiMgtDAO {
             prepStmt.setString(1, keyManagerId);
             rs = prepStmt.executeQuery();
 
-
             Application application;
             while (rs.next()) {
                 application = new Application(rs.getString("UUID"));
