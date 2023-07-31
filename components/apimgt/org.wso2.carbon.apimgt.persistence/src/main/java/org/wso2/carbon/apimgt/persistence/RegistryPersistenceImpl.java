@@ -1816,7 +1816,7 @@ public class RegistryPersistenceImpl implements APIPersistence {
                                 type = APIConstants.API;
                             }
                             PublisherAPI pubAPI = RegistryPersistenceUtil.getAPIForSearch(apiArtifact);
-                            PublisherSearchContent content = new PublisherSearchContent();
+                            AdminApiSearchContent content = new AdminApiSearchContent();
                             content.setContext(pubAPI.getContext());
                             content.setDescription(pubAPI.getDescription());
                             content.setId(pubAPI.getId());
@@ -1828,6 +1828,9 @@ public class RegistryPersistenceImpl implements APIPersistence {
                             content.setStatus(pubAPI.getStatus());
                             content.setAdvertiseOnly(pubAPI.isAdvertiseOnly());
                             content.setThumbnailUri(pubAPI.getThumbnail());
+                            if (apiArtifact.getAttribute("overview_keyManagers") != null) {
+                                content.setKeyManagerEntry(apiArtifact.getAttribute("overview_keyManagers"));
+                            }
                             contentData.add(content);
                         } else {
                             throw new GovernanceException("artifact id is null for " + resourcePath);

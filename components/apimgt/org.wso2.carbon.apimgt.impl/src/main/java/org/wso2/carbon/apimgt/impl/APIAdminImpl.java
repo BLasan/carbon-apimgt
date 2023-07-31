@@ -845,9 +845,9 @@ public class APIAdminImpl implements APIAdmin {
     public void deleteKeyManagerConfigurationById(String organization, KeyManagerConfigurationDTO kmConfig)
             throws APIManagementException {
         if (kmConfig != null) {
-            AdminContentSearchResult usage = getAPIUsagesByKeyManager(kmConfig.getName(),
-                    organization, 0, 0, Integer.MAX_VALUE);
-            if (usage != null && usage.getApiCount() < 0 && usage.getApiCount() < 0) {
+            AdminContentSearchResult usage = getAPIUsagesByKeyManager(organization, kmConfig.getName()
+                    , 0, 0, Integer.MAX_VALUE);
+            if (usage != null && usage.getApiCount() == 0 && usage.getApplicationCount() == 0) {
                 if (!APIConstants.KeyManager.DEFAULT_KEY_MANAGER.equals(kmConfig.getName())) {
                     deleteIdentityProvider(organization, kmConfig);
                     apiMgtDAO.deleteKeyManagerConfigurationById(kmConfig.getUuid(), organization);
