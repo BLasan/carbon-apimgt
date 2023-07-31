@@ -1829,7 +1829,9 @@ public class RegistryPersistenceImpl implements APIPersistence {
                             content.setAdvertiseOnly(pubAPI.isAdvertiseOnly());
                             content.setThumbnailUri(pubAPI.getThumbnail());
                             if (apiArtifact.getAttribute("overview_keyManagers") != null) {
-                                content.setKeyManagerEntry(apiArtifact.getAttribute("overview_keyManagers"));
+                                content.setKeyManagerEntry(apiArtifact.getAttribute("overview_keyManagers")
+                                        .replace("[\"","").replace("\"]","")
+                                        .replace("\",\""," , "));
                             }
                             contentData.add(content);
                         } else {
