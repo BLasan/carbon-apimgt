@@ -213,7 +213,7 @@ public class KeyManagersApiServiceImpl implements KeyManagersApiService {
                 apiAdmin.getAPIUsagesByKeyManager(organization, KeyManagerName, start, offset, limit);
 
         ApiMgtDAO apiMgtDAO = ApiMgtDAO.getInstance();
-        List<Application> applications = apiMgtDAO.getAllApplicationsOfKeyManager(keyManagerId);
+        List<ApplicationInfoKeyManager> applications = apiMgtDAO.getAllApplicationsOfKeyManager(keyManagerId);
         result.setApplicationCount(applications.size());
         result.setApplications(applications);
 
