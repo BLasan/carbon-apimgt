@@ -57,13 +57,16 @@ import org.wso2.carbon.apimgt.api.model.policy.PolicyConstants;
 import org.wso2.carbon.apimgt.impl.alertmgt.AlertMgtConstants;
 import org.wso2.carbon.apimgt.impl.dao.ApiMgtDAO;
 import org.wso2.carbon.apimgt.impl.dao.constants.SQLConstants;
-import org.wso2.carbon.apimgt.impl.dto.ThrottleProperties;
-import org.wso2.carbon.apimgt.impl.dto.WorkflowProperties;
+import org.wso2.carbon.apimgt.impl.dto.*;
+import org.wso2.carbon.apimgt.impl.factory.*;
 import org.wso2.carbon.apimgt.impl.internal.ServiceReferenceHolder;
 import org.wso2.carbon.apimgt.impl.keymgt.KeyMgtNotificationSender;
 import org.wso2.carbon.apimgt.impl.monetization.DefaultMonetizationImpl;
 import org.wso2.carbon.apimgt.impl.service.KeyMgtRegistrationService;
 import org.wso2.carbon.apimgt.impl.utils.APIUtil;
+import org.wso2.carbon.apimgt.persistence.*;
+import org.wso2.carbon.apimgt.persistence.dto.*;
+import org.wso2.carbon.apimgt.persistence.exceptions.*;
 import org.wso2.carbon.context.CarbonContext;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.core.util.CryptoException;
@@ -75,6 +78,7 @@ import org.wso2.carbon.identity.application.common.model.IdentityProviderPropert
 import org.wso2.carbon.identity.application.common.util.IdentityApplicationConstants;
 import org.wso2.carbon.idp.mgt.IdentityProviderManagementException;
 import org.wso2.carbon.idp.mgt.IdentityProviderManager;
+import org.wso2.carbon.registry.core.pagination.*;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 import org.xml.sax.InputSource;
@@ -559,6 +563,27 @@ public class APIAdminImpl implements APIAdmin {
         return keyManagerConfigurationDTO;
     }
 
+    public AdminContentSearchResult getAPIUsagesByKeyManager(String org, String keyManagerName, int start,
+                                                             int offset, int limit) throws APIManagementException {
+        APIPersistence apiPersistenceInstance = PersistenceFactory.getAPIPersistenceInstance();
+        String searchQuery = APIConstants.API_USAGE_BY_KEY_MANAGER_QUERY.replace("$1", keyManagerName);
+        try {
+            return apiPersistenceInstance.searchContentForAdmin(org, searchQuery, start, offset, limit);
+        } catch (APIPersistenceException e) {
+            throw new APIManagementException("Error while finding the key manager ", e);
+        }
+    }
+
+    public AdminContentSearchResult getAPIUsagesByKeyManagerWithoutAllEntry(String org, String keyManagerName, int start,
+                                                             int offset, int limit) throws APIManagementException {
+        APIPersistence apiPersistenceInstance = PersistenceFactory.getAPIPersistenceInstance();
+        String searchQuery = APIConstants.API_USAGE_BY_KEY_MANAGER_WITHOUT_ALL_ENTRY_QUERY.replace("$1", keyManagerName);
+        try {
+            return apiPersistenceInstance.searchContentForAdmin(org, searchQuery, start, offset, limit);
+        } catch (APIPersistenceException e) {
+            throw new APIManagementException("Error while finding the key manager ", e);
+        }
+    }
     private void validateKeyManagerEndpointConfiguration(KeyManagerConfigurationDTO keyManagerConfigurationDTO)
             throws APIManagementException {
         if (!APIConstants.KeyManager.DEFAULT_KEY_MANAGER.equals(keyManagerConfigurationDTO.getName())) {
@@ -831,13 +856,20 @@ public class APIAdminImpl implements APIAdmin {
     public void deleteKeyManagerConfigurationById(String organization, KeyManagerConfigurationDTO kmConfig)
             throws APIManagementException {
         if (kmConfig != null) {
-            if (!APIConstants.KeyManager.DEFAULT_KEY_MANAGER.equals(kmConfig.getName())) {
-                deleteIdentityProvider(organization, kmConfig);
-                apiMgtDAO.deleteKeyManagerConfigurationById(kmConfig.getUuid(), organization);
-                new KeyMgtNotificationSender()
-                        .notify(kmConfig, APIConstants.KeyManager.KeyManagerEvent.ACTION_DELETE);
+            AdminContentSearchResult usage = getAPIUsagesByKeyManagerWithoutAllEntry(organization, kmConfig.getName()
+                    , 0, 0, Integer.MAX_VALUE);
+            if (usage != null && usage.getApiCount() == 0 && usage.getApplicationCount() == 0) {
+                if (!APIConstants.KeyManager.DEFAULT_KEY_MANAGER.equals(kmConfig.getName())) {
+                    deleteIdentityProvider(organization, kmConfig);
+                    apiMgtDAO.deleteKeyManagerConfigurationById(kmConfig.getUuid(), organization);
+                    new KeyMgtNotificationSender()
+                            .notify(kmConfig, APIConstants.KeyManager.KeyManagerEvent.ACTION_DELETE);
+                } else {
+                    throw new APIManagementException(APIConstants.KeyManager.DEFAULT_KEY_MANAGER + " couldn't delete",
+                            ExceptionCodes.INTERNAL_ERROR);
+                }
             } else {
-                throw new APIManagementException(APIConstants.KeyManager.DEFAULT_KEY_MANAGER + " couldn't delete",
+                throw new APIManagementException("Key Manager is already used by an API or and Application.",
                         ExceptionCodes.INTERNAL_ERROR);
             }
         }

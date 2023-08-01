@@ -25,8 +25,10 @@ import javax.ws.rs.core.SecurityContext;
 public interface KeyManagersApiService {
       public Response keyManagersDiscoverPost(String url, String type, MessageContext messageContext) throws APIManagementException;
       public Response keyManagersGet(MessageContext messageContext) throws APIManagementException;
+      public Response keyManagersIsDeletableKeyManagerIdGet(String keyManagerId, Integer start, Integer offset, Integer limit, MessageContext messageContext) throws APIManagementException;
       public Response keyManagersKeyManagerIdDelete(String keyManagerId, MessageContext messageContext) throws APIManagementException;
       public Response keyManagersKeyManagerIdGet(String keyManagerId, MessageContext messageContext) throws APIManagementException;
       public Response keyManagersKeyManagerIdPut(String keyManagerId, KeyManagerDTO keyManagerDTO, MessageContext messageContext) throws APIManagementException;
       public Response keyManagersPost(KeyManagerDTO keyManagerDTO, MessageContext messageContext) throws APIManagementException;
+      public Response keyManagersUsagesKeyManagerIdGet(String keyManagerId, Integer start, Integer offset, Integer limit, MessageContext messageContext) throws APIManagementException;
 }

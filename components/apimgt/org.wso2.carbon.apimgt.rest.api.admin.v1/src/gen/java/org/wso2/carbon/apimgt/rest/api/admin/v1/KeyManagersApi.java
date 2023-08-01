@@ -70,6 +70,24 @@ KeyManagersApiService delegate = new KeyManagersApiServiceImpl();
         return delegate.keyManagersGet(securityContext);
     }
 
+    @GET
+    @Path("/is-deletable/{keyManagerId}")
+    
+    @Produces({ "application/json" })
+    @ApiOperation(value = "Get a Key Manager Usage on APIs and applications", notes = "Retrieve boolean value to indicate whether the key manager is deletable or not. We should provide the Id of the KeyManager as a path parameter. ", response = KeyManagerDTO.class, authorizations = {
+        @Authorization(value = "OAuth2Security", scopes = {
+            @AuthorizationScope(scope = "apim:admin", description = "Manage all admin operations"),
+            @AuthorizationScope(scope = "apim:admin_operations", description = "Manage API categories and Key Managers related operations")
+        })
+    }, tags={ "Key Manager (Individual)",  })
+    @ApiResponses(value = { 
+        @ApiResponse(code = 200, message = "OK. Boolean value returned ", response = KeyManagerDTO.class),
+        @ApiResponse(code = 404, message = "Not Found. The specified resource does not exist.", response = ErrorDTO.class),
+        @ApiResponse(code = 406, message = "Not Acceptable. The requested media type is not supported.", response = ErrorDTO.class) })
+    public Response keyManagersIsDeletableKeyManagerIdGet(@ApiParam(value = "Key Manager UUID ",required=true) @PathParam("keyManagerId") String keyManagerId,  @ApiParam(value = "Starting number for pagination. ", defaultValue="0") @DefaultValue("0") @QueryParam("start") Integer start,  @ApiParam(value = "Starting point within the complete list of items qualified. ", defaultValue="0") @DefaultValue("0") @QueryParam("offset") Integer offset,  @ApiParam(value = "Maximum size of resource array to return. ", defaultValue="25") @DefaultValue("25") @QueryParam("limit") Integer limit) throws APIManagementException{
+        return delegate.keyManagersIsDeletableKeyManagerIdGet(keyManagerId, start, offset, limit, securityContext);
+    }
+
     @DELETE
     @Path("/{keyManagerId}")
     
@@ -132,11 +150,29 @@ KeyManagersApiService delegate = new KeyManagersApiServiceImpl();
             @AuthorizationScope(scope = "apim:admin", description = "Manage all admin operations"),
             @AuthorizationScope(scope = "apim:admin_operations", description = "Manage API categories and Key Managers related operations")
         })
-    }, tags={ "Key Manager (Collection)" })
+    }, tags={ "Key Manager (Collection)",  })
     @ApiResponses(value = { 
         @ApiResponse(code = 201, message = "Created. Successful response with the newly created object as entity in the body. ", response = KeyManagerDTO.class),
         @ApiResponse(code = 400, message = "Bad Request. Invalid request or validation error.", response = ErrorDTO.class) })
     public Response keyManagersPost(@ApiParam(value = "Key Manager object that should to be added " ,required=true) KeyManagerDTO keyManagerDTO) throws APIManagementException{
         return delegate.keyManagersPost(keyManagerDTO, securityContext);
+    }
+
+    @GET
+    @Path("/usages/{keyManagerId}")
+    
+    @Produces({ "application/json" })
+    @ApiOperation(value = "Get a Key Manager Usage on APIs and applications", notes = "Retrieve keymanager usage on APIs and applications. We should provide the Id of the KeyManager as a path parameter. ", response = KeyManagerDTO.class, authorizations = {
+        @Authorization(value = "OAuth2Security", scopes = {
+            @AuthorizationScope(scope = "apim:admin", description = "Manage all admin operations"),
+            @AuthorizationScope(scope = "apim:admin_operations", description = "Manage API categories and Key Managers related operations")
+        })
+    }, tags={ "Key Manager (Individual)" })
+    @ApiResponses(value = { 
+        @ApiResponse(code = 200, message = "OK. KeyManager Configuration returned ", response = KeyManagerDTO.class),
+        @ApiResponse(code = 404, message = "Not Found. The specified resource does not exist.", response = ErrorDTO.class),
+        @ApiResponse(code = 406, message = "Not Acceptable. The requested media type is not supported.", response = ErrorDTO.class) })
+    public Response keyManagersUsagesKeyManagerIdGet(@ApiParam(value = "Key Manager UUID ",required=true) @PathParam("keyManagerId") String keyManagerId,  @ApiParam(value = "Starting number for pagination. ", defaultValue="0") @DefaultValue("0") @QueryParam("start") Integer start,  @ApiParam(value = "Starting point within the complete list of items qualified. ", defaultValue="0") @DefaultValue("0") @QueryParam("offset") Integer offset,  @ApiParam(value = "Maximum size of resource array to return. ", defaultValue="25") @DefaultValue("25") @QueryParam("limit") Integer limit) throws APIManagementException{
+        return delegate.keyManagersUsagesKeyManagerIdGet(keyManagerId, start, offset, limit, securityContext);
     }
 }

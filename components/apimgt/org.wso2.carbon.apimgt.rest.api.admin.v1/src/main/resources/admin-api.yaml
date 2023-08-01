@@ -3192,6 +3192,86 @@ paths:
           source: 'curl -k -X POST -H "Authorization: Bearer ae4eae22-3f65-387b-a171-d37eaa366fa8"
           -F "type=WSO2-IS" "https://127.0.0.1:9443/api/am/admin/v4/key-managers/discover"'
 
+  /key-managers/usages/{keyManagerId}:
+    get:
+      tags:
+        - Key Manager (Individual)
+      summary: Get a Key Manager Usage on APIs and applications
+      description: |
+        Retrieve keymanager usage on APIs and applications. We should provide the Id of the KeyManager as a path parameter.
+      parameters:
+        - $ref: '#/components/parameters/start'
+        - $ref: '#/components/parameters/offset'
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/keyManagerId'
+      responses:
+        200:
+          description: |
+            OK.
+            KeyManager Configuration returned
+          headers:
+            Content-Type:
+              description: |
+                The content type of the body.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KeyManager'
+        404:
+          $ref: '#/components/responses/NotFound'
+        406:
+          $ref: '#/components/responses/NotAcceptable'
+      security:
+        - OAuth2Security:
+            - apim:admin
+            - apim:admin_operations
+      x-code-samples:
+        - lang: Curl
+          source: 'curl -k -H "Authorization: Bearer ae4eae22-3f65-387b-a171-d37eaa366fa8"
+          "https://127.0.0.1:9443/api/am/admin/v4/key-managers/usages/8d263942-a6df-4cc2-a804-7a2525501450"'
+
+  /key-managers/is-deletable/{keyManagerId}:
+    get:
+      tags:
+        - Key Manager (Individual)
+      summary: Get a Key Manager Usage on APIs and applications
+      description: |
+        Retrieve boolean value to indicate whether the key manager is deletable or not. We should provide the Id of the KeyManager as a path parameter.
+      parameters:
+        - $ref: '#/components/parameters/start'
+        - $ref: '#/components/parameters/offset'
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/keyManagerId'
+      responses:
+        200:
+          description: |
+            OK.
+            Boolean value returned
+          headers:
+            Content-Type:
+              description: |
+                The content type of the body.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KeyManager'
+        404:
+          $ref: '#/components/responses/NotFound'
+        406:
+          $ref: '#/components/responses/NotAcceptable'
+      security:
+        - OAuth2Security:
+            - apim:admin
+            - apim:admin_operations
+      x-code-samples:
+        - lang: Curl
+          source: 'curl -k -H "Authorization: Bearer ae4eae22-3f65-387b-a171-d37eaa366fa8"
+          "https://127.0.0.1:9443/api/am/admin/v4/key-managers/is-deletable/8d263942-a6df-4cc2-a804-7a2525501450"'
+
 components:
   schemas:
     Error:
@@ -5129,6 +5209,14 @@ components:
       schema:
         type: string
         default: application/json
+    start:
+      name: start
+      in: query
+      description: |
+        Starting number for pagination.
+      schema:
+        type: integer
+        default: 0
     limit:
       name: limit
       in: query
