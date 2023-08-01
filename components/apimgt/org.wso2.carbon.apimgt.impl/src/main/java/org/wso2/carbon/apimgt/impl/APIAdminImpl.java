@@ -856,7 +856,7 @@ public class APIAdminImpl implements APIAdmin {
     public void deleteKeyManagerConfigurationById(String organization, KeyManagerConfigurationDTO kmConfig)
             throws APIManagementException {
         if (kmConfig != null) {
-            AdminContentSearchResult usage = getAPIUsagesByKeyManager(organization, kmConfig.getName()
+            AdminContentSearchResult usage = getAPIUsagesByKeyManagerWithoutAllEntry(organization, kmConfig.getName()
                     , 0, 0, Integer.MAX_VALUE);
             if (usage != null && usage.getApiCount() == 0 && usage.getApplicationCount() == 0) {
                 if (!APIConstants.KeyManager.DEFAULT_KEY_MANAGER.equals(kmConfig.getName())) {
