@@ -26,7 +26,7 @@ public class AdminContentSearchResult {
     int applicationCount;
     List<SearchContent> apis = new ArrayList<SearchContent>();
 
-    List<Application> applications = new ArrayList<>();
+    List<ApplicationInfoKeyManager> applications = new ArrayList<>();
 
     public List<SearchContent> getApis() {
         return apis;
@@ -52,7 +52,7 @@ public class AdminContentSearchResult {
         this.applicationCount = applicationCount;
     }
 
-    public List<Application> getApplications() { return applications; }
+    public List<ApplicationInfoKeyManager> getApplications() { return applications; }
 
-    public void setApplications(List<Application> applications) {this.applications = applications; }
+    public void setApplications(List<ApplicationInfoKeyManager> applications) {this.applications = applications; }
 }
