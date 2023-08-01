@@ -2235,6 +2235,9 @@ public final class APIConstants {
     public static final String API_USAGE_BY_KEY_MANAGER_QUERY = "(overview_keyManagers:\\*\"$1\"\\* " +
             "OR overview_keyManagers:\\*\"all\"\\*) AND mediaType:application\\/vnd.wso2\\-api\\+xml";
 
+    public static final String API_USAGE_BY_KEY_MANAGER_WITHOUT_ALL_ENTRY_QUERY = "overview_keyManagers:\\*\"$1\"\\* " +
+            " AND mediaType:application\\/vnd.wso2\\-api\\+xml";
+
     public static class OASResourceAuthTypes {
 
         public static final String APPLICATION_OR_APPLICATION_USER = "Application & Application User";

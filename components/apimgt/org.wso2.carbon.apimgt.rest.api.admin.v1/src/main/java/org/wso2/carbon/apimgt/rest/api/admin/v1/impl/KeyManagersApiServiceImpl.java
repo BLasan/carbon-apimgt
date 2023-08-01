@@ -77,6 +77,34 @@ public class KeyManagersApiServiceImpl implements KeyManagersApiService {
         return Response.ok().entity(keyManagerListDTO).build();
     }
 
+    @Override
+    public Response keyManagersIsDeletableKeyManagerIdGet(String keyManagerId,
+                                                          Integer start, Integer offset, Integer limit,
+                                                          MessageContext messageContext) throws APIManagementException {
+        String organization = RestApiUtil.getOrganization(messageContext);
+        offset = offset != null ? offset : RestApiConstants.PAGINATION_OFFSET_DEFAULT;
+        APIAdminImpl apiAdmin = new APIAdminImpl();
+        KeyManagerConfigurationDTO keyManager = apiAdmin.getKeyManagerConfigurationById(organization, keyManagerId);
+        String KeyManagerName;
+        if (keyManager != null) {
+            KeyManagerName = keyManager.getName();
+        } else {
+            throw new APIManagementException("Requested KeyManager not found", ExceptionCodes.KEY_MANAGER_NOT_FOUND);
+        }
+        AdminContentSearchResult result =
+                apiAdmin.getAPIUsagesByKeyManagerWithoutAllEntry(organization, KeyManagerName, start, offset, limit);
+
+        ApiMgtDAO apiMgtDAO = ApiMgtDAO.getInstance();
+        List<Application> applications = apiMgtDAO.getAllApplicationsOfKeyManager(keyManagerId);
+        result.setApplicationCount(applications.size());
+
+        if (result.getApiCount() == 0 && result.getApplicationCount() == 0) {
+            return Response.ok().entity(true).build();
+        } else {
+            return Response.ok().entity(false).build();
+        }
+    }
+
     public Response keyManagersKeyManagerIdDelete(String keyManagerId, MessageContext messageContext)
             throws APIManagementException {
 

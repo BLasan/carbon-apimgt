@@ -573,6 +573,17 @@ public class APIAdminImpl implements APIAdmin {
             throw new APIManagementException("Error while finding the key manager ", e);
         }
     }
+
+    public AdminContentSearchResult getAPIUsagesByKeyManagerWithoutAllEntry(String org, String keyManagerName, int start,
+                                                             int offset, int limit) throws APIManagementException {
+        APIPersistence apiPersistenceInstance = PersistenceFactory.getAPIPersistenceInstance();
+        String searchQuery = APIConstants.API_USAGE_BY_KEY_MANAGER_WITHOUT_ALL_ENTRY_QUERY.replace("$1", keyManagerName);
+        try {
+            return apiPersistenceInstance.searchContentForAdmin(org, searchQuery, start, offset, limit);
+        } catch (APIPersistenceException e) {
+            throw new APIManagementException("Error while finding the key manager ", e);
+        }
+    }
     private void validateKeyManagerEndpointConfiguration(KeyManagerConfigurationDTO keyManagerConfigurationDTO)
             throws APIManagementException {
         if (!APIConstants.KeyManager.DEFAULT_KEY_MANAGER.equals(keyManagerConfigurationDTO.getName())) {
