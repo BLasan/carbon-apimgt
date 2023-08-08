@@ -38,17 +38,10 @@ import org.wso2.carbon.apimgt.api.APIConsumer;
 import org.wso2.carbon.apimgt.api.APIManagementException;
 import org.wso2.carbon.apimgt.api.EmptyCallbackURLForCodeGrantsException;
 import org.wso2.carbon.apimgt.api.ExceptionCodes;
-import org.wso2.carbon.apimgt.api.model.APIIdentifier;
-import org.wso2.carbon.apimgt.api.model.APIKey;
-import org.wso2.carbon.apimgt.api.model.AccessTokenInfo;
-import org.wso2.carbon.apimgt.api.model.Application;
-import org.wso2.carbon.apimgt.api.model.ApplicationConstants;
-import org.wso2.carbon.apimgt.api.model.OAuthApplicationInfo;
-import org.wso2.carbon.apimgt.api.model.Scope;
-import org.wso2.carbon.apimgt.api.model.Subscriber;
-import org.wso2.carbon.apimgt.impl.APIConstants;
-import org.wso2.carbon.apimgt.impl.APIManagerFactory;
+import org.wso2.carbon.apimgt.api.model.*;
+import org.wso2.carbon.apimgt.impl.*;
 import org.wso2.carbon.apimgt.impl.dao.ApiMgtDAO;
+import org.wso2.carbon.apimgt.impl.factory.*;
 import org.wso2.carbon.apimgt.impl.importexport.APIImportExportException;
 import org.wso2.carbon.apimgt.impl.importexport.ExportFormat;
 import org.wso2.carbon.apimgt.impl.importexport.ImportExportConstants;
@@ -57,21 +50,7 @@ import org.wso2.carbon.apimgt.impl.utils.APIUtil;
 import org.wso2.carbon.apimgt.rest.api.common.RestApiCommonUtil;
 import org.wso2.carbon.apimgt.rest.api.common.RestApiConstants;
 import org.wso2.carbon.apimgt.rest.api.store.v1.ApplicationsApiService;
-import org.wso2.carbon.apimgt.rest.api.store.v1.dto.APIInfoListDTO;
-import org.wso2.carbon.apimgt.rest.api.store.v1.dto.APIKeyDTO;
-import org.wso2.carbon.apimgt.rest.api.store.v1.dto.APIKeyGenerateRequestDTO;
-import org.wso2.carbon.apimgt.rest.api.store.v1.dto.APIKeyRevokeRequestDTO;
-import org.wso2.carbon.apimgt.rest.api.store.v1.dto.ApplicationDTO;
-import org.wso2.carbon.apimgt.rest.api.store.v1.dto.ApplicationInfoDTO;
-import org.wso2.carbon.apimgt.rest.api.store.v1.dto.ApplicationKeyDTO;
-import org.wso2.carbon.apimgt.rest.api.store.v1.dto.ApplicationKeyGenerateRequestDTO;
-import org.wso2.carbon.apimgt.rest.api.store.v1.dto.ApplicationKeyListDTO;
-import org.wso2.carbon.apimgt.rest.api.store.v1.dto.ApplicationKeyMappingRequestDTO;
-import org.wso2.carbon.apimgt.rest.api.store.v1.dto.ApplicationListDTO;
-import org.wso2.carbon.apimgt.rest.api.store.v1.dto.ApplicationTokenDTO;
-import org.wso2.carbon.apimgt.rest.api.store.v1.dto.ApplicationTokenGenerateRequestDTO;
-import org.wso2.carbon.apimgt.rest.api.store.v1.dto.PaginationDTO;
-import org.wso2.carbon.apimgt.rest.api.store.v1.dto.ScopeInfoDTO;
+import org.wso2.carbon.apimgt.rest.api.store.v1.dto.*;
 import org.wso2.carbon.apimgt.rest.api.store.v1.mappings.APIInfoMappingUtil;
 import org.wso2.carbon.apimgt.rest.api.store.v1.mappings.ApplicationKeyMappingUtil;
 import org.wso2.carbon.apimgt.rest.api.store.v1.mappings.ApplicationMappingUtil;
@@ -1179,7 +1158,7 @@ public class ApplicationsApiServiceImpl implements ApplicationsApiService {
 
         String username = RestApiCommonUtil.getLoggedInUsername();
         try {
-            APIConsumer apiConsumer = APIManagerFactory.getInstance().getAPIConsumer(username);
+                APIConsumer apiConsumer = APIManagerFactory.getInstance().getAPIConsumer(username);
             Application application = apiConsumer.getLightweightApplicationByUUID(applicationId);
             apiConsumer.cleanUpApplicationRegistrationByApplicationIdAndKeyMappingId(application.getId(), keyMappingId);
             return Response.ok().build();
@@ -1346,6 +1325,36 @@ public class ApplicationsApiServiceImpl implements ApplicationsApiService {
 
                 return Response.ok().entity(retrievedApplicationKey).build();
             }
+        return null;
+    }
+
+    @Override
+    public Response applicationsApplicationIdOauthKeysKeyMappingIdRemoveKeysPost(String applicationId,
+                                                                                 String keyMappingId,
+                                                                                 String xWSO2Tenant,
+                                                                                 MessageContext messageContext)
+            throws APIManagementException {
+        String username = RestApiCommonUtil.getLoggedInUsername();
+        try {
+            APIConsumer apiConsumer = APIManagerFactory.getInstance().getAPIConsumer(username);
+            Application application = apiConsumer.getLightweightApplicationByUUID(applicationId);
+
+            String keyManagerName = APIConstants.KeyManager.DEFAULT_KEY_MANAGER;
+            ApiMgtDAO apiMgtDAO = ApiMgtDAO.getInstance();
+            String result = apiMgtDAO.getKeyManagerNameFromKeyMappingId(keyMappingId);
+            if (!StringUtils.isEmpty(result)) {
+                keyManagerName = result;
+            }
+
+            ApplicationKeyDTO applicationKeyDTO = getApplicationKeyByAppIDAndKeyMapping(applicationId, keyMappingId);
+
+            KeyManager keyManager = KeyManagerHolder.getKeyManagerInstance(xWSO2Tenant, keyManagerName);
+            keyManager.deleteApplication(applicationKeyDTO.getConsumerKey());
+            apiConsumer.cleanUpApplicationRegistrationByApplicationIdAndKeyMappingId(application.getId(), keyMappingId);
+            return Response.ok().build();
+        } catch (APIManagementException e) {
+            RestApiUtil.handleInternalServerError("Error occurred while application key cleanup process", e, log);
+        }
         return null;
     }
 
