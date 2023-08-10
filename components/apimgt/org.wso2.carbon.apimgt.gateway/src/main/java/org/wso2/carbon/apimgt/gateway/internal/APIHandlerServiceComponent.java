@@ -36,12 +36,14 @@ import org.wso2.carbon.apimgt.common.gateway.jwtgenerator.APIMgtGatewayJWTGenera
 import org.wso2.carbon.apimgt.common.gateway.jwtgenerator.APIMgtGatewayUrlSafeJWTGeneratorImpl;
 import org.wso2.carbon.apimgt.common.gateway.jwtgenerator.AbstractAPIMgtGatewayJWTGenerator;
 import org.wso2.carbon.apimgt.gateway.APIMgtGatewayConstants;
+import org.wso2.carbon.apimgt.gateway.ClockTimeBasedHybridThrottleProcessor;
 import org.wso2.carbon.apimgt.gateway.HybridThrottleProcessor;
 import org.wso2.carbon.apimgt.gateway.RedisBaseDistributedCountManager;
 import org.wso2.carbon.apimgt.gateway.handlers.security.keys.APIKeyValidatorClientPool;
 import org.wso2.carbon.apimgt.gateway.jwt.RevokedJWTMapCleaner;
 import org.wso2.carbon.apimgt.gateway.listeners.GatewayStartupListener;
 import org.wso2.carbon.apimgt.gateway.listeners.ServerStartupListener;
+import org.wso2.carbon.apimgt.impl.APIConstants;
 import org.wso2.carbon.apimgt.impl.APIManagerConfigurationService;
 import org.wso2.carbon.apimgt.impl.caching.CacheProvider;
 import org.wso2.carbon.apimgt.impl.dto.GatewayArtifactSynchronizerProperties;
@@ -137,10 +139,19 @@ public class APIHandlerServiceComponent {
         }
 
         if (ThrottleServiceDataHolder.getInstance().getThrottleProperties().isThrottleSyncAsyncHybridModeEnabled()) {
-            HybridThrottleProcessor hybridDistributedThrottleProcessor =
-                    new HybridThrottleProcessor();
-            context.getBundleContext().registerService(DistributedThrottleProcessor.class,
-                    hybridDistributedThrottleProcessor, null);
+            String hybridThrottleProcessorWindowType =
+                    ThrottleServiceDataHolder.getInstance().getThrottleProperties().getHybridThrottleProcessorWindowType();
+            if (APIConstants.HYBRID_THROTTLE_PROCESSOR_TYPE_START_TIME_BASED.equals(hybridThrottleProcessorWindowType)) {
+                HybridThrottleProcessor hybridDistributedThrottleProcessor =
+                        new HybridThrottleProcessor();
+                context.getBundleContext().registerService(DistributedThrottleProcessor.class,
+                        hybridDistributedThrottleProcessor, null);
+            } else if (APIConstants.HYBRID_THROTTLE_PROCESSOR_TYPE_CLOCK_TIME_BASED.equals(hybridThrottleProcessorWindowType)) {
+                ClockTimeBasedHybridThrottleProcessor clockTimeBasedHybridThrottleProcessor =
+                        new ClockTimeBasedHybridThrottleProcessor();
+                context.getBundleContext().registerService(DistributedThrottleProcessor.class,
+                        clockTimeBasedHybridThrottleProcessor, null);
+            }
         }
 
         // Create "sync-mode-initiation-channel"

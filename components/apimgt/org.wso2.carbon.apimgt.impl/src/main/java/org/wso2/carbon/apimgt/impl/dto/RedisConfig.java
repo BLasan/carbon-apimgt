@@ -52,6 +52,8 @@ public class RedisConfig {
     private long keyLockRetrievalTimeout;
     private boolean isProductionUnitTimeInSec;
 
+    private String hybridThrottleProcessorType;
+
     public int getMaxTotal() {
 
         return maxTotal;
@@ -269,5 +271,13 @@ public class RedisConfig {
     //TODO: Remove this debugging config
     public boolean isProductionUnitTimeInSec() {
         return isProductionUnitTimeInSec;
+    }
+
+    public void setHybridThrottleProcessorType(String hybridThrottleProcessorType) {
+        this.hybridThrottleProcessorType = hybridThrottleProcessorType;
+    }
+
+    public String getHybridThrottleProcessorType() {
+        return hybridThrottleProcessorType;
     }
 }

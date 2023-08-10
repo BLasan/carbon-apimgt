@@ -1422,6 +1422,10 @@ public final class APIConstants {
 
     public static final String CONFIG_REDIS_KEY_LOCK_RETRIEVAL_TIMEOUT = "KeyLockRetrievalTimeout";
     public static final String CONFIG_IS_PRODUCTION_UNIT_TIME_IN_SEC = "IsProductionTimeUnitInSec"; //TODO: Remove this debugging config
+    //public static final String HYBRID_THROTTLE_PROCESSOR_TYPE = "HybridThrottleProcessorType";
+
+    public static final String HYBRID_THROTTLE_PROCESSOR_TYPE_START_TIME_BASED = "start_time_based";
+    public static final String HYBRID_THROTTLE_PROCESSOR_TYPE_CLOCK_TIME_BASED = "clock_time_based";
 
 
     // Primary/Secondary Login configuration

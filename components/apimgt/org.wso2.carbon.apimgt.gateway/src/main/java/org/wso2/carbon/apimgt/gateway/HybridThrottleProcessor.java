@@ -569,15 +569,9 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
                 " callerContext.getNextTimeWindow():" + callerContext.getNextTimeWindow() + "(" + getReadableTime(callerContext.getNextTimeWindow())
                 + ")" + " nextAccessTime:" + callerContext.getNextAccessTime() + "(" + getReadableTime(callerContext.getNextAccessTime()) + ")" +" localHits:" +
                 callerContext.getLocalHits() + " globalHits :" + callerContext.getGlobalCounter() + " Thread name: " +
-                Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId() + "\n\n");
+                Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
         return canAccess;
     }
-
-   /* public void syncThrottleParams(CallerContext callerContext, boolean isInvocationFlow, long currentTime) {
-        log.trace("\n\n///////////////// &&& Running syncThrottleParams(). Thread name:" + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
-        syncThrottleWindowParams(callerContext);
-        syncThrottleCounterParams(callerContext, isInvocationFlow, currentTime);
-    }*/
 
     /**
      * Syncs the throttle window parameters

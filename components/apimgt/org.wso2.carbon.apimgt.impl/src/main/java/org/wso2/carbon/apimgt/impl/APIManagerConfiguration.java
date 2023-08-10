@@ -387,6 +387,8 @@ public class APIManagerConfiguration {
                 OMElement minGatewayCount = element.getFirstChildWithName(new QName(APIConstants.CONFIG_REDIS_MIN_GATEWAY_COUNT));
                 OMElement keyLockRetrievalTimeout = element.getFirstChildWithName(new QName(APIConstants.CONFIG_REDIS_KEY_LOCK_RETRIEVAL_TIMEOUT));
                 OMElement isProductionUnitTimeSec = element.getFirstChildWithName(new QName(APIConstants.CONFIG_IS_PRODUCTION_UNIT_TIME_IN_SEC));//TODO: remove
+              //  OMElement throttleProcessorClass = element.getFirstChildWithName(new QName(APIConstants.DISTRIBUTED_THROTTLE_PROCESSOR_IMPL));//TODO: remove
+                //OMElement hybridThrottleProcessorType = element.getFirstChildWithName(new QName(APIConstants.HYBRID_THROTTLE_PROCESSOR_TYPE));//TODO: remove
 
                 redisConfig.setRedisEnabled(true);
                 redisConfig.setHost(redisHost.getText());
@@ -401,6 +403,7 @@ public class APIManagerConfiguration {
                     redisConfig.setKeyLockRetrievalTimeout(Integer.parseInt(keyLockRetrievalTimeout.getText()));
                 }
                 redisConfig.setProductionUnitTimeInSec(Boolean.parseBoolean(isProductionUnitTimeSec.getText())); //TODO: remove
+               //  redisConfig.setHybridThrottleProcessorType(hybridThrottleProcessorType.getText());
 
                 if (redisUser != null) {
                     redisConfig.setUser(redisUser.getText());
