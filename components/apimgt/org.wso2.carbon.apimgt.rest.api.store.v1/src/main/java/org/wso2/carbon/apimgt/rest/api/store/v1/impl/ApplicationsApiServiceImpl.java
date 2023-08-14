@@ -1183,7 +1183,7 @@ public class ApplicationsApiServiceImpl implements ApplicationsApiService {
 
         String username = RestApiCommonUtil.getLoggedInUsername();
         try {
-                APIConsumer apiConsumer = APIManagerFactory.getInstance().getAPIConsumer(username);
+            APIConsumer apiConsumer = APIManagerFactory.getInstance().getAPIConsumer(username);
             Application application = apiConsumer.getLightweightApplicationByUUID(applicationId);
             apiConsumer.cleanUpApplicationRegistrationByApplicationIdAndKeyMappingId(application.getId(), keyMappingId);
             return Response.ok().build();
