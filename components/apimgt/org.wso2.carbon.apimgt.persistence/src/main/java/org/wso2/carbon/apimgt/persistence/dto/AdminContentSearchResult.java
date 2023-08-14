@@ -16,7 +16,7 @@
 
 package org.wso2.carbon.apimgt.persistence.dto;
 
-import org.wso2.carbon.apimgt.api.model.*;
+import org.wso2.carbon.apimgt.api.model.ApplicationInfoKeyManager;
 
 import java.util.ArrayList;
 import java.util.List;
