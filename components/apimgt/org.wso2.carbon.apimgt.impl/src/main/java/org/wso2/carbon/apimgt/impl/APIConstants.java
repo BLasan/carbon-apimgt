@@ -2234,10 +2234,7 @@ public final class APIConstants {
     public static final String API_SUBSCRIPTION_TYPE = "API";
     public static final String TYPE = "type";
     public static final String TYPE_SEARCH_TYPE_KEY = "type=";
-    public static final String API_USAGE_BY_KEY_MANAGER_QUERY = "(overview_keyManagers:\\*\"$1\"\\* " +
-            "OR overview_keyManagers:\\*\"all\"\\*) AND mediaType:application\\/vnd.wso2\\-api\\+xml";
-
-    public static final String API_USAGE_BY_KEY_MANAGER_WITHOUT_ALL_ENTRY_QUERY = "overview_keyManagers:\\*\"$1\"\\* " +
+    public static final String API_USAGE_BY_KEY_MANAGER_QUERY = "overview_keyManagers:\\*\"$1\"\\* " +
             " AND mediaType:application\\/vnd.wso2\\-api\\+xml";
 
     public static class OASResourceAuthTypes {

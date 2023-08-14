@@ -39,18 +39,7 @@ import org.wso2.carbon.apimgt.api.APIManagementException;
 import org.wso2.carbon.apimgt.api.APIMgtResourceNotFoundException;
 import org.wso2.carbon.apimgt.api.ExceptionCodes;
 import org.wso2.carbon.apimgt.api.dto.KeyManagerConfigurationDTO;
-import org.wso2.carbon.apimgt.api.model.APICategory;
-import org.wso2.carbon.apimgt.api.model.Application;
-import org.wso2.carbon.apimgt.api.model.ApplicationInfo;
-import org.wso2.carbon.apimgt.api.model.ConfigurationDto;
-import org.wso2.carbon.apimgt.api.model.Environment;
-import org.wso2.carbon.apimgt.api.model.KeyManagerConfiguration;
-import org.wso2.carbon.apimgt.api.model.KeyManagerConnectorConfiguration;
-import org.wso2.carbon.apimgt.api.model.Monetization;
-import org.wso2.carbon.apimgt.api.model.MonetizationUsagePublishInfo;
-import org.wso2.carbon.apimgt.api.model.VHost;
-import org.wso2.carbon.apimgt.api.model.Workflow;
-import org.wso2.carbon.apimgt.api.model.WorkflowTaskService;
+import org.wso2.carbon.apimgt.api.model.*;
 import org.wso2.carbon.apimgt.api.model.botDataAPI.BotDetectionData;
 import org.wso2.carbon.apimgt.api.model.policy.Policy;
 import org.wso2.carbon.apimgt.api.model.policy.PolicyConstants;
@@ -574,16 +563,12 @@ public class APIAdminImpl implements APIAdmin {
         }
     }
 
-    public AdminContentSearchResult getAPIUsagesByKeyManagerWithoutAllEntry(String org, String keyManagerName, int start,
-                                                             int offset, int limit) throws APIManagementException {
-        APIPersistence apiPersistenceInstance = PersistenceFactory.getAPIPersistenceInstance();
-        String searchQuery = APIConstants.API_USAGE_BY_KEY_MANAGER_WITHOUT_ALL_ENTRY_QUERY.replace("$1", keyManagerName);
-        try {
-            return apiPersistenceInstance.searchContentForAdmin(org, searchQuery, start, offset, limit);
-        } catch (APIPersistenceException e) {
-            throw new APIManagementException("Error while finding the key manager ", e);
-        }
+    public List<ApplicationInfoKeyManager> getAllApplicationsOfKeyManager(String keyManagerId)
+            throws APIManagementException {
+        ApiMgtDAO apiMgtDAO = ApiMgtDAO.getInstance();
+        return apiMgtDAO.getAllApplicationsOfKeyManager(keyManagerId);
     }
+
     private void validateKeyManagerEndpointConfiguration(KeyManagerConfigurationDTO keyManagerConfigurationDTO)
             throws APIManagementException {
         if (!APIConstants.KeyManager.DEFAULT_KEY_MANAGER.equals(keyManagerConfigurationDTO.getName())) {
@@ -856,7 +841,7 @@ public class APIAdminImpl implements APIAdmin {
     public void deleteKeyManagerConfigurationById(String organization, KeyManagerConfigurationDTO kmConfig)
             throws APIManagementException {
         if (kmConfig != null) {
-            AdminContentSearchResult usage = getAPIUsagesByKeyManagerWithoutAllEntry(organization, kmConfig.getName()
+            AdminContentSearchResult usage = getAPIUsagesByKeyManager(organization, kmConfig.getName()
                     , 0, 0, Integer.MAX_VALUE);
             if (usage != null && usage.getApiCount() == 0 && usage.getApplicationCount() == 0) {
                 if (!APIConstants.KeyManager.DEFAULT_KEY_MANAGER.equals(kmConfig.getName())) {
