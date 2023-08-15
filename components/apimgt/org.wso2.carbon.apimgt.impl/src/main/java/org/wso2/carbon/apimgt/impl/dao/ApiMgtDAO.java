@@ -19541,43 +19541,28 @@ public class ApiMgtDAO {
         }
         return policyIds;
     }
-
-
     public List<ApplicationInfoKeyManager> getAllApplicationsOfKeyManager(String keyManagerId) throws
             APIManagementException {
 
-        Connection connection;
-        PreparedStatement prepStmt = null;
-        ResultSet rs;
         ArrayList<ApplicationInfoKeyManager> applicationsList = new ArrayList<>();
         String sqlQuery = SQLConstants.GET_APPLICATIONS_OF_KEY_MANAGERS_SQL;
 
-        try {
-            connection = APIMgtDBUtil.getConnection();
-            int appTenantId = APIUtil.getTenantIdFromTenantDomain(keyManagerId);
-            prepStmt = connection.prepareStatement(sqlQuery);
+        try (Connection connection = APIMgtDBUtil.getConnection();
+             PreparedStatement prepStmt = connection.prepareStatement(sqlQuery)) {
             prepStmt.setString(1, keyManagerId);
-            rs = prepStmt.executeQuery();
-
-            ApplicationInfoKeyManager application;
-            while (rs.next()) {
-                application = new ApplicationInfoKeyManager();
-                application.setUuid(rs.getString("UUID"));
-                application.setName(rs.getString("NAME"));
-                application.setOwner(rs.getString("CREATED_BY"));
-                application.setOrganization(rs.getString("ORGANIZATION"));
-                applicationsList.add(application);
+            try (ResultSet rs = prepStmt.executeQuery()) {
+                ApplicationInfoKeyManager application;
+                while (rs.next()) {
+                    application = new ApplicationInfoKeyManager();
+                    application.setUuid(rs.getString("UUID"));
+                    application.setName(rs.getString("NAME"));
+                    application.setOwner(rs.getString("CREATED_BY"));
+                    application.setOrganization(rs.getString("ORGANIZATION"));
+                    applicationsList.add(application);
+                }
             }
         } catch (SQLException e) {
             handleException("Error when reading the application information from the persistence store.", e);
-        } finally {
-            if (prepStmt != null) {
-                try {
-                    prepStmt.close();
-                } catch (SQLException e) {
-                    log.warn("Database error. Could not close Statement. Continuing with others." + e.getMessage(), e);
-                }
-            }
         }
         return applicationsList;
     }

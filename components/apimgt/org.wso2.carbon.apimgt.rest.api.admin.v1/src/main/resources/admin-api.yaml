@@ -3192,7 +3192,7 @@ paths:
           source: 'curl -k -X POST -H "Authorization: Bearer ae4eae22-3f65-387b-a171-d37eaa366fa8"
           -F "type=WSO2-IS" "https://127.0.0.1:9443/api/am/admin/v4/key-managers/discover"'
 
-  /key-managers/usages/{keyManagerId}:
+  /key-managers/{keyManagerId}/usages:
     get:
       tags:
         - Key Manager (Individual)

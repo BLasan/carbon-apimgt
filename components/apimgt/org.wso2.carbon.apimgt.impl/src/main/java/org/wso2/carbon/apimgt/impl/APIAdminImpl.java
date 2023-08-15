@@ -564,8 +564,9 @@ public class APIAdminImpl implements APIAdmin {
         return keyManagerConfigurationDTO;
     }
 
-    public AdminContentSearchResult getAPIUsagesByKeyManager(String org, String keyManagerName, int start,
-                                                             int offset, int limit) throws APIManagementException {
+    public AdminContentSearchResult getAPIUsagesByKeyManagerNameAndOrganization(String org, String keyManagerName,
+                                                                                int start, int offset, int limit)
+            throws APIManagementException {
         APIPersistence apiPersistenceInstance = PersistenceFactory.getAPIPersistenceInstance();
         String searchQuery = APIConstants.API_USAGE_BY_KEY_MANAGER_QUERY.replace("$1", keyManagerName);
         try {
@@ -853,7 +854,7 @@ public class APIAdminImpl implements APIAdmin {
     public void deleteKeyManagerConfigurationById(String organization, KeyManagerConfigurationDTO kmConfig)
             throws APIManagementException {
         if (kmConfig != null) {
-            AdminContentSearchResult usage = getAPIUsagesByKeyManager(organization, kmConfig.getName()
+            AdminContentSearchResult usage = getAPIUsagesByKeyManagerNameAndOrganization(organization, kmConfig.getName()
                     , 0, 0, Integer.MAX_VALUE);
             if (usage != null && usage.getApiCount() == 0 && usage.getApplicationCount() == 0) {
                 if (!APIConstants.KeyManager.DEFAULT_KEY_MANAGER.equals(kmConfig.getName())) {
@@ -863,11 +864,11 @@ public class APIAdminImpl implements APIAdmin {
                             .notify(kmConfig, APIConstants.KeyManager.KeyManagerEvent.ACTION_DELETE);
                 } else {
                     throw new APIManagementException(APIConstants.KeyManager.DEFAULT_KEY_MANAGER + " couldn't delete",
-                            ExceptionCodes.INTERNAL_ERROR);
+                            ExceptionCodes.KEY_MANAGER_DELETE_FAILED);
                 }
             } else {
                 throw new APIManagementException("Key Manager is already used by an API or and Application.",
-                        ExceptionCodes.INTERNAL_ERROR);
+                        ExceptionCodes.KEY_MANAGER_DELETE_FAILED);
             }
         }
     }

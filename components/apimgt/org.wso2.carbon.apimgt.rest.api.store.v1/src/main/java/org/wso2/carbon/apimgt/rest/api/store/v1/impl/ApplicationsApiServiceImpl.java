@@ -1194,6 +1194,49 @@ public class ApplicationsApiServiceImpl implements ApplicationsApiService {
     }
 
     @Override
+    public Response applicationsApplicationIdOauthKeysKeyMappingIdDelete(String applicationId, String keyMappingId,
+                                                                         String xWSO2Tenant,
+                                                                         MessageContext messageContext)
+            throws APIManagementException {
+        String username = RestApiCommonUtil.getLoggedInUsername();
+        try {
+            APIConsumer apiConsumer = APIManagerFactory.getInstance().getAPIConsumer(username);
+            Application application = apiConsumer.getLightweightApplicationByUUID(applicationId);
+
+            String keyManagerName = APIConstants.KeyManager.DEFAULT_KEY_MANAGER;
+            ApiMgtDAO apiMgtDAO = ApiMgtDAO.getInstance();
+            String result = apiMgtDAO.getKeyManagerNameFromKeyMappingId(keyMappingId);
+            if (!StringUtils.isEmpty(result)) {
+                keyManagerName = result;
+            }
+
+            ApplicationKeyDTO applicationKeyDTO = getApplicationKeyByAppIDAndKeyMapping(applicationId, keyMappingId);
+            String consumerKey = applicationKeyDTO.getConsumerKey();
+
+            //Removed the key manager entry from the key manager if it is not a mapped key.xxx
+            if (applicationKeyDTO.getMode().equals(ApplicationKeyDTO.ModeEnum.CREATED)) {
+                KeyManager keyManager = KeyManagerHolder.getKeyManagerInstance(xWSO2Tenant, keyManagerName);
+                keyManager.deleteApplication(consumerKey);
+            }
+
+            apiConsumer.cleanUpApplicationRegistrationByApplicationIdAndKeyMappingId(application.getId(), keyMappingId);
+
+            //publishing event for application key cleanup in gateway.
+            ApplicationRegistrationEvent removeEntryTrigger = new ApplicationRegistrationEvent(
+                    UUID.randomUUID().toString(), System.currentTimeMillis(),
+                    APIConstants.EventType.REMOVE_APPLICATION_KEYMAPPING.name(),
+                    APIUtil.getTenantIdFromTenantDomain(xWSO2Tenant), application.getOrganization(),
+                    application.getId(), application.getUUID(), consumerKey, application.getKeyType(),
+                    keyManagerName);
+            APIUtil.sendNotification(removeEntryTrigger, APIConstants.NotifierType.APPLICATION_REGISTRATION.name());
+            return Response.ok().build();
+        } catch (APIManagementException e) {
+            RestApiUtil.handleInternalServerError("Error occurred while application key cleanup process", e, log);
+        }
+        return null;
+    }
+
+    @Override
     public Response applicationsApplicationIdOauthKeysKeyMappingIdGenerateTokenPost(String applicationId,
                                                                                     String keyMappingId,
                                                                                     ApplicationTokenGenerateRequestDTO body,
@@ -1350,50 +1393,6 @@ public class ApplicationsApiServiceImpl implements ApplicationsApiService {
 
                 return Response.ok().entity(retrievedApplicationKey).build();
             }
-        return null;
-    }
-
-    @Override
-    public Response applicationsApplicationIdOauthKeysKeyMappingIdRemoveKeysPost(String applicationId,
-                                                                                 String keyMappingId,
-                                                                                 String xWSO2Tenant,
-                                                                                 MessageContext messageContext)
-            throws APIManagementException {
-        String username = RestApiCommonUtil.getLoggedInUsername();
-        try {
-            APIConsumer apiConsumer = APIManagerFactory.getInstance().getAPIConsumer(username);
-            Application application = apiConsumer.getLightweightApplicationByUUID(applicationId);
-
-            String keyManagerName = APIConstants.KeyManager.DEFAULT_KEY_MANAGER;
-            ApiMgtDAO apiMgtDAO = ApiMgtDAO.getInstance();
-            String result = apiMgtDAO.getKeyManagerNameFromKeyMappingId(keyMappingId);
-            if (!StringUtils.isEmpty(result)) {
-                keyManagerName = result;
-            }
-
-            ApplicationKeyDTO applicationKeyDTO = getApplicationKeyByAppIDAndKeyMapping(applicationId, keyMappingId);
-            String consumerKey = applicationKeyDTO.getConsumerKey();
-
-            //Removed the key manager entry from the key manager if it is not a mapped key.xxx
-            if (applicationKeyDTO.getMode().equals(ApplicationKeyDTO.ModeEnum.CREATED)) {
-                KeyManager keyManager = KeyManagerHolder.getKeyManagerInstance(xWSO2Tenant, keyManagerName);
-                keyManager.deleteApplication(consumerKey);
-            }
-
-            apiConsumer.cleanUpApplicationRegistrationByApplicationIdAndKeyMappingId(application.getId(), keyMappingId);
-
-            //publishing event for application key cleanup in gateway.
-            ApplicationRegistrationEvent removeEntryTrigger = new ApplicationRegistrationEvent(
-                    UUID.randomUUID().toString(), System.currentTimeMillis(),
-                    APIConstants.EventType.REMOVE_APPLICATION_KEYMAPPING.name(),
-                    APIUtil.getTenantIdFromTenantDomain(xWSO2Tenant), application.getOrganization(),
-                    application.getId(), application.getUUID(), consumerKey, application.getKeyType(),
-                    keyManagerName);
-            APIUtil.sendNotification(removeEntryTrigger, APIConstants.NotifierType.APPLICATION_REGISTRATION.name());
-            return Response.ok().build();
-        } catch (APIManagementException e) {
-            RestApiUtil.handleInternalServerError("Error occurred while application key cleanup process", e, log);
-        }
         return null;
     }
 
