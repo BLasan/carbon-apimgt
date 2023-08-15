@@ -32,6 +32,7 @@ import org.wso2.carbon.apimgt.api.model.CommentList;
 import org.wso2.carbon.apimgt.api.model.Application;
 import org.wso2.carbon.apimgt.api.model.Comment;
 import org.wso2.carbon.apimgt.api.model.Identifier;
+import org.wso2.carbon.apimgt.api.model.KeyManagerApplicationInfo;
 import org.wso2.carbon.apimgt.api.model.Monetization;
 import org.wso2.carbon.apimgt.api.model.OAuthApplicationInfo;
 import org.wso2.carbon.apimgt.api.model.ResourceFile;
@@ -718,6 +719,16 @@ public interface APIConsumer extends APIManager {
      *
      */
     String getRequestedTenant();
+
+    /**
+     * Get consumer key and key manager name by application id and key mapping id
+     * @param applicationId application id
+     * @param keyMappingId  key mapping id
+     * @return  KeyManagerApplicationInfo
+     */
+    KeyManagerApplicationInfo getKeyManagerNameAndConsumerKeyByAppIDAndKeyMapping(int applicationId,
+                                                                                  String keyMappingId)
+            throws APIManagementException;;
 
     /**
      *

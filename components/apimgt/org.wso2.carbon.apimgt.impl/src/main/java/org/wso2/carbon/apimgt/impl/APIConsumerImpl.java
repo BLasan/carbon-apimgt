@@ -62,6 +62,7 @@ import org.wso2.carbon.apimgt.api.model.DocumentationType;
 import org.wso2.carbon.apimgt.api.model.Environment;
 import org.wso2.carbon.apimgt.api.model.Identifier;
 import org.wso2.carbon.apimgt.api.model.KeyManager;
+import org.wso2.carbon.apimgt.api.model.KeyManagerApplicationInfo;
 import org.wso2.carbon.apimgt.api.model.KeyManagerConfiguration;
 import org.wso2.carbon.apimgt.api.model.Label;
 import org.wso2.carbon.apimgt.api.model.Monetization;
@@ -3460,7 +3461,7 @@ public class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
     public boolean removalKeys(Application application, String keyMappingId, String xWSO2Tenant)
             throws APIManagementException {
         try {
-            APIConsumer apiConsumer = APIManagerFactory.getInstance().getAPIConsumer(username);
+            APIConsumer apiConsumer = APIManagerFactory.getInstance().getAPIConsumer(this.username);
 
             String keyManagerName = APIConstants.KeyManager.DEFAULT_KEY_MANAGER;
             ApiMgtDAO apiMgtDAO = ApiMgtDAO.getInstance();
@@ -3518,6 +3519,12 @@ public class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
         }
 
         return apiKey;
+    }
+
+    @Override public KeyManagerApplicationInfo getKeyManagerNameAndConsumerKeyByAppIDAndKeyMapping(int applicationId, String keyMappingId)
+            throws APIManagementException {
+        return apiMgtDAO
+                .getKeyManagerNameAndConsumerKeyByAppIdAndKeyMappingId(applicationId, keyMappingId);
     }
 
     @Override

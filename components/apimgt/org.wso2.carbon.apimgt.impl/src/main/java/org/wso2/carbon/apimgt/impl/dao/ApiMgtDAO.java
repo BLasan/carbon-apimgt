@@ -39,9 +39,6 @@ import org.wso2.carbon.apimgt.api.dto.ConditionDTO;
 import org.wso2.carbon.apimgt.api.dto.ConditionGroupDTO;
 import org.wso2.carbon.apimgt.api.dto.KeyManagerConfigurationDTO;
 import org.wso2.carbon.apimgt.api.dto.UserApplicationAPIUsage;
-import org.wso2.carbon.apimgt.api.dto.ConditionGroupDTO;
-import org.wso2.carbon.apimgt.api.dto.KeyManagerConfigurationDTO;
-import org.wso2.carbon.apimgt.api.dto.UserApplicationAPIUsage;
 import org.wso2.carbon.apimgt.api.model.API;
 import org.wso2.carbon.apimgt.api.model.APICategory;
 import org.wso2.carbon.apimgt.api.model.APIIdentifier;
@@ -65,6 +62,7 @@ import org.wso2.carbon.apimgt.api.model.DeployedAPIRevision;
 import org.wso2.carbon.apimgt.api.model.Environment;
 import org.wso2.carbon.apimgt.api.model.Identifier;
 import org.wso2.carbon.apimgt.api.model.KeyManager;
+import org.wso2.carbon.apimgt.api.model.KeyManagerApplicationInfo;
 import org.wso2.carbon.apimgt.api.model.LifeCycleEvent;
 import org.wso2.carbon.apimgt.api.model.MonetizationUsagePublishInfo;
 import org.wso2.carbon.apimgt.api.model.OAuthAppRequest;
@@ -9415,6 +9413,31 @@ public class ApiMgtDAO {
                     }
                     apiKey.setCreateMode(createMode);
                     return apiKey;
+                }
+            }
+        } catch (SQLException e) {
+            throw new APIManagementException("Error while Retrieving Key Mapping ", e);
+        }
+        return null;
+    }
+
+    public KeyManagerApplicationInfo getKeyManagerNameAndConsumerKeyByAppIdAndKeyMappingId(int applicationId,
+                                                                                           String keyMappingId)
+            throws APIManagementException {
+        final String query = "SELECT NAME AS KEY_MANAGER_NAME, CONSUMER_KEY FROM AM_KEY_MANAGER AKM, " +
+                "AM_APPLICATION_KEY_MAPPING AAKM WHERE APPLICATION_ID=? AND AAKM.UUID = ? " +
+                "AND AKM.UUID=AAKM.KEY_MANAGER";
+        Set<APIKey> apiKeyList = new HashSet<>();
+        try (Connection connection = APIMgtDBUtil.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+            preparedStatement.setInt(1, applicationId);
+            preparedStatement.setString(2, keyMappingId);
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                if (resultSet.next()) {
+                    KeyManagerApplicationInfo keyManagerApplicationInfo = new KeyManagerApplicationInfo();
+                    keyManagerApplicationInfo.setConsumerKey(resultSet.getString("CONSUMER_KEY"));
+                    keyManagerApplicationInfo.setKeyManagerName(resultSet.getString("KEY_MANAGER_NAME"));
+                    return keyManagerApplicationInfo;
                 }
             }
         } catch (SQLException e) {
