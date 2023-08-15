@@ -3497,7 +3497,7 @@ public class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
             ApplicationRegistrationEvent removeEntryTrigger = new ApplicationRegistrationEvent(
                     UUID.randomUUID().toString(), System.currentTimeMillis(),
                     APIConstants.EventType.REMOVE_APPLICATION_KEYMAPPING.name(),
-                    APIUtil.getTenantIdFromTenantDomain(xWSO2Tenant), application.getOrganization(),
+                    APIUtil.getTenantIdFromTenantDomain(tenantDomain), application.getOrganization(),
                     application.getId(), application.getUUID(), consumerKey, application.getKeyType(),
                     keyManagerName);
             APIUtil.sendNotification(removeEntryTrigger, APIConstants.NotifierType.APPLICATION_REGISTRATION.name());
