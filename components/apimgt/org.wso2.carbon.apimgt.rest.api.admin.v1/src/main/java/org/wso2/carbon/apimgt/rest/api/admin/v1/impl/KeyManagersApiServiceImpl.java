@@ -13,6 +13,7 @@ import org.wso2.carbon.apimgt.api.APIAdmin;
 import org.wso2.carbon.apimgt.api.APIManagementException;
 import org.wso2.carbon.apimgt.api.ExceptionCodes;
 import org.wso2.carbon.apimgt.api.dto.KeyManagerConfigurationDTO;
+import org.wso2.carbon.apimgt.api.model.ApplicationInfoKeyManager;
 import org.wso2.carbon.apimgt.impl.APIAdminImpl;
 import org.wso2.carbon.apimgt.impl.APIConstants;
 import org.wso2.carbon.apimgt.impl.kmclient.ApacheFeignHttpClient;
@@ -20,6 +21,7 @@ import org.wso2.carbon.apimgt.impl.kmclient.KMClientErrorDecoder;
 import org.wso2.carbon.apimgt.impl.kmclient.model.OpenIDConnectDiscoveryClient;
 import org.wso2.carbon.apimgt.impl.kmclient.model.OpenIdConnectConfiguration;
 import org.wso2.carbon.apimgt.impl.utils.APIUtil;
+import org.wso2.carbon.apimgt.persistence.dto.AdminContentSearchResult;
 import org.wso2.carbon.apimgt.rest.api.admin.v1.KeyManagersApiService;
 import org.wso2.carbon.apimgt.rest.api.admin.v1.dto.KeyManagerDTO;
 import org.wso2.carbon.apimgt.rest.api.admin.v1.dto.KeyManagerListDTO;
@@ -137,6 +139,33 @@ public class KeyManagersApiServiceImpl implements KeyManagersApiService {
                     "Error while Retrieving Key Manager configuration for " + keyManagerId + " in organization " +
                             organization;
             throw new APIManagementException(error, e, ExceptionCodes.INTERNAL_ERROR);
+        }
+    }
+
+    @Override
+    public Response keyManagersKeyManagerIdUsagesGet(String keyManagerId, Integer start, Integer offset, Integer limit,
+                                                     MessageContext messageContext) throws APIManagementException {
+        String organization = RestApiUtil.getOrganization(messageContext);
+        offset = offset != null ? offset : RestApiConstants.PAGINATION_OFFSET_DEFAULT;
+        APIAdminImpl apiAdmin = new APIAdminImpl();
+        KeyManagerConfigurationDTO keyManager = apiAdmin.getKeyManagerConfigurationById(organization, keyManagerId);
+        String KeyManagerName;
+        if (keyManager != null) {
+            KeyManagerName = keyManager.getName();
+        } else {
+            throw new APIManagementException("Requested KeyManager not found", ExceptionCodes.KEY_MANAGER_NOT_FOUND);
+        }
+        AdminContentSearchResult result =
+                apiAdmin.getAPIUsagesByKeyManagerNameAndOrganization(organization, KeyManagerName, start, offset, limit);
+
+        List<ApplicationInfoKeyManager> applications = apiAdmin.getAllApplicationsOfKeyManager(keyManagerId);
+        result.setApplicationCount(applications.size());
+        result.setApplications(applications);
+
+        if (result != null) {
+            return Response.ok().entity(result).build();
+        } else {
+            throw new APIManagementException("Requested KeyManager not found", ExceptionCodes.KEY_MANAGER_NOT_FOUND);
         }
     }
 

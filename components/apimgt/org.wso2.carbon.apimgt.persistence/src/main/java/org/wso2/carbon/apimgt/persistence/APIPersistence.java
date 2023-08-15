@@ -17,6 +17,7 @@
 package org.wso2.carbon.apimgt.persistence;
 
 import org.wso2.carbon.apimgt.api.model.Tag;
+import org.wso2.carbon.apimgt.persistence.dto.AdminContentSearchResult;
 import org.wso2.carbon.apimgt.persistence.dto.DevPortalAPI;
 import org.wso2.carbon.apimgt.persistence.dto.DevPortalAPISearchResult;
 import org.wso2.carbon.apimgt.persistence.dto.DevPortalContentSearchResult;
@@ -227,6 +228,21 @@ public interface APIPersistence {
      * @throws WSDLPersistenceException
      */
     void saveWSDL(Organization org, String apiId, ResourceFile wsdlResourceFile) throws WSDLPersistenceException;
+
+    /**
+     *
+      * @param org
+     * @param searchQuery
+     * @param start
+     * @param offset
+     * @param limit
+     * @return
+     * @throws APIPersistenceException
+     */
+    default AdminContentSearchResult searchContentForAdmin(String org, String searchQuery, int start, int offset, int limit)
+            throws APIPersistenceException {
+        return null;
+    }
 
     /**
      * Get the WSDL schema definition
