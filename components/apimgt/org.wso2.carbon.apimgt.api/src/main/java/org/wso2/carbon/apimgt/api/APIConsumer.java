@@ -797,4 +797,13 @@ public interface APIConsumer extends APIManager {
      * @throws APIManagementException if failed to retrieve policy.
      */
     Tier getThrottlePolicyByName(String name, int policyType, String organization) throws APIManagementException;
+
+    /**
+     * Remove application keys.
+     * @param application   application
+     * @param keyMappingId  key mapping id
+     * @param xWSO2Tenant   tenant domain
+     * @throws APIManagementException
+     */
+     boolean removalKeys(Application application, String keyMappingId, String xWSO2Tenant) throws APIManagementException;
 }

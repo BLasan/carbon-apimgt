@@ -3457,6 +3457,43 @@ public class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
         }
     }
 
+    public boolean removalKeys(Application application, String keyMappingId, String xWSO2Tenant)
+            throws APIManagementException {
+        try {
+            APIConsumer apiConsumer = APIManagerFactory.getInstance().getAPIConsumer(username);
+
+            String keyManagerName = APIConstants.KeyManager.DEFAULT_KEY_MANAGER;
+            ApiMgtDAO apiMgtDAO = ApiMgtDAO.getInstance();
+            String result = apiMgtDAO.getKeyManagerNameFromKeyMappingId(keyMappingId);
+            if (!StringUtils.isEmpty(result)) {
+                keyManagerName = result;
+            }
+
+            APIKey apiKey = getApplicationKeyByAppIDAndKeyMapping(application.getId(), keyMappingId);
+            String consumerKey = apiKey.getConsumerKey();
+
+            //Removed the key manager entry from the key manager if it is not a mapped key.xxx
+            if (apiKey.getCreateMode().equals(APIConstants.OAuthAppMode.CREATED.name())) {
+                KeyManager keyManager = KeyManagerHolder.getKeyManagerInstance(xWSO2Tenant, keyManagerName);
+                keyManager.deleteApplication(consumerKey);
+            }
+
+            apiConsumer.cleanUpApplicationRegistrationByApplicationIdAndKeyMappingId(application.getId(), keyMappingId);
+
+            //publishing event for application key cleanup in gateway.
+            ApplicationRegistrationEvent removeEntryTrigger = new ApplicationRegistrationEvent(
+                    UUID.randomUUID().toString(), System.currentTimeMillis(),
+                    APIConstants.EventType.REMOVE_APPLICATION_KEYMAPPING.name(),
+                    APIUtil.getTenantIdFromTenantDomain(xWSO2Tenant), application.getOrganization(),
+                    application.getId(), application.getUUID(), consumerKey, application.getKeyType(),
+                    keyManagerName);
+            APIUtil.sendNotification(removeEntryTrigger, APIConstants.NotifierType.APPLICATION_REGISTRATION.name());
+            return true;
+        } catch (APIManagementException e) {
+            throw new APIManagementException("Error occurred while application key cleanup process",
+                    ExceptionCodes.KEYS_DELETE_FAILED);
+        }
+    }
     @Override public APIKey getApplicationKeyByAppIDAndKeyMapping(int applicationId, String keyMappingId)
             throws APIManagementException {
         APIKey apiKey = apiMgtDAO.getKeyMappingFromApplicationIdAndKeyMappingId(applicationId, keyMappingId);
