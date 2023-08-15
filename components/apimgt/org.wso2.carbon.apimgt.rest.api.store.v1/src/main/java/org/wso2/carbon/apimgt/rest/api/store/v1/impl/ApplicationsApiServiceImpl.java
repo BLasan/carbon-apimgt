@@ -1202,7 +1202,7 @@ public class ApplicationsApiServiceImpl implements ApplicationsApiService {
         try {
             APIConsumer apiConsumer = APIManagerFactory.getInstance().getAPIConsumer(username);
             Application application = apiConsumer.getLightweightApplicationByUUID(applicationId);
-            boolean result = apiConsumer.removalKeys(application, keyMappingId, username);
+            boolean result = apiConsumer.removalKeys(application, keyMappingId, xWSO2Tenant);
             if(result) {
                 return Response.ok().build();
             } else {
