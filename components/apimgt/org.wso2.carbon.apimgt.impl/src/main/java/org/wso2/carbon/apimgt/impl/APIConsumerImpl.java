@@ -3464,17 +3464,18 @@ public class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
             APIConsumer apiConsumer = APIManagerFactory.getInstance().getAPIConsumer(this.username);
 
             String keyManagerName = APIConstants.KeyManager.DEFAULT_KEY_MANAGER;
-            ApiMgtDAO apiMgtDAO = ApiMgtDAO.getInstance();
-            String result = apiMgtDAO.getKeyManagerNameFromKeyMappingId(keyMappingId);
-            if (!StringUtils.isEmpty(result)) {
-                keyManagerName = result;
-            }
 
-            APIKey apiKey = getApplicationKeyByAppIDAndKeyMapping(application.getId(), keyMappingId);
-            String consumerKey = apiKey.getConsumerKey();
+            ApiMgtDAO apiMgtDAO = ApiMgtDAO.getInstance();
+            KeyManagerApplicationInfo KeyManagerApplicationInfo = apiMgtDAO
+                    .getKeyManagerNameAndConsumerKeyByAppIdAndKeyMappingId(application.getId(), keyMappingId);
+            String keyManagerNameResult = KeyManagerApplicationInfo.getKeyManagerName();
+            if (!StringUtils.isEmpty(keyManagerNameResult)) {
+                keyManagerName = keyManagerNameResult;
+            }
+            String consumerKey = KeyManagerApplicationInfo.getConsumerKey();
 
             //Removed the key manager entry from the key manager if it is not a mapped key.xxx
-            if (apiKey.getCreateMode().equals(APIConstants.OAuthAppMode.CREATED.name())) {
+            if (KeyManagerApplicationInfo.getMode().equals(APIConstants.OAuthAppMode.CREATED.name())) {
                 KeyManager keyManager = KeyManagerHolder.getKeyManagerInstance(xWSO2Tenant, keyManagerName);
                 keyManager.deleteApplication(consumerKey);
             }

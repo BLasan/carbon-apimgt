@@ -9424,7 +9424,7 @@ public class ApiMgtDAO {
     public KeyManagerApplicationInfo getKeyManagerNameAndConsumerKeyByAppIdAndKeyMappingId(int applicationId,
                                                                                            String keyMappingId)
             throws APIManagementException {
-        final String query = "SELECT NAME AS KEY_MANAGER_NAME, CONSUMER_KEY FROM AM_KEY_MANAGER AKM, " +
+        final String query = "SELECT NAME AS KEY_MANAGER_NAME, CONSUMER_KEY, CREATE_MODE FROM AM_KEY_MANAGER AKM, " +
                 "AM_APPLICATION_KEY_MAPPING AAKM WHERE APPLICATION_ID=? AND AAKM.UUID = ? " +
                 "AND AKM.UUID=AAKM.KEY_MANAGER";
         Set<APIKey> apiKeyList = new HashSet<>();
@@ -9437,6 +9437,7 @@ public class ApiMgtDAO {
                     KeyManagerApplicationInfo keyManagerApplicationInfo = new KeyManagerApplicationInfo();
                     keyManagerApplicationInfo.setConsumerKey(resultSet.getString("CONSUMER_KEY"));
                     keyManagerApplicationInfo.setKeyManagerName(resultSet.getString("KEY_MANAGER_NAME"));
+                    keyManagerApplicationInfo.setMode(resultSet.getString("CREATE_MODE"));
                     return keyManagerApplicationInfo;
                 }
             }

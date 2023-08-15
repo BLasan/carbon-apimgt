@@ -1,22 +1,31 @@
 package org.wso2.carbon.apimgt.api.model;
 
 public class KeyManagerApplicationInfo {
-    String KeyManagerName;
-    String ConsumerKey;
+    String keyManagerName;
+    String consumerKey;
+    String mode;
 
     public String getKeyManagerName() {
-        return KeyManagerName;
+        return keyManagerName;
     }
 
     public void setKeyManagerName(String keyManagerName) {
-        KeyManagerName = keyManagerName;
+        this.keyManagerName = keyManagerName;
     }
 
     public String getConsumerKey() {
-        return ConsumerKey;
+        return consumerKey;
     }
 
     public void setConsumerKey(String consumerKey) {
-        ConsumerKey = consumerKey;
+        this.consumerKey = consumerKey;
+    }
+
+    public String getMode() {
+        return mode;
+    }
+
+    public void setMode(String mode) {
+        this.mode = mode;
     }
 }
