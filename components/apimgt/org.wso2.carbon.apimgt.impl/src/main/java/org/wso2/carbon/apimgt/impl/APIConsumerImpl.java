@@ -3463,6 +3463,17 @@ public class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
         try {
             APIConsumer apiConsumer = APIManagerFactory.getInstance().getAPIConsumer(this.username);
 
+            if (StringUtils.isNotEmpty(xWSO2Tenant)) {
+                int tenantId = APIUtil.getInternalOrganizationId(xWSO2Tenant);
+                // To handle choreo scenario. due to keymanagers are not per organization atm. using ST
+                if (tenantId == MultitenantConstants.SUPER_TENANT_ID) {
+                    xWSO2Tenant = MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
+                }
+            }
+            String tenantDomain = this.tenantDomain;
+            if (StringUtils.isNotEmpty(xWSO2Tenant)) {
+                tenantDomain = xWSO2Tenant;
+            }
             String keyManagerName = APIConstants.KeyManager.DEFAULT_KEY_MANAGER;
 
             ApiMgtDAO apiMgtDAO = ApiMgtDAO.getInstance();
@@ -3476,7 +3487,7 @@ public class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
 
             //Removed the key manager entry from the key manager if it is not a mapped key.xxx
             if (KeyManagerApplicationInfo.getMode().equals(APIConstants.OAuthAppMode.CREATED.name())) {
-                KeyManager keyManager = KeyManagerHolder.getKeyManagerInstance(xWSO2Tenant, keyManagerName);
+                KeyManager keyManager = KeyManagerHolder.getKeyManagerInstance(tenantDomain, keyManagerName);
                 keyManager.deleteApplication(consumerKey);
             }
 
@@ -3486,7 +3497,7 @@ public class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
             ApplicationRegistrationEvent removeEntryTrigger = new ApplicationRegistrationEvent(
                     UUID.randomUUID().toString(), System.currentTimeMillis(),
                     APIConstants.EventType.REMOVE_APPLICATION_KEYMAPPING.name(),
-                    APIUtil.getTenantIdFromTenantDomain(xWSO2Tenant), application.getOrganization(),
+                    APIUtil.getTenantIdFromTenantDomain(tenantDomain), application.getOrganization(),
                     application.getId(), application.getUUID(), consumerKey, application.getKeyType(),
                     keyManagerName);
             APIUtil.sendNotification(removeEntryTrigger, APIConstants.NotifierType.APPLICATION_REGISTRATION.name());
