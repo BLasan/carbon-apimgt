@@ -51,7 +51,6 @@ public class OrganizationKeyManagerDto {
         } else {
             keyManagerMap.put(keyManagerDto.getName(), keyManagerDto);
         }
-                    keyManagerMap.put(keyManagerDto.getName(), keyManagerDto);
         issuerNameMap.put(keyManagerDto.getIssuer(), keyManagerDto.getName());
     }
 
