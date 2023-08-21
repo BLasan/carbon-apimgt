@@ -866,7 +866,7 @@ public class ThrottleHandler extends AbstractHandler implements ManagedLifecycle
             if (APIThrottleConstants.MIN.equalsIgnoreCase(unitTime)) {
                 spikeArrestWindowUnitTime = 60000;
             } else {
-                spikeArrestWindowUnitTime = 60000;
+                spikeArrestWindowUnitTime = 1000;
             }
             try {
                 synchronized (this) {
