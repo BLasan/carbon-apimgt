@@ -101,13 +101,20 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
                         }
                     }
                 };
-                //
-
+                subscribeWithRetry(jedisPubSub);
+            }
+            public void subscribeWithRetry(JedisPubSub jedisPubSub) {
                 try (Jedis jedis = redisPool.getResource()) {
-                    jedis.subscribe(jedisPubSub, WSO2_SYNC_MODE_INIT_CHANNEL); /* TODO: will have to do above again and again in case redis server shut down at some time, the channel will be gone from redis */
+                    jedis.subscribe(jedisPubSub, WSO2_SYNC_MODE_INIT_CHANNEL);
                 } catch (JedisConnectionException e) {
                     log.error("Could not establish connection by retrieving a resource from the redis pool. So error occurred while subscribing to channel: " + WSO2_SYNC_MODE_INIT_CHANNEL, e);
-                    throw e;
+                    log.info("Next retry to subscribe to channel " + WSO2_SYNC_MODE_INIT_CHANNEL + " + in 10 seconds");
+                    try {
+                        Thread.sleep(10000);
+                    } catch (InterruptedException ex) {
+                        throw new RuntimeException(ex);
+                    }
+                    subscribeWithRetry(jedisPubSub);
                 }
             }
         };
@@ -383,7 +390,7 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
                         if (log.isDebugEnabled()) {
                             String type = ThrottleConstants.IP_BASE == configuration.getType() ?
                                     "IP address" : "domain";
-                            log.trace("Prohibit period is not yet over for caller with "
+                            log.trace("There is no prohibit period or the prohibit period is not yet over for caller with "
                                     + type + " - " + callerContext.getId() + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
                         }
                     }
@@ -675,7 +682,8 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
                 callerContext.setNextTimeWindow(sharedNextWindow);
                 callerContext.setGlobalCounter(distributedCounter);
                 if (!isInvocationFlow) {
-                    callerContext.setLocalHits(0);
+                    callerContext.setLocalHits(0); // >> if localCounter was set 0 here, that premature throttling won't happen. But can't set 0 here too since then already recieved request that should
+                                                        // be counted will be lost.
                 }
                 if (log.isDebugEnabled()) {
                     log.trace("///////////////// Setting time windows of caller context " + callerId
