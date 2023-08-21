@@ -126,6 +126,20 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
                 " Thread name:" + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId() + " TTL:" + getTtl(key));
     }
 
+    public void setCounterWithExpiry(String key, long value, long expiryTime) {
+        log.trace("Checking ttl before calling setCounter. TTL:" + getTtl(key));
+        long startTime = 0;
+        try {
+            startTime = System.currentTimeMillis();
+            asyncGetAlterAndSetExpiryOfCounter(key, value, expiryTime); // this should remove the expiry time as new key is created by this
+            log.trace("RedisBaseDistributedCountManager*****.setCounter ** : key:" + key + ", value:" + value);
+        } finally {
+            if (log.isDebugEnabled()) {
+                //     log.trace("Time Taken to setDistributedCounter :" + (System.currentTimeMillis() - startTime));
+            }
+        }
+    }
+
     @Override
     public long addAndGetCounter(String key, long value) {
 
@@ -268,6 +282,46 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
     }
 
     @Override
+    public long asyncGetAlterAndSetExpiryOfCounter(String key, long value, long expiryTimeStamp) {
+
+        long startTime = 0;
+        try {
+            startTime = System.currentTimeMillis();
+
+            try (Jedis jedis = redisPool.getResource()) {
+
+                long current = 0;
+                Transaction transaction = jedis.multi();
+                Response<String> currentValue = transaction.get(key);
+                transaction.del(key);
+                Response<Long> incrementedValue = transaction.incrBy(key, value);
+                Response<Long> expireSetResponse = transaction.pexpireAt(key, expiryTimeStamp);
+                transaction.exec();
+                if (expireSetResponse.get() == 1) {
+                    log.trace("Expire timeout was set of key:" + key +  " status:" + expireSetResponse.get());
+                } else if (expireSetResponse.get() == 0) {
+                    log.trace("Expire timeout was not set of key:" + key + " status:" +  expireSetResponse.get() +
+                            " e.g. key doesn't exist, or operation skipped due to the provided arguments.");
+                } else {
+                    log.trace("Expire timeout was not set");
+                }
+
+                if (currentValue != null && currentValue.get() != null) {
+                    current = Long.parseLong(currentValue.get());
+                }
+                if (log.isDebugEnabled()) {
+                    log.trace(String.format("RedisBaseDistributedCountManager*****asyncGetAndAlterCounter %s Key increased from %s to %s", key, current, incrementedValue.get()));
+                }
+                return current;
+            }
+        } finally {
+            if (log.isDebugEnabled()) {
+                //     log.trace("Time Taken to asyncGetAndAlterDistributedCounter :" + (System.currentTimeMillis() - startTime));
+            }
+        }
+    }
+
+    @Override
     public long getTimestamp(String key) {
 
         long startTime = 0;
@@ -347,6 +401,37 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
         log.trace("key:" + key + "  After setting timestamp .getTimestamp : " + getTimestamp(key) + " TTL:" + getTtl(key));
     }
 
+    public void setTimestampWithExpiry(String key, long timeStamp, long expiryTime) {
+        log.trace("Checking ttl before calling timestamp. TTL:" + getTtl(key));
+        long startTime = 0;
+        try {
+            startTime = System.currentTimeMillis();
+
+            try (Jedis jedis = redisPool.getResource()) {
+                Transaction transaction = jedis.multi();
+                transaction.set(key, String.valueOf(timeStamp));
+                Response<Long> expireSetResponse = transaction.pexpireAt(key, expiryTime);
+                transaction.exec();
+
+                if (expireSetResponse.get() == 1) {
+                    log.trace("Expire timeout was set of key:" + key +  " status:" + expireSetResponse.get());
+                } else if (expireSetResponse.get() == 0) {
+                    log.trace("Expire timeout was not set of key:" + key + " status:" +  expireSetResponse.get() +
+                            " e.g. key doesn't exist, or operation skipped due to the provided arguments.");
+                } else {
+                    log.trace("Expire timeout was not set");
+                }
+                log.trace("RedisBaseDistributedCountManager*****.setTimestamp***** " + getReadableTime(timeStamp) + "(" +
+                        timeStamp + ").  Thread name:" + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
+            }
+        } finally {
+            if (log.isDebugEnabled()) {
+                //   log.trace("Time Taken to setTimestamp :" + (System.currentTimeMillis() - startTime));
+            }
+        }
+        log.trace("key:" + key + "  After setting timestamp .getTimestamp : " + getTimestamp(key) + " TTL:" + getTtl(key));
+    }
+
     @Override
     public void removeTimestamp(String key) {
 
@@ -401,17 +486,15 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
 
             try (Jedis jedis = redisPool.getResource()) {
                 Transaction transaction = jedis.multi();
-                Response<Long> x = transaction.pexpireAt(key, expiryTimeStamp);
+                Response<Long> expireSetResponse = transaction.pexpireAt(key, expiryTimeStamp);
                 transaction.exec();
-//                log.trace("RedisBaseDistributedCountManager.setExpiry state " + x.get() + " of key:" + key +
-//                        "  (1 if the pexpire was set, 0 if the timeout was not set. e.g. key doesn't exist, " +
-//                        "or operation skipped due to the provided arguments.)");
-                if (x.get() == 1) {
-                    log.trace("pexpire timeout was set. state " + x.get() + " of key:" + key);
-                } else if (x.get() == 0) {
-                    log.trace("pexpire timeout was not set. state: " + x.get() + " of key:" + key + " e.g. key doesn't exist, or operation skipped due to the provided arguments.");
+                if (expireSetResponse.get() == 1) {
+                    log.trace("Expire timeout was set of key:" + key +  " status:" + expireSetResponse.get());
+                } else if (expireSetResponse.get() == 0) {
+                    log.trace("Expire timeout was not set of key:" + key + " status:" +  expireSetResponse.get() +
+                            " e.g. key doesn't exist, or operation skipped due to the provided arguments.");
                 } else {
-                    log.trace("pexpire timeout was not set. else value");
+                    log.trace("Expire timeout was not set");
                 }
             }
         } finally {
@@ -419,21 +502,6 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
                 log.trace("Time Taken to perform Redis setExpiry operation:" + (System.currentTimeMillis() - startTime));
             }
         }
-
-        log.trace("RedisBaseDistributedCountManager*****After setting expiry Checking the TTL of the key:" + key + " . TTL : " + getTtl(key));
-
-        log.trace("\nAfter setting expiry Checking if the key:" + key + " exists");
-        if (key.startsWith("sharedCounter")) {
-            getCounter(key);
-        } else if (key.startsWith("startedTime")) {
-            getTimestamp(key);
-        } else {
-            log.trace("key:" + key + " does not start with sharedCounter or sharedTimestamp");
-        }
-
-        log.trace("Again at the end of setExpiry() method checking the TTL of key " + key + " . TTL : " + getTtl(key));
-        log.trace("\n");
-
     }
 
     public long getTtl(String key) {
