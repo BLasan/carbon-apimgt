@@ -87,7 +87,7 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
                 }
                 if (count != null) {
                     long l = Long.parseLong(count);
-                    if (log.isDebugEnabled()) {
+                    if (log.isTraceEnabled()) {
                         log.trace(String.format("%s Key exist in redis with value %s", key, l));
                     }
                     log.trace("RedisBaseDistributedCountManager*****.getCounter**1 Redis getCounter:" + l);
@@ -99,7 +99,7 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
                 return 0;
             }
         } finally {
-            if (log.isDebugEnabled()) {
+            if (log.isTraceEnabled()) {
                 //        log.trace("Time Taken to getDistributedCounter :" + (System.currentTimeMillis() - startTime));
             }
         }
@@ -116,7 +116,7 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
             asyncGetAndAlterCounter(key, value); // this should remove the expiry time as new key is created by this
             log.trace("RedisBaseDistributedCountManager*****.setCounter ** : key:" + key + ", value:" + value);
         } finally {
-            if (log.isDebugEnabled()) {
+            if (log.isTraceEnabled()) {
                 //     log.trace("Time Taken to setDistributedCounter :" + (System.currentTimeMillis() - startTime));
             }
 
@@ -127,15 +127,14 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
     }
 
     public void setCounterWithExpiry(String key, long value, long expiryTime) {
-        log.trace("Checking ttl before calling setCounter. TTL:" + getTtl(key));
         long startTime = 0;
         try {
             startTime = System.currentTimeMillis();
             asyncGetAlterAndSetExpiryOfCounter(key, value, expiryTime); // this should remove the expiry time as new key is created by this
-            log.trace("RedisBaseDistributedCountManager*****.setCounter ** : key:" + key + ", value:" + value);
         } finally {
-            if (log.isDebugEnabled()) {
-                //     log.trace("Time Taken to setDistributedCounter :" + (System.currentTimeMillis() - startTime));
+            if (log.isTraceEnabled()) {
+                log.trace("Set DistributedCounter : key:" + key + ", value:" + value + ", expiryTime:" + expiryTime);
+                log.trace("Time Taken to set DistributedCounter :" + (System.currentTimeMillis() - startTime));
             }
         }
     }
@@ -153,7 +152,7 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
                 Response<Long> incrementedValueResponse = transaction.incrBy(key, value);
                 transaction.exec();
                 Long incrementedValue = incrementedValueResponse.get();
-                if (log.isDebugEnabled()) {
+                if (log.isTraceEnabled()) {
                     log.trace(String.format("RedisBaseDistributedCountManager*****addAndGetCounter** %s Key increased from %s to %s", key, previousResponse.get(),
                             incrementedValue));
                 }
@@ -161,7 +160,7 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
             }
 
         } finally {
-            if (log.isDebugEnabled()) {
+            if (log.isTraceEnabled()) {
                 //      log.trace("Time Taken to addAndGetDistributedCounter :" + (System.currentTimeMillis() - startTime));
             }
         }
@@ -179,13 +178,13 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
                 Transaction transaction = jedis.multi();
                 transaction.del(key);
                 transaction.exec();
-                if (log.isDebugEnabled()) {
+                if (log.isTraceEnabled()) {
                     log.trace(String.format("%s Key Removed", key));
                 }
                 log.trace("RedisBaseDistributedCountManager*****Counter Key Removed:" + key + " current timestamp:" + System.currentTimeMillis());
             }
         } finally {
-            if (log.isDebugEnabled()) {
+            if (log.isTraceEnabled()) {
                 log.trace("Time Taken to removeCounter :" + (System.currentTimeMillis() - startTime));
             }
         }
@@ -208,13 +207,13 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
                 if (currentValue != null && currentValue.get() != null) {
                     current = Long.parseLong(currentValue.get());
                 }
-                if (log.isDebugEnabled()) {
+                if (log.isTraceEnabled()) {
                     log.trace(String.format("RedisBaseDistributedCountManager*****asyncGetAndAddCounter** %s Key increased from %s to %s", key, current, incrementedValue.get()));
                 }
                 return current;
             }
         } finally {
-            if (log.isDebugEnabled()) {
+            if (log.isTraceEnabled()) {
                 //     log.trace("Time Taken to asyncGetAndAddDistributedCounter :" + (System.currentTimeMillis() - startTime));
             }
         }
@@ -237,13 +236,13 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
                 if (responseValue != null && responseValue.get() != null) {
                     incrementedValue = responseValue.get();
                 }
-                if (log.isDebugEnabled()) {
+                if (log.isTraceEnabled()) {
                     log.trace(String.format("RedisBaseDistributedCountManager*****asyncAddCounter** %s Key increased from %s to %s", key, incrementedValue - value, incrementedValue));
                 }
                 return incrementedValue;
             }
         } finally {
-            if (log.isDebugEnabled()) {
+            if (log.isTraceEnabled()) {
                 //     log.trace("Time Taken to asyncAddCounter :" + (System.currentTimeMillis() - startTime));
             }
         }
@@ -269,13 +268,13 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
                 if (currentValue != null && currentValue.get() != null) {
                     current = Long.parseLong(currentValue.get());
                 }
-                if (log.isDebugEnabled()) {
+                if (log.isTraceEnabled()) {
                     log.trace(String.format("RedisBaseDistributedCountManager*****asyncGetAndAlterCounter %s Key increased from %s to %s", key, current, incrementedValue.get()));
                 }
                 return current;
             }
         } finally {
-            if (log.isDebugEnabled()) {
+            if (log.isTraceEnabled()) {
                 //     log.trace("Time Taken to asyncGetAndAlterDistributedCounter :" + (System.currentTimeMillis() - startTime));
             }
         }
@@ -309,13 +308,13 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
                 if (currentValue != null && currentValue.get() != null) {
                     current = Long.parseLong(currentValue.get());
                 }
-                if (log.isDebugEnabled()) {
+                if (log.isTraceEnabled()) {
                     log.trace(String.format("RedisBaseDistributedCountManager*****asyncGetAndAlterCounter %s Key increased from %s to %s", key, current, incrementedValue.get()));
                 }
                 return current;
             }
         } finally {
-            if (log.isDebugEnabled()) {
+            if (log.isTraceEnabled()) {
                 //     log.trace("Time Taken to asyncGetAndAlterDistributedCounter :" + (System.currentTimeMillis() - startTime));
             }
         }
@@ -344,39 +343,11 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
                 return 0;
             }
         } finally {
-            if (log.isDebugEnabled()) {
+            if (log.isTraceEnabled()) {
                 //  log.trace("Time Taken to getSharedTimestamp :" + (System.currentTimeMillis() - startTime));
             }
         }
     }
-
-    /*
-    @Override
-    public long getTimestamp(String key) {
-
-        long startTime = 0;
-        try {
-            startTime = System.currentTimeMillis();
-
-            try (Jedis jedis = redisPool.getResource()) {
-
-                String timeStamp = jedis.get(key);
-                if (timeStamp != null) {
-                    log.trace("getTimestamp. key:" + key + ". Timestamp not null ** getTimestamp:" + getReadableTime(Long.parseLong(timeStamp)) + "(" + timeStamp + ")");
-                    return Long.parseLong(timeStamp);
-                } else {
-                    log.trace("getTimestamp :" + key + ". Timestamp null. So set to 0. ** :");
-                }
-                return 0;
-            }
-        } finally {
-            if (log.isDebugEnabled()) {
-              //  log.trace("Time Taken to getSharedTimestamp :" + (System.currentTimeMillis() - startTime));
-            }
-        }
-    }
-
-     */
 
     @Override
     public void setTimestamp(String key, long timeStamp) {
@@ -394,7 +365,7 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
                         timeStamp + ").  Thread name:" + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
             }
         } finally {
-            if (log.isDebugEnabled()) {
+            if (log.isTraceEnabled()) {
                 //   log.trace("Time Taken to setTimestamp :" + (System.currentTimeMillis() - startTime));
             }
         }
@@ -425,7 +396,7 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
                         timeStamp + ").  Thread name:" + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
             }
         } finally {
-            if (log.isDebugEnabled()) {
+            if (log.isTraceEnabled()) {
                 //   log.trace("Time Taken to setTimestamp :" + (System.currentTimeMillis() - startTime));
             }
         }
@@ -448,29 +419,11 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
 
             }
         } finally {
-            if (log.isDebugEnabled()) {
+            if (log.isTraceEnabled()) {
                 log.trace("Time Taken to removeTimestamp :" + (System.currentTimeMillis() - startTime));
             }
         }
     }
-
-//    @Override
-//    public long getExpiry(String key) {
-//        long startTime = 0;
-//        try {
-//            try (Jedis jedis = redisPool.getResource()) {
-//                long expiryTime = jedis.expireTime(key);
-//                log.trace("(negative value is returned in order to signal an error: -1 if the key exists but has no associated expiration time, and -2 if the key does not exist.)");
-//                return expiryTime;
-//            }
-//        } finally {
-//            if (log.isDebugEnabled()) {
-//                log.trace("Time Taken to getExpiry :" + (System.currentTimeMillis() - startTime));
-//            }
-//        }
-//
-//    }
-
 
     @Override
     public void setExpiry(String key, long expiryTimeStamp) {
@@ -498,7 +451,7 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
                 }
             }
         } finally {
-            if (log.isDebugEnabled()) {
+            if (log.isTraceEnabled()) {
                 log.trace("Time Taken to perform Redis setExpiry operation:" + (System.currentTimeMillis() - startTime));
             }
         }
@@ -520,7 +473,7 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
                 return ttl;
             }
         } finally {
-            if (log.isDebugEnabled()) {
+            if (log.isTraceEnabled()) {
 
             }
         }
@@ -548,7 +501,7 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
                 return responseCode;
             }
         } finally {
-            if (log.isDebugEnabled()) {
+            if (log.isTraceEnabled()) {
                 //   log.trace("Time Taken to setLock :" + (System.currentTimeMillis() - startTime));
             }
         }
@@ -573,7 +526,7 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
                 return pexpireAtResponseCode;
             }
         } finally {
-            if (log.isDebugEnabled()) {
+            if (log.isTraceEnabled()) {
                 //   log.trace("Time Taken to setLock :" + (System.currentTimeMillis() - startTime));
             }
         }
@@ -617,7 +570,7 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
                 transaction.exec();
             }
         } finally {
-            if (log.isDebugEnabled()) {
+            if (log.isTraceEnabled()) {
                 log.trace("Time Taken to remove lock :" + (System.currentTimeMillis() - startTime));
             }
         }

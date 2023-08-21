@@ -40,13 +40,18 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
 
         Thread thread = new Thread() {
             public void run() {
-                log.trace("Channel subscribing Thread Running");
+                if (log.isTraceEnabled()) {
+                    log.trace("Channel subscribing Thread Running");
+                }
                 JedisPubSub jedisPubSub = new JedisPubSub() {
                     @Override
                     public void onSubscribe(String channel, int subscribedChannels) {
                         super.onSubscribe(channel, subscribedChannels);
-                        log.trace("Client is Subscribed to " + channel);
-                        log.trace("Client is Subscribed to " + subscribedChannels + " no. of channels");
+                        if (log.isTraceEnabled()) {
+                            log.trace("Client is Subscribed to " + channel);
+                            log.trace("Client is Subscribed to " + subscribedChannels + " no. of channels");
+                        }
+
                     }
 
                     @Override
@@ -58,9 +63,13 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
                     @Override
                     public void onMessage(String channel, String syncModeInitMsg) {
                         super.onMessage(channel, syncModeInitMsg);
-                        log.trace("\n\nSync mode changed message received. Channel: " + channel + " Msg: " + syncModeInitMsg + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
+                        if (log.isTraceEnabled()) {
+                            log.trace("\n\nSync mode changed message received. Channel: " + channel + " Msg: " + syncModeInitMsg + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
+                        }
                         if (syncModeInitMsg.startsWith(gatewayId)) {
-                            log.trace("Ignoring ! as message received to own node. " + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
+                            if (log.isTraceEnabled()) {
+                                log.trace("Ignoring ! as message received to own node. " + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
+                            }
                             return;
                         }
                         log.trace("******************* Message received. CC Channel: " + channel + " Msg: " + syncModeInitMsg + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
@@ -285,7 +294,7 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
 
             if (callerContext.getGlobalCounter() <= maxRequest) {    //(If the globalCount is less than max request). // Very first requests to cluster hits into this block
                 log.trace("&&& If the globalCount is less than max request : (callerContext.getglobalCount.get() + callerContext.getlocalCount.get()) = " + (callerContext.getGlobalCounter() + callerContext.getLocalCounter()) + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId()); // >>>
-                if (log.isDebugEnabled()) {
+                if (log.isTraceEnabled()) {
                     log.trace("In canAccessIfUnitTimeNotOver Values:  "
                             + "allowed=" + maxRequest + " available=" + (maxRequest - (callerContext.getGlobalCounter() + callerContext.getLocalCounter())
                             + " key=" + callerContext.getId() + " currentGlobalCount=" + callerContext.getGlobalCounter() + " currentTime="
@@ -316,7 +325,7 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
                         //set it as prohibit period
                         callerContext.setNextAccessTime(requestContext.getRequestTime() + prohibitTime);
                     }
-                    if (log.isDebugEnabled()) {
+                    if (log.isTraceEnabled()) {
                         String type = ThrottleConstants.IP_BASE == configuration.getType() ?
                                 "IP address" : "domain";
                         log.trace("Maximum Number of requests are reached for caller with "
@@ -328,12 +337,14 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
                     // No need to process/sync throttle params in sync mode from now onwards, as the requests will not be allowed anyhow
                     callerContext.setIsThrottleParamSyncingModeSync(false);
                     syncModeNotifiedMap.remove(callerContext.getId());
-                    log.trace("===> mode set back to async since request count has exceeded max limit" + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
+                    if (log.isTraceEnabled()) {
+                        log.trace("===> mode set back to async since request count has exceeded max limit" + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
+                    }
                 } else { // second to onwards exceeding requests : conditions based on prohibit time period comes into
                     // action here onwards since 1st exceeding request had set the prohibit period if there is any
-                    if (callerContext.getNextAccessTime() <= requestContext.getRequestTime()) { // if the caller has already prohibit and prohibit // TODO: if next
+                    if (callerContext.getNextAccessTime() <= requestContext.getRequestTime()) { // if the caller has already prohibit and prohibit
                         // time period has already over
-                        if (log.isDebugEnabled()) {
+                        if (log.isTraceEnabled()) {
                             log.trace("CallerContext Checking access if unit time is not over before time window exceed >> "
                                     + "Access allowed=" + maxRequest + " available="
                                     + (maxRequest - (callerContext.getGlobalCounter() + callerContext.getLocalCounter()))
@@ -358,7 +369,7 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
 
                         // trouble occurs from below line >>>>>>>>>>>>>
                         callerContext.setGlobalCounter(0);// can access the system   and this is same as first access
-                        callerContext.setLocalCounter(1); // TODO : CHECK THIS and set to 0 if needed
+                        callerContext.setLocalCounter(1);
                         callerContext.setLocalHits(0);
                         callerContext.setFirstAccessTime(requestContext.getRequestTime());
                         callerContext.setNextTimeWindow(requestContext.getRequestTime() + configuration.getUnitTime());
@@ -366,15 +377,15 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
                                 ", firstAccessTime:" + getReadableTime(callerContext.getFirstAccessTime())
                                 + " , nextTimeWindow:" + getReadableTime(callerContext.getNextTimeWindow())
                                 + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
-                       // throttleContext.replicateTimeWindow(callerContext.getId()); // 1-WindowReplicator   TODO: remove if not needed
-                        throttleContext.addAndFlushCallerContext(callerContext, callerContext.getId()); // 2-ThrottleCounterReplicator  TODO: remove if not needed
+                        // throttleContext.replicateTimeWindow(callerContext.getId()); // 1-WindowReplicator   TODO: remove if not needed
+                        throttleContext.addAndFlushCallerContext(callerContext, callerContext.getId()); //
 
-                        if (log.isDebugEnabled()) { // TODO: change this to isTraceEnabled at all places
+                        if (log.isTraceEnabled()) { // TODO: change this to isTraceEnabled at all places
                             log.trace("Caller=" + callerContext.getId() + " has reset counters and added for replication when unit "
                                     + "time is not over"  + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
                         }
                     } else {
-                        if (log.isDebugEnabled()) {
+                        if (log.isTraceEnabled()) {
                             String type = ThrottleConstants.IP_BASE == configuration.getType() ?
                                     "IP address" : "domain";
                             log.trace("There is no prohibit period or the prohibit period is not yet over for caller with "
@@ -384,12 +395,12 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
                 }
             }
             if (!localCounterReseted && canAccess == false) { // if throttle param processing was async and if the request was not allowed, then need to reset the local counter and hits
-
-
                 callerContext.resetLocalCounter(); //
                 callerContext.setLocalHits(0);
-                log.trace("Check if this log is hit. If not, can remove this condition; and will need to move the setLocalHits() call to outside. NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE\n  NOTE NOTE NOTE "
-                        + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
+                if (log.isTraceEnabled()) {
+                    log.trace("Check if this log is hit. If not, can remove this condition; and will need to move the setLocalHits() call to outside. NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE\n  NOTE NOTE NOTE "
+                            + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
+                }
             }
         }
         log.debug(" request time:" + requestContext.getRequestTime() + "(" + getReadableTime(requestContext.getRequestTime()) + ")" + "$$$ In canAccessIfUnitTimeNotOver:  DECISION MADE. CAN ACCESS: " + canAccess
@@ -460,7 +471,7 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
                             + getReadableTime(callerContext.getNextTimeWindow()) + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
 
                 }
-                if (log.isDebugEnabled()) {
+                if (log.isTraceEnabled()) {
                     log.trace("CallerContext Checking access if unit time over next time window>> Access allowed="
                             + maxRequest + " available=" + (maxRequest - (callerContext.getGlobalCounter() + callerContext.getLocalCounter()))
                             + " key=" + callerContext.getId() + " currentGlobalCount=" + callerContext.getGlobalCounter() + " currentTime=" + requestContext.getRequestTime()
@@ -523,7 +534,7 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
                     log.trace("DDD : canAccessIfUnitTimeOver**  globalCount:" + callerContext.getGlobalCounter() + " , localCount:" + callerContext.getLocalCounter() +
                             ", firstAccessTime:" + getReadableTime(callerContext.getFirstAccessTime()) + " , nextTimeWindow:"
                             + getReadableTime(callerContext.getNextTimeWindow()) + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
-                    if (log.isDebugEnabled()) {
+                    if (log.isTraceEnabled()) {
                         log.trace("Caller=" + callerContext.getId() + " has reset counters and added for replication when unit "
                                 + "time is over" + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
                     }
@@ -547,7 +558,7 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
 
                 } else {
                     // if  caller in prohibit session  and prohibit period has not  over
-                    if (log.isDebugEnabled()) {
+                    if (log.isTraceEnabled()) {
                         String type = ThrottleConstants.IP_BASE == configuration.getType() ?
                                 "IP address" : "domain";
                         log.trace("Even unit time has over , CallerContext in prohibit state :"
@@ -663,7 +674,7 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
                     callerContext.setLocalHits(0); // >> if localCounter was set 0 here, that premature throttling won't happen. But can't set 0 here too since then already recieved request that should
                                                         // be counted will be lost.
                 }
-                if (log.isDebugEnabled()) {
+                if (log.isTraceEnabled()) {
                     log.trace("///////////////// Setting time windows of caller context " + callerId
                             + " when window already set at another GW" + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
                 }
@@ -682,7 +693,7 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
                 callerContext.setNextTimeWindow(sharedNextWindow);
                 log.trace("///////////////// &&&  - distributedCounter :" + distributedCounter + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
                 callerContext.setGlobalCounter(distributedCounter);
-                if (log.isDebugEnabled()) {
+                if (log.isTraceEnabled()) {
                     log.trace("///////////////// Setting time windows of caller context in intermediate interval=" +
                             callerId + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
                 }
@@ -724,9 +735,9 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
                 //callerContext.setLocalCounter(1)
                 //log.trace("///////////////// &&&  - after setting GlobalCounter :" + callerContext.getGlobalCounter());
                 //setLocalCounter(1);//Local counter will be set to one as new time window starts
-                // if (log.isDebugEnabled()) {
-                log.trace("\n ///////////////// Completed resetting time window of=" + callerId + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
-                // }
+                if (log.isTraceEnabled()) {
+                    log.trace("\n ///////////////// Completed resetting time window of=" + callerId + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
+                }
             }
             log.trace("///////////////// STWP: Method final: ** sharedTimestamp :"
                     + getReadableTime(SharedParamManager.getSharedTimestamp(callerId)) +
