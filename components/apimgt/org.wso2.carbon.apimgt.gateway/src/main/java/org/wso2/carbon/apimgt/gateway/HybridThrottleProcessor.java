@@ -154,8 +154,8 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
     @Override
     public boolean canAccessBasedOnUnitTime(CallerContext callerContext, CallerConfiguration configuration, ThrottleContext throttleContext, RequestContext requestContext) {
         log.trace("### canAccessBasedOnUnitTime Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
-        setLocalQuota(callerContext, configuration); // TODO: remove (and add to a proper place) if not needed to do this always.
-        setThrottleParamSyncMode(callerContext, requestContext.getRequestTime());
+        setLocalQuota(callerContext, configuration);
+        setThrottleParamSyncMode(callerContext, requestContext);
 
         if (dataHolder == null) {
             dataHolder = (ThrottleDataHolder) throttleContext.getConfigurationContext().getPropertyNonReplicable(ThrottleConstants.THROTTLE_INFO_KEY);
@@ -213,36 +213,25 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
         return canAccess;
     }
 
-    private void setThrottleParamSyncMode(CallerContext callerContext, long currentTime) { // TODO: refactor method params
+    private void setThrottleParamSyncMode(CallerContext callerContext, RequestContext requestContext) {
         //iterate over the map syncModeNotifiedSet
         log.trace("Setting ThrottleParam Sync Mode for callerContext" + callerContext.getId() +  ". \nsyncModeNotifiedMap:" + syncModeNotifiedMap.entrySet() + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
-        if (!callerContext.isThrottleParamSyncingModeSync()) { // if async TODO: switch if else order
-            if (syncModeNotifiedMap.containsKey(callerContext.getId())) { // if a sync mode switching msg has been received or own node exceeded local quota
-                long nextTimeWindowOfSyncMessage = Long.parseLong(syncModeNotifiedMap.get(callerContext.getId()));
-                //long currentTime = System.currentTimeMillis();
-                if (nextTimeWindowOfSyncMessage >= currentTime) { // still within the time window that the sync message was sent by some other GW node or mode switched by own node
-                    callerContext.setIsThrottleParamSyncingModeSync(true);
-                    callerContext.setSyncModeLastUpdatedTime(currentTime); // TODO: can remove this SyncModeLastUpdatedTime property
-                    log.trace("/////////////////  ### Set ThrottleParamSyncingModeSync to true for callerContext: " + callerContext.getId() + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
-                }
-                //log.trace("/////////////////  ### Set ThrottleParamSyncingModeSync to true for callerContext: " + callerContext.getId() + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
-            }
-        } else { // isThrottleParamSyncingModeSync = true ; handle if the syncMode was set to true in a previous time window
+        if (callerContext.isThrottleParamSyncingModeSync()) { // if async
             log.trace("/////////////////  ### ThrottleParamSyncingModeSync is already true for callerContext: " + callerContext.getId() + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
-            // check if the sync mode was set 'sync' in a previous time window, that should not be taken into consideration
-//            if (callerContext.getSyncModeLastUpdatedTime() > callerContext.getNextTimeWindow()) { // TODO: debug & check if callerContext.getNextTimeWindow() is the one set in previous time window
-//                log.trace("/////////////////  ### But the last updated time is in a previous time window. So setting it to false. So setting it to false.");
-//                callerContext.setIsThrottleParamSyncingModeSync(false);
-//            }
-//            if (callerContext.getSyncModeLastUpdatedTime() < callerContext.getNextTimeWindow() && System.currentTimeMillis() > callerContext.getNextTimeWindow()) {
-//                // normally SyncModeLastUpdatedTime is less than NextTimeWindow. If so we need to check if this nextTimeWindow is an old one too. (previous window is passed now)
-//                log.trace("/////////////////  ### But the last updated time is in a previous time window. So setting it to false. So setting it to false.");
-//                callerContext.setIsThrottleParamSyncingModeSync(false);
-//            }
-            if (currentTime > callerContext.getNextTimeWindow()) { // previous time window is exceeded and this is the first request in new window
+            if (requestContext.getRequestTime() > callerContext.getNextTimeWindow()) { // previous time window is exceeded and this is the first request in new window
                 // normally SyncModeLastUpdatedTime is less than NextTimeWindow. If so we need to check if this nextTimeWindow is an old one too. (previous window is passed now)
                 log.trace("/////////////////  ### currentTime has exceeded NextTimeWindow. So setting it to false. So setting it to false." + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
                 callerContext.setIsThrottleParamSyncingModeSync(false);
+            }
+        } else {
+            if (syncModeNotifiedMap.containsKey(callerContext.getId())) { // if a sync mode switching msg has been received or own node exceeded local quota
+                long nextTimeWindowOfSyncMessage = Long.parseLong(syncModeNotifiedMap.get(callerContext.getId()));
+                if (nextTimeWindowOfSyncMessage >= requestContext.getRequestTime()) { // still within the time window that the sync message was sent by some other GW node or mode switched by own node
+                    callerContext.setIsThrottleParamSyncingModeSync(true);
+                    callerContext.setSyncModeLastUpdatedTime(requestContext.getRequestTime()); // TODO: can remove this SyncModeLastUpdatedTime property
+                    log.trace("/////////////////  ### Set ThrottleParamSyncingModeSync to true for callerContext: " + callerContext.getId() + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
+                }
+                //log.trace("/////////////////  ### Set ThrottleParamSyncingModeSync to true for callerContext: " + callerContext.getId() + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
             }
         }
     }
