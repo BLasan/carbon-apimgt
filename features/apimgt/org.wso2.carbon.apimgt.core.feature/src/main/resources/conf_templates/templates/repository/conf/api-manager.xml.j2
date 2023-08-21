@@ -53,6 +53,11 @@
         <!--ClaimsRetrieverImplClass>org.wso2.carbon.apimgt.impl.token.DefaultClaimsRetriever</ClaimsRetrieverImplClass-->
         {% endif %}
 
+        <!-- Specifies whether the backend JWT header should include the kid claim. -->
+        {% if apim.jwt.use_kid_property is defined %}
+            <UseKidProperty>{{apim.jwt.use_kid_property}}</UseKidProperty>
+        {% endif %}
+
         <!-- The dialectURI under which the claimURIs that need to be appended to the
              JWT are defined. Not used with custom ClaimsRetriever implementations. The
              same value is used in the keys for appending the default properties to the
@@ -1104,6 +1109,14 @@
                 {% endif %}
                 {% if apim.open_tracer.remote_tracer.properties.sampler_param is defined %}
                 <SamplerParam>{{apim.open_tracer.remote_tracer.properties.sampler_param}}</SamplerParam>
+                {% if apim.open_tracer.remote_tracer.properties.proxy_host is defined %}
+                <ProxyHost>{{apim.open_tracer.remote_tracer.properties.proxy_host}}</ProxyHost>
+                {% endif %}
+                {% if apim.open_tracer.remote_tracer.properties.proxy_port is defined %}
+                <ProxyPort>{{apim.open_tracer.remote_tracer.properties.proxy_port}}</ProxyPort>
+                {% endif %}
+                {% if apim.open_tracer.remote_tracer.properties.endpoint_url is defined %}
+                <EndpointUrl>{{apim.open_tracer.remote_tracer.properties.endpoint_url}}</EndpointUrl>
                 {% endif %}
             </Properties>
         </RemoteTracer>
