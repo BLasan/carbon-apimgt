@@ -20,6 +20,7 @@ package org.wso2.carbon.apimgt.gateway;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.synapse.commons.throttle.core.CallerContext;
 import org.apache.synapse.commons.throttle.core.DistributedCounterManager;
 import org.wso2.carbon.apimgt.impl.dto.RedisConfig;
 import redis.clients.jedis.*;
@@ -395,16 +396,6 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
 
         long startTime = 0;
 
-        log.trace("Initially Checking if the key:" + key + " exists");
-        if (key.startsWith("sharedCounter")) {
-            getCounter(key);
-        } else if (key.startsWith("startedTime")) {
-            getTimestamp(key);
-        } else {
-            log.trace("key:" + key + " does not start with sharedCounter or startedTime");
-        }
-
-
         try {
             startTime = System.currentTimeMillis();
 
@@ -425,7 +416,7 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
             }
         } finally {
             if (log.isDebugEnabled()) {
-                //  log.trace("Time Taken to setExpiry :" + (System.currentTimeMillis() - startTime));
+                log.trace("Time Taken to perform Redis setExpiry operation:" + (System.currentTimeMillis() - startTime));
             }
         }
 
@@ -487,6 +478,31 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
                 }
                 log.trace("RedisBaseDistributedCountManager*****.setLock*****  Thread name:" + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
                 return responseCode;
+            }
+        } finally {
+            if (log.isDebugEnabled()) {
+                //   log.trace("Time Taken to setLock :" + (System.currentTimeMillis() - startTime));
+            }
+        }
+    }
+
+    public long setLockWithExpiry(String key, String value, long expiryTimeStamp) {
+       // log.trace("Checking ttl before calling ..:" + getTtl(key));
+        try {
+            try (Jedis jedis = redisPool.getResource()) {
+                Transaction transaction = jedis.multi();
+                Response<Long> setnxResponse = transaction.setnx(key, value);
+                Response<Long> pexpireAtResponse = transaction.pexpireAt(key, expiryTimeStamp);
+                transaction.exec();
+                long pexpireAtResponseCode = pexpireAtResponse.get();
+                if (pexpireAtResponseCode == 1) {
+                    log.trace("expiry time of key:" + key + " was set successfully." + "Thread name:" + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
+                } else if (pexpireAtResponseCode == 0) {
+                    log.trace("expiry time was not set of key:" + key + " e.g. key doesn't exist, or operation skipped due to the provided arguments." + "Thread name:" + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
+                } else {
+                    log.trace("expiry time was not set of key:"  + " Thread name:" + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
+                }
+                return pexpireAtResponseCode;
             }
         } finally {
             if (log.isDebugEnabled()) {
