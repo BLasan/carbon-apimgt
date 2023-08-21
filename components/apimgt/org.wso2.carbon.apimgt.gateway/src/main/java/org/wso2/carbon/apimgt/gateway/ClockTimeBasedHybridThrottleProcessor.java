@@ -2,10 +2,7 @@ package org.wso2.carbon.apimgt.gateway;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.synapse.commons.throttle.core.CallerConfiguration;
-import org.apache.synapse.commons.throttle.core.CallerContext;
-import org.apache.synapse.commons.throttle.core.SharedParamManager;
-import org.apache.synapse.commons.throttle.core.ThrottleContext;
+import org.apache.synapse.commons.throttle.core.*;
 import org.apache.synapse.commons.throttle.core.internal.DistributedThrottleProcessor;
 import org.wso2.carbon.apimgt.gateway.internal.ServiceReferenceHolder;
 import org.wso2.carbon.apimgt.impl.dto.RedisConfig;
@@ -29,9 +26,9 @@ public class ClockTimeBasedHybridThrottleProcessor implements DistributedThrottl
     }
 
     @Override
-    public boolean canAccessBasedOnUnitTime(CallerContext callerContext, CallerConfiguration configuration, ThrottleContext throttleContext, long currentTime) {
+    public boolean canAccessBasedOnUnitTime(CallerContext callerContext, CallerConfiguration configuration, ThrottleContext throttleContext, RequestContext requestContext) {
         setLocalQuota(callerContext, configuration);
-        setThrottleParamSyncMode(callerContext, currentTime);
+        setThrottleParamSyncMode(callerContext, requestContext.getRequestTime());
         int maxRequest = configuration.getMaximumRequestPerUnitTime();
 
         boolean canAccess = false;
@@ -50,7 +47,7 @@ public class ClockTimeBasedHybridThrottleProcessor implements DistributedThrottl
             // 2- requests at sync mode
         } else if (callerContext.getGlobalCounter() < maxRequest) { // haven't synced with redis yet. so check with locally stored global counter
             //determine the shared counter identifier for the current time unit window
-            long timeWindowStartTimestamp = getTimeWindowStartTimestamp(currentTime, configuration.getUnitTime());
+            long timeWindowStartTimestamp = getTimeWindowStartTimestamp(requestContext.getRequestTime(), configuration.getUnitTime());
 
             // format of the distributed counter key: "sharedCounter-timeWindowStartTimestamp" e.g. sharedCounter-1512086400000
             long distributedCounter = SharedParamManager.addAndGetDistributedCounter(String.valueOf(timeWindowStartTimestamp), 1);
@@ -72,17 +69,17 @@ public class ClockTimeBasedHybridThrottleProcessor implements DistributedThrottl
 
 
     @Override
-    public boolean canAccessIfUnitTimeNotOver(CallerContext callerContext, CallerConfiguration callerConfiguration, ThrottleContext throttleContext, long l) {
+    public boolean canAccessIfUnitTimeNotOver(CallerContext callerContext, CallerConfiguration callerConfiguration, ThrottleContext throttleContext, RequestContext requestContext) {
         return false;
     }
 
     @Override
-    public boolean canAccessIfUnitTimeOver(CallerContext callerContext, CallerConfiguration callerConfiguration, ThrottleContext throttleContext, long l) {
+    public boolean canAccessIfUnitTimeOver(CallerContext callerContext, CallerConfiguration callerConfiguration, ThrottleContext throttleContext, RequestContext requestContext) {
         return false;
     }
 
     @Override
-    public void syncThrottleCounterParams(CallerContext callerContext, boolean b, long l) {
+    public void syncThrottleCounterParams(CallerContext callerContext, boolean b, RequestContext requestContext) {
 
     }
 
