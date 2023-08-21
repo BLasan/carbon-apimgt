@@ -182,7 +182,6 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
             log.trace("\n\n ///////////////// quota reached. SWITCHED TO SYNC MODE !!!. callerContext.getLocalHits()  : "
                     + callerContext.getLocalHits() + "\n" + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
             callerContext.setIsThrottleParamSyncingModeSync(true);
-            callerContext.setSyncModeLastUpdatedTime(System.currentTimeMillis());
             String message = gatewayId + "___" + callerContext.getId() + "___" + callerContext.getNextTimeWindow();
 
             if (dataHolder != null) {
@@ -228,7 +227,6 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
                 long nextTimeWindowOfSyncMessage = Long.parseLong(syncModeNotifiedMap.get(callerContext.getId()));
                 if (nextTimeWindowOfSyncMessage >= requestContext.getRequestTime()) { // still within the time window that the sync message was sent by some other GW node or mode switched by own node
                     callerContext.setIsThrottleParamSyncingModeSync(true);
-                    callerContext.setSyncModeLastUpdatedTime(requestContext.getRequestTime()); // TODO: can remove this SyncModeLastUpdatedTime property
                     log.trace("/////////////////  ### Set ThrottleParamSyncingModeSync to true for callerContext: " + callerContext.getId() + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
                 }
                 //log.trace("/////////////////  ### Set ThrottleParamSyncingModeSync to true for callerContext: " + callerContext.getId() + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
