@@ -972,8 +972,8 @@ public class OAS3Parser extends APIDefinition {
                 openAPI.addExtension(APIConstants.X_WSO2_MUTUAL_SSL, mutualSSLOptional);
             }
         }
-        // This app security is should given in resource level,
-        // otherwise the default oauth2 scheme defined at each resouce level will override application securities
+        // This app security should be given in both root level and resource level,
+        // otherwise the default oauth2 scheme defined at each resource level will override application securities
         JsonNode appSecurityExtension = OASParserUtil.getAppSecurity(apiSecurity);
         for (String pathKey : openAPI.getPaths().keySet()) {
             PathItem pathItem = openAPI.getPaths().get(pathKey);
@@ -982,6 +982,7 @@ public class OAS3Parser extends APIDefinition {
                 operation.addExtension(APIConstants.X_WSO2_APP_SECURITY, appSecurityExtension);
             }
         }
+        openAPI.addExtension(APIConstants.X_WSO2_APP_SECURITY, appSecurityExtension);
         openAPI.addExtension(APIConstants.X_WSO2_RESPONSE_CACHE,
                 OASParserUtil.getResponseCacheConfig(api.getResponseCache(), api.getCacheTimeout()));
         return Json.pretty(openAPI);
