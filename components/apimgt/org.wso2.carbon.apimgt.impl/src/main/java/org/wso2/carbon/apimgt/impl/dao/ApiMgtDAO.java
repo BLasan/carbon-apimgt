@@ -3532,17 +3532,6 @@ public class ApiMgtDAO {
                 addApplicationAttributes(conn, application.getApplicationAttributes(), application.getId(), tenantId);
             }
             conn.commit();
-        } catch (SQLIntegrityConstraintViolationException e) {
-            // Handle primary key or unique key violation
-            if (conn != null) {
-                try {
-                    conn.rollback();
-                } catch (SQLException e1) {
-                    log.error("Failed to rollback the update Application ", e1);
-                }
-            }
-            APIUtil.handleResourceAlreadyExistsException(
-                    "A duplicate application already exists by the name - " + application.getName());
         } catch (SQLException e) {
             if (conn != null) {
                 try {
