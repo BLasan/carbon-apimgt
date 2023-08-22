@@ -154,11 +154,6 @@ public class APIHandlerServiceComponent {
             }
         }
 
-        // Create "sync-mode-initiation-channel"
-        // if feature enabled
-
-
-
         // Create caches for the super tenant
         ServerConfiguration.getInstance().overrideConfigurationProperty("Cache.ForceLocalCache", "true");
         CacheProvider.createGatewayKeyCache();
@@ -512,7 +507,6 @@ public class APIHandlerServiceComponent {
             jedisPool = new JedisPool(jedisPoolConfig, redisConfig.getHost(), redisConfig.getPort(),
                     redisConfig.getConnectionTimeout(), redisConfig.isSslEnabled());
         }
-
         return jedisPool;
     }
 }

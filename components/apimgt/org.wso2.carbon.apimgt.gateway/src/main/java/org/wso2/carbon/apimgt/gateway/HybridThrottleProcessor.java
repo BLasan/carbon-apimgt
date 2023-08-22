@@ -195,7 +195,6 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
         //TODO: Decide whether to make the first and second arg of scheduleAtFixedRate() configurable
         executor.scheduleAtFixedRate(new ChannelSubscriptionCounterTask(), 15000,
                 Integer.parseInt(gatewayCountCheckingFrequency), TimeUnit.MILLISECONDS);
-
     }
 
     /**
@@ -276,7 +275,6 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
                 if (log.isTraceEnabled()) {
                     log.trace("DataHolder is not null so running syncing tasks"
                             + GatewayUtils.getThreadNameAndIdToLog());
-
                 }
                 if (SharedParamManager.lockSharedKeys(callerContext.getId(), gatewayId)) {
                     long syncingStartTime = System.currentTimeMillis();
