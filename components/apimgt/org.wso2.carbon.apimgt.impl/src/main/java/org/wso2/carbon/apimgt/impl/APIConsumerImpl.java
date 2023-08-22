@@ -1820,6 +1820,12 @@ public class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
             application.setApplicationAttributes(null);
         }
         validateApplicationPolicy(application, existingApp.getOrganization());
+        tenantDomain = PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain();
+        if (APIUtil.isApplicationExist(application.getSubscriber().getName(), application.getName(), application.getGroupId(),
+                tenantDomain)) {
+            handleResourceAlreadyExistsException(
+                    "A duplicate application already exists by the name - " + application.getName());
+        }
         apiMgtDAO.updateApplication(application);
         if (log.isDebugEnabled()) {
             log.debug("Successfully updated the Application: " + application.getId() +" in the database.");
