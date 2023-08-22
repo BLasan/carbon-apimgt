@@ -384,11 +384,12 @@ public class APIManagerConfiguration {
                 OMElement redisIsSslEnabled = element.getFirstChildWithName(new QName(APIConstants.CONFIG_REDIS_IS_SSL_ENABLED));
                 OMElement propertiesElement = element.getFirstChildWithName(new QName(APIConstants.CONFIG_REDIS_PROPERTIES));
                 OMElement gatewayId = element.getFirstChildWithName(new QName(APIConstants.CONFIG_REDIS_GATEWAY_ID));
-                OMElement minGatewayCount = element.getFirstChildWithName(new QName(APIConstants.CONFIG_REDIS_MIN_GATEWAY_COUNT));
-                OMElement keyLockRetrievalTimeout = element.getFirstChildWithName(new QName(APIConstants.CONFIG_REDIS_KEY_LOCK_RETRIEVAL_TIMEOUT));
-                OMElement isProductionUnitTimeSec = element.getFirstChildWithName(new QName(APIConstants.CONFIG_IS_PRODUCTION_UNIT_TIME_IN_SEC));//TODO: remove
-              //  OMElement throttleProcessorClass = element.getFirstChildWithName(new QName(APIConstants.DISTRIBUTED_THROTTLE_PROCESSOR_IMPL));//TODO: remove
-                //OMElement hybridThrottleProcessorType = element.getFirstChildWithName(new QName(APIConstants.HYBRID_THROTTLE_PROCESSOR_TYPE));//TODO: remove
+                OMElement minGatewayCount = element.getFirstChildWithName(
+                        new QName(APIConstants.CONFIG_REDIS_MIN_GATEWAY_COUNT));
+                OMElement keyLockRetrievalTimeout = element.getFirstChildWithName(
+                        new QName(APIConstants.CONFIG_REDIS_KEY_LOCK_RETRIEVAL_TIMEOUT));
+                OMElement isProductionUnitTimeSec = element.getFirstChildWithName(
+                        new QName(APIConstants.CONFIG_IS_PRODUCTION_UNIT_TIME_IN_SEC));//TODO: remove
 
                 redisConfig.setRedisEnabled(true);
                 redisConfig.setHost(redisHost.getText());
@@ -398,12 +399,12 @@ public class APIManagerConfiguration {
                 }
                 if (minGatewayCount != null) {
                     redisConfig.setMinGatewayCount(Integer.parseInt(minGatewayCount.getText()));
-                } // TODO : set default values properly, etc
+                }
                 if (keyLockRetrievalTimeout != null) {
                     redisConfig.setKeyLockRetrievalTimeout(Integer.parseInt(keyLockRetrievalTimeout.getText()));
                 }
-                redisConfig.setProductionUnitTimeInSec(Boolean.parseBoolean(isProductionUnitTimeSec.getText())); //TODO: remove
-               //  redisConfig.setHybridThrottleProcessorType(hybridThrottleProcessorType.getText());
+                redisConfig.setProductionUnitTimeInSec(
+                        Boolean.parseBoolean(isProductionUnitTimeSec.getText())); //TODO: remove
 
                 if (redisUser != null) {
                     redisConfig.setUser(redisUser.getText());
