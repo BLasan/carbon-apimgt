@@ -36,7 +36,6 @@ import org.wso2.carbon.apimgt.common.gateway.jwtgenerator.APIMgtGatewayJWTGenera
 import org.wso2.carbon.apimgt.common.gateway.jwtgenerator.APIMgtGatewayUrlSafeJWTGeneratorImpl;
 import org.wso2.carbon.apimgt.common.gateway.jwtgenerator.AbstractAPIMgtGatewayJWTGenerator;
 import org.wso2.carbon.apimgt.gateway.APIMgtGatewayConstants;
-import org.wso2.carbon.apimgt.gateway.ClockTimeBasedHybridThrottleProcessor;
 import org.wso2.carbon.apimgt.gateway.HybridThrottleProcessor;
 import org.wso2.carbon.apimgt.gateway.RedisBaseDistributedCountManager;
 import org.wso2.carbon.apimgt.gateway.handlers.security.keys.APIKeyValidatorClientPool;
@@ -68,8 +67,6 @@ import org.wso2.carbon.sequences.services.SequenceAdmin;
 import org.wso2.carbon.utils.Axis2ConfigurationContextObserver;
 import org.wso2.carbon.utils.CarbonUtils;
 import org.wso2.carbon.utils.ConfigurationContextService;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisMonitor;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 
@@ -146,11 +143,6 @@ public class APIHandlerServiceComponent {
                         new HybridThrottleProcessor();
                 context.getBundleContext().registerService(DistributedThrottleProcessor.class,
                         hybridDistributedThrottleProcessor, null);
-            } else if (APIConstants.HYBRID_THROTTLE_PROCESSOR_TYPE_CLOCK_TIME_BASED.equals(hybridThrottleProcessorWindowType)) {
-                ClockTimeBasedHybridThrottleProcessor clockTimeBasedHybridThrottleProcessor =
-                        new ClockTimeBasedHybridThrottleProcessor();
-                context.getBundleContext().registerService(DistributedThrottleProcessor.class,
-                        clockTimeBasedHybridThrottleProcessor, null);
             }
         }
 
