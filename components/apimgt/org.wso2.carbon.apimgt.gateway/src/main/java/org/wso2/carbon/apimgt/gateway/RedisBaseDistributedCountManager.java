@@ -175,7 +175,7 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
                     current = Long.parseLong(currentValue.get());
                 }
                 if (log.isTraceEnabled()) {
-                    log.trace(String.format("RedisBaseDistributedCountManager*****asyncGetAndAddCounter** %s Key increased from %s to %s", key, current, incrementedValue.get()));
+                    log.trace(String.format("Key %s increased from %s to %s", key, current, incrementedValue.get()));
                 }
                 return current;
             }
@@ -203,7 +203,8 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
                     incrementedValue = responseValue.get();
                 }
                 if (log.isTraceEnabled()) {
-                    log.trace(String.format("RedisBaseDistributedCountManager*****asyncAddCounter** %s Key increased from %s to %s", key, incrementedValue - value, incrementedValue));
+                    log.trace(String.format("Key %s increased from %s to %s", key, incrementedValue - value,
+                            incrementedValue));
                 }
                 return incrementedValue;
             }
