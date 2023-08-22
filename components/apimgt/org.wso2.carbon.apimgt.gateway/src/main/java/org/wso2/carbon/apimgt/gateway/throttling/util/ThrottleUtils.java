@@ -17,6 +17,10 @@
  */
 package org.wso2.carbon.apimgt.gateway.throttling.util;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 public class ThrottleUtils {
 
     public static String getApiName() {
@@ -25,5 +29,12 @@ public class ThrottleUtils {
 
     public static String getApiCreatorTenantDomain() {
         return null;
+    }
+
+    public static String getReadableTime(long time) {
+        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss,SSS");
+        Date date = new Date(time);
+        String formattedTime = dateFormat.format(date);
+        return formattedTime;
     }
 }
