@@ -78,15 +78,6 @@ public class ServiceReferenceHolder {
     private Map<String, ExternalEnvironment> externalEnvironmentsMap = new HashMap<>();
     private Map<String, APIDefinition> apiDefinitionMap = new HashMap<>();
     private WorkflowTaskService workflowTaskService;
-    private int gatewayCount = 1;
-
-    public int getGatewayCount() {
-        return gatewayCount;
-    }
-
-    public void setGatewayCount(int gatewayCount) {
-        this.gatewayCount = gatewayCount;
-    }
 
     private ServiceReferenceHolder() {
 
