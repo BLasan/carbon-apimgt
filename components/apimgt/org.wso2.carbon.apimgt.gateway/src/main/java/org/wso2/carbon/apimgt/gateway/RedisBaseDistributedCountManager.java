@@ -26,10 +26,6 @@ import org.wso2.carbon.apimgt.gateway.utils.GatewayUtils;
 import org.wso2.carbon.apimgt.impl.dto.RedisConfig;
 import redis.clients.jedis.*;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-
 /**
  * Redis Base Distributed Counter Manager for Throttler.
  */
@@ -476,7 +472,7 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
             startTime = System.currentTimeMillis();
             try (Jedis jedis = redisPool.getResource()) {
                 Transaction transaction = jedis.multi();
-                Response<Long> setnxResponse = transaction.setnx(key, value);
+                transaction.setnx(key, value);
                 Response<Long> pexpireAtResponse = transaction.pexpireAt(key, expiryTimeStamp);
                 transaction.exec();
                 long pexpireAtResponseCode = pexpireAtResponse.get();
