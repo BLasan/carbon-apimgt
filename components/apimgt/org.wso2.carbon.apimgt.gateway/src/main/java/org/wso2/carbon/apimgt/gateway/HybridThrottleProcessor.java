@@ -972,6 +972,11 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
         long maxRequests = configuration.getMaximumRequestPerUnitTime();
         int gatewayCount = ServiceReferenceHolder.getInstance().getGatewayCount();
 
+        RedisConfig redisConfig = org.wso2.carbon.apimgt.impl.internal.ServiceReferenceHolder.getInstance()
+                .getAPIManagerConfigurationService().getAPIManagerConfiguration().getRedisConfig();
+        if (gatewayCount < redisConfig.getMinGatewayCount()) {
+            gatewayCount = redisConfig.getMinGatewayCount();
+        }
         long localQuota = (maxRequests - maxRequests * 20 / 100) / gatewayCount; // TODO: add a config
         if (log.isTraceEnabled()) {
             log.trace("Set local quota to " + localQuota + " for " + callerContext.getId() + " in hybrid throttling" + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread()
