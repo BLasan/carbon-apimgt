@@ -21,10 +21,13 @@ package org.wso2.carbon.apimgt.gateway;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.commons.throttle.core.DistributedCounterManager;
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.Response;
+import redis.clients.jedis.Transaction;
 import org.wso2.carbon.apimgt.gateway.throttling.util.ThrottleUtils;
 import org.wso2.carbon.apimgt.gateway.utils.GatewayUtils;
 import org.wso2.carbon.apimgt.impl.dto.RedisConfig;
-import redis.clients.jedis.*;
 
 /**
  * Redis Base Distributed Counter Manager for Throttler.
@@ -36,7 +39,6 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
     long keyLockRetrievalTimeout;
 
     public RedisBaseDistributedCountManager(JedisPool redisPool) {
-       // log.trace("### RedisBaseDistributedCountManager instantiated !!!");
         this.redisPool = redisPool;
         RedisConfig redisConfig = org.wso2.carbon.apimgt.impl.internal.ServiceReferenceHolder.
                 getInstance().getAPIManagerConfigurationService().getAPIManagerConfiguration().getRedisConfig();
@@ -63,10 +65,9 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
                     if (log.isTraceEnabled()) {
                         log.trace(String.format("%s Key exist in redis with value %s", key, l));
                     }
-                    log.trace("RedisBaseDistributedCountManager*****.getCounter**1 Redis getCounter:" + l);
                     return l;
                 } else {
-                    log.trace(String.format("RedisBaseDistributedCountManager***** %s KEY DOES NOT EXIST !!!", key));
+                    log.trace(String.format("Key %s does not exist !", key));
                 }
                 log.trace("shared counter key didn't exist. But returning:" + 0);
                 return 0;
@@ -80,7 +81,6 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
 
     @Override
     public void setCounter(String key, long value) {
-        log.trace("Checking ttl before calling setCounter. TTL:" + getTtl(key));
         long startTime = 0;
         try {
             startTime = System.currentTimeMillis();
@@ -91,7 +91,7 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
             }
         }
     }
-
+    @Override
     public void setCounterWithExpiry(String key, long value, long expiryTime) {
         long startTime = 0;
         try {
@@ -120,12 +120,11 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
                 transaction.exec();
                 Long incrementedValue = incrementedValueResponse.get();
                 if (log.isTraceEnabled()) {
-                    log.trace(String.format("RedisBaseDistributedCountManager*****addAndGetCounter** %s Key increased from %s to %s", key, previousResponse.get(),
+                    log.trace(String.format("Key %s is increased from %s to %s", key, previousResponse.get(),
                             incrementedValue));
                 }
                 return incrementedValue;
             }
-
         } finally {
             if (log.isTraceEnabled()) {
                 log.trace("Time Taken to addAndGetDistributedCounter :" + (System.currentTimeMillis() - startTime));

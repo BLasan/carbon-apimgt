@@ -18,8 +18,6 @@
 
 package org.wso2.carbon.apimgt.impl.dto;
 
-import javax.xml.namespace.QName;
-
 /**
  * RedisConfig Model class for connection properties of a Redis Server
  */

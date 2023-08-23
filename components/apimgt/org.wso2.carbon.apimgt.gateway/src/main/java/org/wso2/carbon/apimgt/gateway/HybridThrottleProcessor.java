@@ -342,6 +342,7 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
                     log.trace("Going to run throttle param syncing in sync mode"
                             + GatewayUtils.getThreadNameAndIdToLog());
                 }
+                // TODO: add syncing from here
                 if (SharedParamManager.lockSharedKeys(callerContext.getId(), gatewayId)) {
                     long syncingStartTime = System.currentTimeMillis();
                     syncThrottleWindowParams(callerContext, true);
@@ -844,41 +845,50 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
 
     /**
      * Syncs the throttle window related parameters
-     * @param callerContext
-     * @param isInvocationFlow
      */
     @Override
     public void syncThrottleWindowParams(CallerContext callerContext, boolean isInvocationFlow) {
         synchronized (callerContext.getId().intern()) {
             long syncingStartTime = System.currentTimeMillis();
-            log.trace("\n\n Running throttleWindowParamSync" + GatewayUtils.getThreadNameAndIdToLog());
+            if (log.isTraceEnabled()) {
+                log.trace("\n\n Running throttleWindowParamSync" + GatewayUtils.getThreadNameAndIdToLog());
+            }
 
             String callerId = callerContext.getId();
             long sharedTimestamp = SharedParamManager.getSharedTimestamp(
                     callerContext.getId());  // this will be set 0 if the redis key-value pair is not available
-            log.trace("Got sharedTimestamp from redis. sharedTimestamp :" + sharedTimestamp + "(" + ThrottleUtils.getReadableTime(
-                    sharedTimestamp) + ") " + GatewayUtils.getThreadNameAndIdToLog());
-            log.trace("TTL of sharedTimetamp:" + SharedParamManager.getTtl("startedTime-" + callerContext.getId())
-                    + GatewayUtils.getThreadNameAndIdToLog());
+            if (log.isTraceEnabled()) {
+                log.trace("Got sharedTimestamp from redis. sharedTimestamp :" + sharedTimestamp + "("
+                        + ThrottleUtils.getReadableTime(sharedTimestamp) + ") "
+                        + GatewayUtils.getThreadNameAndIdToLog());
+            }
             long sharedNextWindow = sharedTimestamp + callerContext.getUnitTime();
             long localFirstAccessTime = callerContext.getFirstAccessTime();
 
-            log.trace("Initial: sharedTimestamp :" + ThrottleUtils.getReadableTime(sharedTimestamp)
-                    + " sharedNextWindow :" + ThrottleUtils.getReadableTime(sharedNextWindow) + " localFirstAccessTime :"
-                    + ThrottleUtils.getReadableTime(localFirstAccessTime) + "  callerContext.getUnitTime():"
-                    + callerContext.getUnitTime() + GatewayUtils.getThreadNameAndIdToLog());
+            if (log.isTraceEnabled()) {
+                log.trace("Initial: sharedTimestamp :" + ThrottleUtils.getReadableTime(sharedTimestamp)
+                        + " sharedNextWindow :" + ThrottleUtils.getReadableTime(sharedNextWindow)
+                        + " localFirstAccessTime :" + ThrottleUtils.getReadableTime(localFirstAccessTime)
+                        + "  callerContext.getUnitTime():" + callerContext.getUnitTime()
+                        + GatewayUtils.getThreadNameAndIdToLog());
+            }
 
             long distributedCounter = SharedParamManager.getDistributedCounter(callerId);
-            log.trace("Got distributedCounter from redis. distributedCounter :" + distributedCounter
-                    + GatewayUtils.getThreadNameAndIdToLog());
-            log.trace("In syncThrottleWindowParams: localCounter:" + callerContext.getLocalCounter() + ", "
-                    + "globalCounter:" + callerContext.getGlobalCounter() + ", localHits:" + callerContext.getLocalHits()
-                    + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread()
-                    .getId());
+            if (log.isTraceEnabled()) {
+                log.trace("Got distributedCounter from redis. distributedCounter :" + distributedCounter
+                        + GatewayUtils.getThreadNameAndIdToLog());
+                log.trace("When running syncing throttle window params: localCounter:" + callerContext.getLocalCounter()
+                        + ", " + "globalCounter:" + callerContext.getGlobalCounter() + ", localHits:"
+                        + callerContext.getLocalHits() + " Thread name: " + Thread.currentThread().getName()
+                        + " Thread id: " + Thread.currentThread().getId());
+            }
             // If this is a new time window. If a sync msg is received from another node, this will be true
             if (localFirstAccessTime < sharedTimestamp) {
-                log.trace("In syncThrottleWindowParams: this is a new time window and a sync msg is received from "
-                        + "another node" + GatewayUtils.getThreadNameAndIdToLog());
+                if (log.isTraceEnabled()) {
+                    log.trace(
+                            "When running syncing throttle window params: this is a new time window and a sync msg is received from "
+                                    + "another node" + GatewayUtils.getThreadNameAndIdToLog());
+                }
                 callerContext.setFirstAccessTime(sharedTimestamp);
                 callerContext.setNextTimeWindow(sharedNextWindow);
                 callerContext.setGlobalCounter(distributedCounter);
@@ -888,59 +898,65 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
                     callerContext.setLocalHits(0);
                 }
                 if (log.isTraceEnabled()) {
-                    log.trace("In syncThrottleWindowParams: Setting time windows of caller context " + callerId
+                    log.trace("When running syncing throttle window params: Setting time windows of caller context " + callerId
                             + " when window already set at another GW" + GatewayUtils.getThreadNameAndIdToLog());
                 }
-
             /* If some request comes to a nodes after some node set the shared timestamp then this check whether the
             first access time of local is in between the global time window if so this will set local caller context
             time window to global */
             } else if (localFirstAccessTime == sharedTimestamp) {
                 // if this node itself set the shared timestamp or if another node-sent sync msg had triggered setting
                 // sharedTimestamp and sharedTimestampfrom that other node
-                callerContext.setGlobalCounter(distributedCounter);
-                log.trace("In syncThrottleWindowParams: localFirstAccessTime == sharedTimestamp"
-                        + GatewayUtils.getThreadNameAndIdToLog());
-                log.trace("In syncThrottleWindowParams: globalCounter :" + callerContext.getGlobalCounter()
-                        + GatewayUtils.getThreadNameAndIdToLog());
-            } else if (localFirstAccessTime > sharedTimestamp && localFirstAccessTime < sharedNextWindow) {
-                // if another node had set the shared timestamp, earlier
-
-                callerContext.setFirstAccessTime(sharedTimestamp);
-                callerContext.setNextTimeWindow(sharedNextWindow);
-                log.trace("In syncThrottleWindowParams: distributedCounter :" + distributedCounter
-                        + GatewayUtils.getThreadNameAndIdToLog());
+                if (log.isTraceEnabled()) {
+                    log.trace("When running syncing throttle window params: localFirstAccessTime == sharedTimestamp" + GatewayUtils.getThreadNameAndIdToLog());
+                }
                 callerContext.setGlobalCounter(distributedCounter);
                 if (log.isTraceEnabled()) {
-                    log.trace("In syncThrottleWindowParams: Setting time windows of caller context in intermediate interval="
-                            + callerId + GatewayUtils.getThreadNameAndIdToLog());
+                    log.trace("When running syncing throttle window params: globalCounter :" + callerContext.getGlobalCounter()
+                            + GatewayUtils.getThreadNameAndIdToLog());
                 }
-                log.trace("In syncThrottleWindowParams: getGlobalCounter :" + callerContext.getGlobalCounter()
-                        + GatewayUtils.getThreadNameAndIdToLog());
-                //If above two statements not meets, this is the place where node set new window if
-                // global first access time is 0, then it will be the beginning of the throttle time time
-                // window so present node will set shared timestamp and the distributed counter. Also if time
-                // window expired this will be the node who set the next time window starting time
+            } else if (localFirstAccessTime > sharedTimestamp && localFirstAccessTime < sharedNextWindow) {
+                // if another node had set the shared timestamp, earlier
+                callerContext.setFirstAccessTime(sharedTimestamp);
+                callerContext.setNextTimeWindow(sharedNextWindow);
+                if (log.isTraceEnabled()) {
+                    log.trace("When running syncing throttle window params: distributedCounter :" + distributedCounter + GatewayUtils.getThreadNameAndIdToLog());
+                }
+                callerContext.setGlobalCounter(distributedCounter);
+                if (log.isTraceEnabled()) {
+                    log.trace("When running syncing throttle window params: Global Counter :" + callerContext.getGlobalCounter()
+                            + GatewayUtils.getThreadNameAndIdToLog());
+                }
+            /* If above conditions are not met, this is the place where node set new window if
+             global first access time is 0, then it will be the beginning of the throttle time time
+             window so present node will set shared timestamp and the distributed counter. Also if time
+             window expired this will be the node who set the next time window starting time */
             } else {
-                // In the flow this is the first time that reaches throttleWindowParamSync method. And then at
-                // canAccessIfUnitTimeOver flow, the first call after the sharedTimestamp is removed from redis.
-                log.trace("\n\nCalling setSharedTimestamp" + GatewayUtils.getThreadNameAndIdToLog());
+                /* In the flow this is the first time that reaches throttleWindowParamSync method. And then at
+                 canAccessIfUnitTimeOver flow, the first call after the sharedTimestamp is removed from redis. */
+                if (log.isTraceEnabled()) {
+                    log.trace("\n\nCalling setSharedTimestamp" + GatewayUtils.getThreadNameAndIdToLog());
+                }
                 SharedParamManager.setSharedTimestampWithExpiry(callerId, localFirstAccessTime,
                         callerContext.getUnitTime() + localFirstAccessTime);
-                log.trace("\n\n Calling setDistributedCounter" + GatewayUtils.getThreadNameAndIdToLog());
+                if (log.isTraceEnabled()) {
+                    log.trace("\n\n Calling setDistributedCounterWithExpiry" + GatewayUtils.getThreadNameAndIdToLog());
+                }
                 SharedParamManager.setDistributedCounterWithExpiry(callerId, 0,
                         callerContext.getUnitTime() + localFirstAccessTime);
 
-                log.trace("Called setDistributedCounter. Setted value 0. " + GatewayUtils.getThreadNameAndIdToLog());
                 if (log.isTraceEnabled()) {
-                    log.trace("\n In syncThrottleWindowParams: Completed resetting time window of=" + callerId
+                    log.trace("Called setDistributedCounter. Set value 0. " + GatewayUtils.getThreadNameAndIdToLog());
+                    log.trace("\n When running syncing throttle window params: Completed resetting time window of=" + callerId
                             + GatewayUtils.getThreadNameAndIdToLog());
                 }
             }
-            log.trace("In syncThrottleWindowParams : Method final: sharedTimestamp :" + ThrottleUtils.getReadableTime(
-                    SharedParamManager.getSharedTimestamp(callerId)) + " sharedNextWindow :" + ThrottleUtils.getReadableTime(
-                    sharedNextWindow) + " localFirstAccessTime :" + ThrottleUtils.getReadableTime(localFirstAccessTime)
-                    + GatewayUtils.getThreadNameAndIdToLog());
+            if (log.isTraceEnabled()) {
+                log.trace("When running syncing throttle window params::" + ThrottleUtils.getReadableTime(
+                        SharedParamManager.getSharedTimestamp(callerId)) + " sharedNextWindow :"
+                        + ThrottleUtils.getReadableTime(sharedNextWindow) + " localFirstAccessTime :"
+                        + ThrottleUtils.getReadableTime(localFirstAccessTime) + GatewayUtils.getThreadNameAndIdToLog());
+            }
             if (log.isDebugEnabled()) {
                 log.debug("Latency for syncThrottleWindowParams: " + (System.currentTimeMillis() - syncingStartTime)
                         + " ms for callerContext: " + callerContext.getId() + GatewayUtils.getThreadNameAndIdToLog());
@@ -956,10 +972,11 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
         long maxRequests = configuration.getMaximumRequestPerUnitTime();
         int gatewayCount = ServiceReferenceHolder.getInstance().getGatewayCount();
 
-        long localQuota = (maxRequests - maxRequests * 20 / 100) / gatewayCount;
-        log.trace("Set local quota to " + localQuota + " for " + callerContext.getId() + " in hybrid throttling"
-                + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread()
-                .getId());
+        long localQuota = (maxRequests - maxRequests * 20 / 100) / gatewayCount; // TODO: add a config
+        if (log.isTraceEnabled()) {
+            log.trace("Set local quota to " + localQuota + " for " + callerContext.getId() + " in hybrid throttling" + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread()
+                    .getId());
+        }
         callerContext.setLocalQuota(localQuota);
     }
 
