@@ -242,8 +242,7 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
         }
 
         boolean canAccess;
-        if (callerContext.getNextTimeWindow()
-                > requestContext.getRequestTime()) {
+        if (callerContext.getNextTimeWindow() > requestContext.getRequestTime()) {
             canAccess = canAccessIfUnitTimeNotOver(callerContext, configuration, throttleContext, requestContext);
         } else {
             canAccess = canAccessIfUnitTimeOver(callerContext, configuration, throttleContext, requestContext);
@@ -255,6 +254,12 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
                         + GatewayUtils.getThreadNameAndIdToLog());
             }
         }
+        if (gatewayId == null || gatewayId.isEmpty()) {
+            log.error("gateway_id is not configured in deployment.toml. So the process of syncing Throttle params, "
+                    + "skipped. Please add the gateway_id configuration under [apim.redis_config] section in "
+                    + "deployment.toml.");
+            return canAccess;
+        }
 
         /* Convert the sync mode to sync and publish mode-changing message to redis only if the syncing mode is still
          async and requests are not yet throttled. "canAccess == true" condition is checked to avoid unnecessary syncings
@@ -263,9 +268,8 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
         if (callerContext.getLocalHits() == callerContext.getLocalQuota()
                 && !callerContext.isThrottleParamSyncingModeSync() && canAccess == true) {
             if (log.isTraceEnabled()) {
-                log.trace(
-                        "\n\n Local quota reached. SWITCHED TO SYNC MODE !!!. callerContext.getLocalHits()  : "
-                                + callerContext.getLocalHits() + "\n" + GatewayUtils.getThreadNameAndIdToLog());
+                log.trace("\n\n Local quota reached. SWITCHED TO SYNC MODE !!!. callerContext.getLocalHits()  : "
+                        + callerContext.getLocalHits() + "\n" + GatewayUtils.getThreadNameAndIdToLog());
             }
             callerContext.setIsThrottleParamSyncingModeSync(true);
             String message =
@@ -293,18 +297,19 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
                     if (log.isWarnEnabled()) {
                         log.warn("Current time:" + System.currentTimeMillis() + "(" + ThrottleUtils.getReadableTime(
                                 System.currentTimeMillis()) + ")" + "Evaluating whether can access based on unit time."
-                                + " Syncing Throttle params, skipped. Failed to lock shared keys, hence skipped "
-                                + "syncing tasks. key: " + callerContext.getId()
-                                + GatewayUtils.getThreadNameAndIdToLog());
+                                + "  Failed to lock shared keys, hence skipped " + "syncing tasks. key: "
+                                + callerContext.getId() + GatewayUtils.getThreadNameAndIdToLog());
                     }
                 }
             }
             if (log.isDebugEnabled()) {
-                log.debug("Sync mode started: request time:" + requestContext.getRequestTime() + "(" + ThrottleUtils.getReadableTime(
-                        requestContext.getRequestTime()) + ")" + " firstAccessTime: (" + callerContext.getFirstAccessTime()
-                        + ")" + ThrottleUtils.getReadableTime(callerContext.getFirstAccessTime()) + " callerContext.getNextTimeWindow():"
-                        + callerContext.getNextTimeWindow() + "(" + ThrottleUtils.getReadableTime(callerContext.getNextTimeWindow()) + ")"
-                        + " nextAccessTime:" + callerContext.getNextAccessTime() + "(" + ThrottleUtils.getReadableTime(
+                log.debug("Sync mode started: request time:" + requestContext.getRequestTime() + "("
+                        + ThrottleUtils.getReadableTime(requestContext.getRequestTime()) + ")" + " firstAccessTime: ("
+                        + callerContext.getFirstAccessTime() + ")" + ThrottleUtils.getReadableTime(
+                        callerContext.getFirstAccessTime()) + " callerContext.getNextTimeWindow():"
+                        + callerContext.getNextTimeWindow() + "(" + ThrottleUtils.getReadableTime(
+                        callerContext.getNextTimeWindow()) + ")" + " nextAccessTime:"
+                        + callerContext.getNextAccessTime() + "(" + ThrottleUtils.getReadableTime(
                         callerContext.getNextAccessTime()) + ")" + "  localHits: " + callerContext.getLocalHits()
                         + " localQuota: " + callerContext.getLocalQuota() + GatewayUtils.getThreadNameAndIdToLog());
             }
@@ -387,8 +392,7 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
                                 + configuration.getID() + " nextAccessTime=" + ThrottleUtils.getReadableTime(
                                 callerContext.getNextAccessTime()) + " firstAccessTime:"
                                 + callerContext.getFirstAccessTime() + "(" + ThrottleUtils.getReadableTime(
-                                callerContext.getFirstAccessTime()) + ")") + " Thread name: " + Thread.currentThread()
-                        .getName() + " Thread id: " + Thread.currentThread().getId());
+                                callerContext.getFirstAccessTime()) + ")") + GatewayUtils.getThreadNameAndIdToLog());
             }
 
             if (callerContext.getFirstAccessTime() >= callerContext.getNextAccessTime()) {
@@ -543,8 +547,7 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
                     + ThrottleUtils.getReadableTime(callerContext.getNextTimeWindow()) + ")" + " nextAccessTime:"
                     + callerContext.getNextAccessTime() + "(" + ThrottleUtils.getReadableTime(
                     callerContext.getNextAccessTime()) + ")" + " localHits:" + callerContext.getLocalHits()
-                    + " globalHits :" + callerContext.getGlobalCounter() + " Thread name: " + Thread.currentThread()
-                    .getName() + " Thread id: " + Thread.currentThread().getId());
+                    + " globalHits :" + callerContext.getGlobalCounter() + GatewayUtils.getThreadNameAndIdToLog());
         }
 
         return canAccess;
@@ -778,27 +781,27 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
     public void syncThrottleCounterParams(CallerContext callerContext, boolean isInvocationFlow,
             RequestContext requestContext) {
         if (log.isTraceEnabled()) {
-            log.trace("\n\nRunning throttleCounterParamSync. Thread name:"
-                    + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
+            log.trace("\n\nWhen running syncing throttle counter params: isInvocationFlow:" + isInvocationFlow
+                    + GatewayUtils.getThreadNameAndIdToLog());
         }
         synchronized (callerContext.getId().intern()) {
             long syncingStartTime = System.currentTimeMillis();
             if (log.isTraceEnabled()) {
-                log.trace("CallerContext.getNextTimeWindow() :" + callerContext.getNextTimeWindow() + "("
-                        + ThrottleUtils.getReadableTime(callerContext.getNextTimeWindow()) + ")" + " Thread name:"
-                        + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
+                log.trace("When running syncing throttle counter params: next time window:" + callerContext.getNextTimeWindow() + "("
+                        + ThrottleUtils.getReadableTime(callerContext.getNextTimeWindow()) + ") "
+                        + GatewayUtils.getThreadNameAndIdToLog());
             }
 
             if (callerContext.getNextTimeWindow() > requestContext.getRequestTime()) {
                 if (log.isTraceEnabled()) {
-                    log.trace("In syncThrottleCounterParams: Running counter sync task");
+                    log.trace("When running syncing throttle counter params: Running counter sync task");
                 }
                 String id = callerContext.getId();
                 if (log.isTraceEnabled()) {
-                    log.trace("In syncThrottleCounterParams: Initial Local counter:" + callerContext.getLocalCounter()
-                            + " , globalCounter:" + callerContext.getGlobalCounter() + " distributedCounter :"
-                            + SharedParamManager.getDistributedCounter(id) + " Thread name:" + Thread.currentThread()
-                            .getName() + " Thread id: " + Thread.currentThread().getId());
+                    log.trace("When running syncing throttle counter params: Initial Local counter:"
+                            + callerContext.getLocalCounter() + " , globalCounter:" + callerContext.getGlobalCounter()
+                            + " distributedCounter :" + SharedParamManager.getDistributedCounter(id)
+                            + GatewayUtils.getThreadNameAndIdToLog());
                 }
 
                 if (isInvocationFlow) {
@@ -806,39 +809,39 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
                 }
                 long localCounter = callerContext.getLocalCounter();
                 if (log.isTraceEnabled()) {
-                    log.trace("In syncThrottleCounterParams: localCounter increased to:" + localCounter + " Thread name: "
-                            + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
+                    log.trace("When running syncing throttle counter params: localCounter increased to:" + localCounter
+                            + GatewayUtils.getThreadNameAndIdToLog());
                 }
 
                 callerContext.resetLocalCounter();
                 Long distributedCounter = SharedParamManager.addAndGetDistributedCounter(id, localCounter);
 
                 if (log.isTraceEnabled()) {
-                    log.trace("After calling addAndGetDistributedCounter, checking the shared counter availability now"
+                    log.trace("When running syncing throttle counter params: After adding and getting distributed"
+                            + " counter, checking the shared counter availability now."
                             + GatewayUtils.getThreadNameAndIdToLog());
-                    log.trace("In syncThrottleCounterParams: Finally distributedCounter :" + distributedCounter
-                            + GatewayUtils.getThreadNameAndIdToLog());
+                    log.trace("When running syncing throttle counter params: Finally distributedCounter :"
+                            + distributedCounter + GatewayUtils.getThreadNameAndIdToLog());
                 }
 
                 //Update instance's global counter value with distributed counter
                 long x = callerContext.getGlobalCounter();
                 callerContext.setGlobalCounter(distributedCounter);
                 if (log.isTraceEnabled()) {
-                    log.trace("In syncThrottleCounterParams: Finally globalCounter increased from:" + x + " to : "
+                    log.trace("When running syncing throttle counter params: Finally globalCounter increased from:" + x + " to : "
                             + callerContext.getGlobalCounter() + GatewayUtils.getThreadNameAndIdToLog());
-                    log.trace("In syncThrottleCounterParams: finally local counter reset to 0\n"
+                    log.trace("When running syncing throttle counter params: finally local counter reset to 0\n"
                             + GatewayUtils.getThreadNameAndIdToLog() + "\n");
                 }
 
             } else {
                 if (log.isTraceEnabled()) {
-                    log.trace("Counter Sync task skipped" + GatewayUtils.getThreadNameAndIdToLog() + "\n");
+                    log.trace("Throttle Counter Sync task skipped" + GatewayUtils.getThreadNameAndIdToLog() + "\n");
                 }
             }
             if (log.isDebugEnabled()) {
-                log.debug("Latency for syncThrottleCounterParams: " + (System.currentTimeMillis() - syncingStartTime)
-                        + " ms for callerContext: " + callerContext.getId() + " Thread name: " + Thread.currentThread()
-                        .getName() + " Thread id: " + Thread.currentThread().getId());
+                log.debug("Latency for running syncing throttle counter params: " + (System.currentTimeMillis() - syncingStartTime)
+                        + " ms for callerContext: " + callerContext.getId() + GatewayUtils.getThreadNameAndIdToLog());
             }
         }
     }
@@ -851,7 +854,8 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
         synchronized (callerContext.getId().intern()) {
             long syncingStartTime = System.currentTimeMillis();
             if (log.isTraceEnabled()) {
-                log.trace("\n\n Running throttleWindowParamSync" + GatewayUtils.getThreadNameAndIdToLog());
+                log.trace("\n\n When running syncing throttle window params: isInvocationFlow:" + isInvocationFlow
+                        + GatewayUtils.getThreadNameAndIdToLog());
             }
 
             String callerId = callerContext.getId();
@@ -869,7 +873,7 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
                 log.trace("Initial: sharedTimestamp :" + ThrottleUtils.getReadableTime(sharedTimestamp)
                         + " sharedNextWindow :" + ThrottleUtils.getReadableTime(sharedNextWindow)
                         + " localFirstAccessTime :" + ThrottleUtils.getReadableTime(localFirstAccessTime)
-                        + "  callerContext.getUnitTime():" + callerContext.getUnitTime()
+                        + " callerContext.getUnitTime():" + callerContext.getUnitTime()
                         + GatewayUtils.getThreadNameAndIdToLog());
             }
 
@@ -878,9 +882,9 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
                 log.trace("Got distributedCounter from redis. distributedCounter :" + distributedCounter
                         + GatewayUtils.getThreadNameAndIdToLog());
                 log.trace("When running syncing throttle window params: localCounter:" + callerContext.getLocalCounter()
-                        + ", " + "globalCounter:" + callerContext.getGlobalCounter() + ", localHits:"
-                        + callerContext.getLocalHits() + " Thread name: " + Thread.currentThread().getName()
-                        + " Thread id: " + Thread.currentThread().getId());
+                        + ", " + "globalCounter:" + callerContext.getGlobalCounter() + " , distributedCounter:"
+                        + distributedCounter + ", localHits:" + callerContext.getLocalHits()
+                        + GatewayUtils.getThreadNameAndIdToLog());
             }
             // If this is a new time window. If a sync msg is received from another node, this will be true
             if (localFirstAccessTime < sharedTimestamp) {
@@ -906,59 +910,61 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
             time window to global */
             } else if (localFirstAccessTime == sharedTimestamp) {
                 // if this node itself set the shared timestamp or if another node-sent sync msg had triggered setting
-                // sharedTimestamp and sharedTimestampfrom that other node
+                // sharedTimestamp and sharedTimestamp from that other node
                 if (log.isTraceEnabled()) {
-                    log.trace("When running syncing throttle window params: localFirstAccessTime == sharedTimestamp" + GatewayUtils.getThreadNameAndIdToLog());
+                    log.trace("When running syncing throttle window params: localFirstAccessTime == sharedTimestamp"
+                            + GatewayUtils.getThreadNameAndIdToLog());
                 }
                 callerContext.setGlobalCounter(distributedCounter);
                 if (log.isTraceEnabled()) {
-                    log.trace("When running syncing throttle window params: globalCounter :" + callerContext.getGlobalCounter()
-                            + GatewayUtils.getThreadNameAndIdToLog());
+                    log.trace("When running syncing throttle window params: globalCounter :"
+                            + callerContext.getGlobalCounter() + GatewayUtils.getThreadNameAndIdToLog());
                 }
             } else if (localFirstAccessTime > sharedTimestamp && localFirstAccessTime < sharedNextWindow) {
                 // if another node had set the shared timestamp, earlier
                 callerContext.setFirstAccessTime(sharedTimestamp);
                 callerContext.setNextTimeWindow(sharedNextWindow);
                 if (log.isTraceEnabled()) {
-                    log.trace("When running syncing throttle window params: distributedCounter :" + distributedCounter + GatewayUtils.getThreadNameAndIdToLog());
+                    log.trace("When running syncing throttle window params: distributedCounter :" + distributedCounter
+                            + GatewayUtils.getThreadNameAndIdToLog());
                 }
                 callerContext.setGlobalCounter(distributedCounter);
                 if (log.isTraceEnabled()) {
-                    log.trace("When running syncing throttle window params: Global Counter :" + callerContext.getGlobalCounter()
-                            + GatewayUtils.getThreadNameAndIdToLog());
+                    log.trace("When running syncing throttle window params: Global Counter :"
+                            + callerContext.getGlobalCounter() + GatewayUtils.getThreadNameAndIdToLog());
                 }
             /* If above conditions are not met, this is the place where node set new window if
-             global first access time is 0, then it will be the beginning of the throttle time time
-             window so present node will set shared timestamp and the distributed counter. Also if time
+             global first access time is 0, then it will be the beginning of the throttle time
+             window so present node will set shared timestamp and the distributed counter. Also, if time
              window expired this will be the node who set the next time window starting time */
             } else {
                 /* In the flow this is the first time that reaches throttleWindowParamSync method. And then at
                  canAccessIfUnitTimeOver flow, the first call after the sharedTimestamp is removed from redis. */
                 if (log.isTraceEnabled()) {
-                    log.trace("\n\nCalling setSharedTimestamp" + GatewayUtils.getThreadNameAndIdToLog());
+                    log.trace("\n\nSetting Shared Timestamp" + GatewayUtils.getThreadNameAndIdToLog());
                 }
                 SharedParamManager.setSharedTimestampWithExpiry(callerId, localFirstAccessTime,
                         callerContext.getUnitTime() + localFirstAccessTime);
                 if (log.isTraceEnabled()) {
-                    log.trace("\n\n Calling setDistributedCounterWithExpiry" + GatewayUtils.getThreadNameAndIdToLog());
+                    log.trace("\n\nSetting Distributed Counter With Expiry" + GatewayUtils.getThreadNameAndIdToLog());
                 }
                 SharedParamManager.setDistributedCounterWithExpiry(callerId, 0,
                         callerContext.getUnitTime() + localFirstAccessTime);
 
                 if (log.isTraceEnabled()) {
-                    log.trace("Called setDistributedCounter. Set value 0. " + GatewayUtils.getThreadNameAndIdToLog());
+                    log.trace("Finished setting distributed counter. Set value 0. " + GatewayUtils.getThreadNameAndIdToLog());
                     log.trace("\n When running syncing throttle window params: Completed resetting time window of=" + callerId
                             + GatewayUtils.getThreadNameAndIdToLog());
                 }
             }
             if (log.isTraceEnabled()) {
-                log.trace("When running syncing throttle window params::" + ThrottleUtils.getReadableTime(
+                log.trace("When running syncing throttle window params:" + ThrottleUtils.getReadableTime(
                         SharedParamManager.getSharedTimestamp(callerId)) + " sharedNextWindow :"
                         + ThrottleUtils.getReadableTime(sharedNextWindow) + " localFirstAccessTime :"
                         + ThrottleUtils.getReadableTime(localFirstAccessTime) + GatewayUtils.getThreadNameAndIdToLog());
             }
             if (log.isDebugEnabled()) {
-                log.debug("Latency for syncThrottleWindowParams: " + (System.currentTimeMillis() - syncingStartTime)
+                log.debug("Latency for running syncing throttle window params: " + (System.currentTimeMillis() - syncingStartTime)
                         + " ms for callerContext: " + callerContext.getId() + GatewayUtils.getThreadNameAndIdToLog());
             }
         }
@@ -979,8 +985,8 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
         }
         long localQuota = (maxRequests - maxRequests * 20 / 100) / gatewayCount; // TODO: add a config
         if (log.isTraceEnabled()) {
-            log.trace("Set local quota to " + localQuota + " for " + callerContext.getId() + " in hybrid throttling" + " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread()
-                    .getId());
+            log.trace("Set local quota to " + localQuota + " for " + callerContext.getId() + " in hybrid throttling"
+                    + GatewayUtils.getThreadNameAndIdToLog());
         }
         callerContext.setLocalQuota(localQuota);
     }

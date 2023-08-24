@@ -396,6 +396,9 @@ public class APIManagerConfiguration {
                 redisConfig.setPort(Integer.parseInt(redisPort.getText()));
                 if (gatewayId != null) {
                     redisConfig.setGatewayId(gatewayId.getText());
+                } else {
+                    log.error("gateway_id is not configured in deployment.toml. Please add the gateway ID" +
+                            " configuration under [apim.redis_config] section in deployment.toml");
                 }
                 if (minGatewayCount != null) {
                     redisConfig.setMinGatewayCount(Integer.parseInt(minGatewayCount.getText()));
