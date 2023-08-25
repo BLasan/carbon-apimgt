@@ -72,6 +72,7 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
     }
 
     private class SyncModeInitChannelSubscription implements Runnable {
+        long redisConnectionRetryInterval = 10000;
         public void run() {
             if (log.isTraceEnabled()) {
                 log.trace("SyncModeInitChannelSubscription Thread Running" + GatewayUtils.getThreadNameAndIdToLog());
@@ -83,6 +84,7 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
                     if (log.isTraceEnabled()) {
                         log.trace("Gateway is Subscribed to " + channel);
                     }
+                    redisConnectionRetryInterval = 10000;
                 }
 
                 @Override
@@ -181,29 +183,29 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
                     }
                 }
             };
-            subscribeWithRetry(jedisPubSub, 10000);
+            subscribeWithRetry(jedisPubSub);
         }
 
         /**
          * This method is used to subscribe to the channel in Redis with reconnection tries if connection was broken.
          */
-        public void subscribeWithRetry(JedisPubSub jedisPubSub, long retryInterval) {
+        public void subscribeWithRetry(JedisPubSub jedisPubSub) {
             try (Jedis jedis = redisPool.getResource()) {
                 jedis.subscribe(jedisPubSub, WSO2_SYNC_MODE_INIT_CHANNEL);
             } catch (JedisConnectionException e) {
                 log.error("Could not establish connection by retrieving a resource from the redis pool. So error "
                         + "occurred while subscribing to channel: " + WSO2_SYNC_MODE_INIT_CHANNEL, e);
-                log.info(
-                        "Next retry to subscribe to channel " + WSO2_SYNC_MODE_INIT_CHANNEL + " in " + retryInterval * 2
-                                + " seconds");
+                log.info("Next retry to subscribe to channel " + WSO2_SYNC_MODE_INIT_CHANNEL + " in "
+                        + redisConnectionRetryInterval + " seconds");
                 try {
                     // sleep for given duration before retrying to subscribe, if the redis channel
                     // subscription failed
-                    Thread.sleep(retryInterval * 2); // TODO: decide whether to make this configurable
+                    Thread.sleep(redisConnectionRetryInterval); // TODO: decide whether to make this configurable
+                    redisConnectionRetryInterval *= 2;
                 } catch (InterruptedException ex) {
                     throw new RuntimeException(ex);
                 }
-                subscribeWithRetry(jedisPubSub, retryInterval * 2);
+                subscribeWithRetry(jedisPubSub);
             }
         }
     }
