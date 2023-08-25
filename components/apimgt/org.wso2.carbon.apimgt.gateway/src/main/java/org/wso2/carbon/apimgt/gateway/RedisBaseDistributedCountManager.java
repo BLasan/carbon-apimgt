@@ -476,11 +476,16 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
                 transaction.exec();
                 long pexpireAtResponseCode = pexpireAtResponse.get();
                 if (pexpireAtResponseCode == 1) {
-                    log.trace("expiry time of key:" + key + " was set successfully." + "Thread name:" + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
+                    log.trace("expiry time of key:" + key + " was set successfully." + "Thread name:"
+                            + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
                 } else if (pexpireAtResponseCode == 0) {
-                    log.trace("expiry time was not set of key:" + key + " e.g. key doesn't exist, or operation skipped due to the provided arguments." + "Thread name:" + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
+                    log.trace("expiry time was not set of key:" + key
+                            + " e.g. key doesn't exist, or operation skipped due to the provided arguments."
+                            + "Thread name:" + Thread.currentThread().getName() + " Thread id: "
+                            + Thread.currentThread().getId());
                 } else {
-                    log.trace("expiry time was not set of key:"  + " Thread name:" + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
+                    log.trace("expiry time was not set of key:" + " Thread name:" + Thread.currentThread().getName()
+                            + " Thread id: " + Thread.currentThread().getId());
                 }
                 return pexpireAtResponseCode;
             }

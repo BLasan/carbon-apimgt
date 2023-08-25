@@ -131,28 +131,26 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
                                             + callerContext.getId() + " message:" + syncModeInitMsg
                                             + GatewayUtils.getThreadNameAndIdToLog());
                                 }
+                                synchronized (callerContext.getId().intern()) {
+                                    if (SharedParamManager.lockSharedKeys(callerContext.getId(), gatewayId)) {
+                                        long syncingStartTime = System.currentTimeMillis();
+                                        syncThrottleWindowParams(callerContext, false);
+                                        syncThrottleCounterParams(callerContext, false, new RequestContext(System.currentTimeMillis()));
+                                        SharedParamManager.releaseSharedKeys(callerContext.getId());
+                                        long timeNow = System.currentTimeMillis();
+                                        if (log.isDebugEnabled()) {
+                                            log.debug("Current time:" + timeNow + "(" + ThrottleUtils.getReadableTime(
+                                                    timeNow) + ")" + "In force syncing process, Lock released in " + (
+                                                    timeNow - syncingStartTime) + " ms for callerContext: " + callerContext.getId()
+                                                    + GatewayUtils.getThreadNameAndIdToLog());
+                                        }
 
-                                if (SharedParamManager.lockSharedKeys(callerContext.getId(), gatewayId)) {
-                                    long syncingStartTime = System.currentTimeMillis();
-                                    syncThrottleWindowParams(callerContext, false);
-                                    syncThrottleCounterParams(callerContext, false,
-                                            new RequestContext(System.currentTimeMillis()));
-                                    SharedParamManager.releaseSharedKeys(callerContext.getId());
-                                    long timeNow = System.currentTimeMillis();
-                                    if (log.isDebugEnabled()) {
-                                        log.debug("Current time:" + timeNow + "(" + ThrottleUtils.getReadableTime(timeNow) + ")"
-                                                + "In force syncing process, Lock released in " + (timeNow
-                                                - syncingStartTime) + " ms for callerContext: " + callerContext.getId()
-                                                + GatewayUtils.getThreadNameAndIdToLog());
-                                    }
-
-                                } else {
-                                    if (log.isTraceEnabled()) {
-                                        log.trace("Current time:" + System.currentTimeMillis() + "(" + ThrottleUtils.getReadableTime(
-                                                System.currentTimeMillis()) + ")"
-                                                + " Failed to acquire lock for callerContext: "
-                                                + callerContext.getId() + " message:" + syncModeInitMsg
-                                                + GatewayUtils.getThreadNameAndIdToLog());
+                                    } else {
+                                        if (log.isTraceEnabled()) {
+                                            log.trace("Current time:" + System.currentTimeMillis() + "(" + ThrottleUtils.getReadableTime(System.currentTimeMillis()) + ")"
+                                                    + " Failed to acquire lock for callerContext: " + callerContext.getId() + " message:" + syncModeInitMsg
+                                                    + GatewayUtils.getThreadNameAndIdToLog());
+                                        }
                                     }
                                 }
                             } else {
@@ -281,24 +279,23 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
                     log.trace("DataHolder is not null so running syncing tasks"
                             + GatewayUtils.getThreadNameAndIdToLog());
                 }
-                if (SharedParamManager.lockSharedKeys(callerContext.getId(), gatewayId)) {
-                    long syncingStartTime = System.currentTimeMillis();
-                    syncThrottleWindowParams(callerContext, true);
-                    syncThrottleCounterParams(callerContext, false, requestContext);
-                    SharedParamManager.releaseSharedKeys(callerContext.getId());
-                    long timeNow = System.currentTimeMillis();
-                    if (log.isDebugEnabled()) {
-                        log.debug(timeNow + "(" + ThrottleUtils.getReadableTime(timeNow) + ")"
-                                + "Evaluating whether can access based on unit time. Lock released in " + (timeNow
-                                - syncingStartTime) + " ms for callerContext: " + callerContext.getId()
-                                + GatewayUtils.getThreadNameAndIdToLog());
-                    }
-                } else {
-                    if (log.isWarnEnabled()) {
-                        log.warn("Current time:" + System.currentTimeMillis() + "(" + ThrottleUtils.getReadableTime(
-                                System.currentTimeMillis()) + ")" + "Evaluating whether can access based on unit time."
-                                + "  Failed to lock shared keys, hence skipped " + "syncing tasks. key: "
-                                + callerContext.getId() + GatewayUtils.getThreadNameAndIdToLog());
+                synchronized (callerContext.getId().intern()) {
+                    if (SharedParamManager.lockSharedKeys(callerContext.getId(), gatewayId)) {
+                        long syncingStartTime = System.currentTimeMillis();
+                        syncThrottleWindowParams(callerContext, true);
+                        syncThrottleCounterParams(callerContext, false, requestContext);
+                        SharedParamManager.releaseSharedKeys(callerContext.getId());
+                        long timeNow = System.currentTimeMillis();
+                        if (log.isDebugEnabled()) {
+                            log.debug(timeNow + "(" + ThrottleUtils.getReadableTime(timeNow) + ")" + "Evaluating whether can access based on unit time. Lock released in " + (timeNow
+                                    - syncingStartTime) + " ms for callerContext: " + callerContext.getId() + GatewayUtils.getThreadNameAndIdToLog());
+                        }
+                    } else {
+                        if (log.isWarnEnabled()) {
+                            log.warn("Current time:" + System.currentTimeMillis() + "(" + ThrottleUtils.getReadableTime(
+                                    System.currentTimeMillis()) + ")" + "Evaluating whether can access based on unit time."
+                                    + "  Failed to lock shared keys, hence skipped " + "syncing tasks. key: " + callerContext.getId() + GatewayUtils.getThreadNameAndIdToLog());
+                        }
                     }
                 }
             }
@@ -347,28 +344,26 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
                     log.trace("Going to run throttle param syncing in sync mode"
                             + GatewayUtils.getThreadNameAndIdToLog());
                 }
-                // TODO: add syncing from here
-                if (SharedParamManager.lockSharedKeys(callerContext.getId(), gatewayId)) {
-                    long syncingStartTime = System.currentTimeMillis();
-                    syncThrottleWindowParams(callerContext, true);
-                    // add piled items and new request item to shared-counter (increments before allowing the request)
-                    syncThrottleCounterParams(callerContext, true, requestContext);
-                    SharedParamManager.releaseSharedKeys(callerContext.getId());
-                    long timeNow = System.currentTimeMillis();
-                    if (log.isDebugEnabled()) {
-                        log.debug("Current time:" + timeNow + "(" + ThrottleUtils.getReadableTime(timeNow) + ")"
-                                + "Evaluating whether can access if unit time is not over. Lock released in " + (
-                                System.currentTimeMillis() - syncingStartTime) + " ms for callerContext: "
-                                + callerContext.getId() + GatewayUtils.getThreadNameAndIdToLog());
-                    }
-                } else {
-                    if (log.isWarnEnabled()) {
-                        log.warn("Current time:" + System.currentTimeMillis() + "(" + ThrottleUtils.getReadableTime(
-                                System.currentTimeMillis()) + ")"
-                                + " Evaluating whether can access if unit time is not over. Failed to lock shared keys, hence skipped syncing tasks. key="
-                                + callerContext.getId() + GatewayUtils.getThreadNameAndIdToLog());
-                        callerContext.incrementLocalCounter(); // increment local counter since, sync tasks didn't run
-                        // where incrementing should have happened (https://github.com/wso2/api-manager/issues/1982#issuecomment-1624920455)
+                synchronized (callerContext.getId().intern()) {
+                    if (SharedParamManager.lockSharedKeys(callerContext.getId(), gatewayId)) {
+                        long syncingStartTime = System.currentTimeMillis();
+                        syncThrottleWindowParams(callerContext, true);
+                        // add piled items and new request item to shared-counter (increments before allowing the request)
+                        syncThrottleCounterParams(callerContext, true, requestContext);
+                        SharedParamManager.releaseSharedKeys(callerContext.getId());
+                        long timeNow = System.currentTimeMillis();
+                        if (log.isDebugEnabled()) {
+                            log.debug("Current time:" + timeNow + "(" + ThrottleUtils.getReadableTime(timeNow) + ")" + "Evaluating whether can access if unit time is not over. Lock released in " + (
+                                    System.currentTimeMillis() - syncingStartTime) + " ms for callerContext: " + callerContext.getId() + GatewayUtils.getThreadNameAndIdToLog());
+                        }
+                    } else {
+                        if (log.isWarnEnabled()) {
+                            log.warn("Current time:" + System.currentTimeMillis() + "(" + ThrottleUtils.getReadableTime(
+                                    System.currentTimeMillis()) + ")" + " Evaluating whether can access if unit time is not over. Failed to lock shared keys, hence skipped syncing tasks. key="
+                                    + callerContext.getId() + GatewayUtils.getThreadNameAndIdToLog());
+                            callerContext.incrementLocalCounter(); // increment local counter since, sync tasks didn't run
+                            // where incrementing should have happened (https://github.com/wso2/api-manager/issues/1982#issuecomment-1624920455)
+                        }
                     }
                 }
             } else { //async mode
@@ -582,32 +577,30 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
             if (log.isTraceEnabled()) {
                 log.trace("Going to run throttle param syncing" + GatewayUtils.getThreadNameAndIdToLog());
             }
-            if (SharedParamManager.lockSharedKeys(callerContext.getId(), gatewayId)) {
-                long syncingStartTime = System.currentTimeMillis();
-                syncThrottleWindowParams(callerContext, true);
-                // add piled items and new request item to shared-counter (increments before allowing the request)
-                syncThrottleCounterParams(callerContext, true, requestContext);
-                SharedParamManager.releaseSharedKeys(callerContext.getId());
-                long timeNow = System.currentTimeMillis();
+            synchronized (callerContext.getId().intern()) {
+                if (SharedParamManager.lockSharedKeys(callerContext.getId(), gatewayId)) {
+                    long syncingStartTime = System.currentTimeMillis();
+                    syncThrottleWindowParams(callerContext, true);
+                    // add piled items and new request item to shared-counter (increments before allowing the request)
+                    syncThrottleCounterParams(callerContext, true, requestContext);
+                    SharedParamManager.releaseSharedKeys(callerContext.getId());
+                    long timeNow = System.currentTimeMillis();
 
-                if (log.isDebugEnabled()) {
-                    log.debug("current time:" + timeNow + "(" + ThrottleUtils.getReadableTime(timeNow) + ")"
-                            + "Evaluating whether can access if unit time is over. Lock released in " + (timeNow
-                            - syncingStartTime) + " ms for callerContext: " + callerContext.getId()
-                            + GatewayUtils.getThreadNameAndIdToLog());
-                }
+                    if (log.isDebugEnabled()) {
+                        log.debug("current time:" + timeNow + "(" + ThrottleUtils.getReadableTime(timeNow) + ")" + "Evaluating whether can access if unit time is over. Lock released in " + (timeNow
+                                - syncingStartTime) + " ms for callerContext: " + callerContext.getId() + GatewayUtils.getThreadNameAndIdToLog());
+                    }
 
-            } else {
-                if (log.isWarnEnabled()) {
-                    log.warn("current time:" + System.currentTimeMillis() + "(" + ThrottleUtils.getReadableTime(
-                            System.currentTimeMillis()) + ")"
-                            + " Evaluating whether can access if unit time is over. Failed to lock shared keys, "
-                            + "hence skipped syncing tasks. key=" + callerContext.getId()
-                            + GatewayUtils.getThreadNameAndIdToLog());
+                } else {
+                    if (log.isWarnEnabled()) {
+                        log.warn("current time:" + System.currentTimeMillis() + "(" + ThrottleUtils.getReadableTime(
+                                System.currentTimeMillis()) + ")" + " Evaluating whether can access if unit time is over. Failed to lock shared keys, "
+                                + "hence skipped syncing tasks. key=" + callerContext.getId() + GatewayUtils.getThreadNameAndIdToLog());
+                    }
+                    // increment local counter since, sync tasks didn't run where incrementing should have happened
+                    // (https://github.com/wso2/api-manager/issues/1982#issuecomment-1624920455)
+                    callerContext.incrementLocalCounter();
                 }
-                // increment local counter since, sync tasks didn't run where incrementing should have happened
-                // (https://github.com/wso2/api-manager/issues/1982#issuecomment-1624920455)
-                callerContext.incrementLocalCounter();
             }
         } else {
             if (log.isTraceEnabled()) {
