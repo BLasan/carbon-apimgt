@@ -225,7 +225,7 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
                 int gatewayCount = Integer.parseInt(entry.getValue());
                 ServiceReferenceHolder.getInstance().setGatewayCount(gatewayCount);
                 if (log.isTraceEnabled()) {
-                    log.trace("ChannelSubscriptionCounterTask : channel: " + channel + " Set GW count to: "
+                    log.trace("ChannelSubscriptionCounterTask : channel: " + channel + " Set Gateway count to: "
                             + gatewayCount);
                 }
             }
@@ -988,6 +988,10 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
                 .getAPIManagerConfigurationService().getAPIManagerConfiguration().getRedisConfig();
         if (gatewayCount < redisConfig.getMinGatewayCount()) {
             gatewayCount = redisConfig.getMinGatewayCount();
+            if (log.isTraceEnabled()) {
+                log.trace("Set gateway count to " + gatewayCount + " as the calculated gateway count is less than the"
+                        + " min_gateway_count configuration" + GatewayUtils.getThreadNameAndIdToLog());
+            }
         }
         long localQuota = (maxRequests - maxRequests * 20 / 100) / gatewayCount; // TODO: add a config
         if (log.isTraceEnabled()) {
