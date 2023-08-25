@@ -60,134 +60,9 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
                 .getAPIManagerConfigurationService().getAPIManagerConfiguration().getRedisConfig();
         gatewayId = redisConfig.getGatewayId();
 
-        Thread thread = new Thread() {
-            public void run() {
-                if (log.isTraceEnabled()) {
-                    log.trace("Channel subscribing Thread Running");
-                }
-                JedisPubSub jedisPubSub = new JedisPubSub() {
-                    @Override
-                    public void onSubscribe(String channel, int subscribedChannels) {
-                        super.onSubscribe(channel, subscribedChannels);
-                        if (log.isTraceEnabled()) {
-                            log.trace("Gateway is Subscribed to " + channel);
-                        }
-                    }
-
-                    @Override
-                    public void onUnsubscribe(String channel, int subscribedChannels) {
-                        super.onUnsubscribe(channel, subscribedChannels);
-                        if (log.isWarnEnabled()) {
-                            log.warn("Gateway client is Unsubscribed from channel: " + channel);
-                        }
-                    }
-
-                    @Override
-                    public void onMessage(String channel, String syncModeInitMsg) {
-                        super.onMessage(channel, syncModeInitMsg);
-                        if (log.isTraceEnabled()) {
-                            log.trace("\n\nSync mode changed message received to this node" + gatewayId + ". Channel: "
-                                    + channel + " " + "Msg: " + syncModeInitMsg
-                                    + GatewayUtils.getThreadNameAndIdToLog());
-                        }
-                        if (syncModeInitMsg.startsWith(gatewayId)) {
-                            if (log.isTraceEnabled()) {
-                                log.trace("Ignoring as message received to own node ! "
-                                        + GatewayUtils.getThreadNameAndIdToLog());
-                            }
-                            return;
-                        }
-                        if (log.isTraceEnabled()) {
-                            log.trace("Message received from channel: " + channel + " Message: " + syncModeInitMsg
-                                    + GatewayUtils.getThreadNameAndIdToLog());
-                        }
-                        String[] messageParts = syncModeInitMsg.split(SYNC_MODE_MSG_PART_DELIMITER);
-                        // messageParts[0] = gatewayId , messageParts[1] = callerContextId , messageParts[2] = nextTimeWindow
-                        String callerContextId = messageParts[1];
-                        String nextTimeWindow = messageParts[2];
-                        if (log.isTraceEnabled()) {
-                            log.trace("Going to put callerContextId: " + callerContextId
-                                    + " into syncModeNotifiedSet with nextTimeWindow: " + nextTimeWindow + "("
-                                    + ThrottleUtils.getReadableTime(Long.parseLong(nextTimeWindow)) + " )"
-                                    + GatewayUtils.getThreadNameAndIdToLog());
-                        }
-
-                        syncModeNotifiedMap.put(callerContextId, nextTimeWindow);
-                        if (log.isTraceEnabled()) {
-                            log.trace("\n Caller " + callerContextId + " SWITCHED TO SYNC MODE by message received ! :"
-                                    + GatewayUtils.getThreadNameAndIdToLog());
-                        }
-                        // sync throttle params to redis to consider local unpublished request counts in distributed counters
-                        if (dataHolder != null) {
-                            if (log.isTraceEnabled()) {
-                                log.trace("DataHolder is not null so running syncing tasks."
-                                        + " message:" + syncModeInitMsg + GatewayUtils.getThreadNameAndIdToLog());
-                            }
-
-                            CallerContext callerContext = dataHolder.getCallerContext(callerContextId);
-                            if (callerContext != null) {
-                                if (log.isTraceEnabled()) {
-                                    log.trace("Running forced syncing tasks for callerContext: "
-                                            + callerContext.getId() + " message:" + syncModeInitMsg
-                                            + GatewayUtils.getThreadNameAndIdToLog());
-                                }
-                                synchronized (callerContext.getId().intern()) {
-                                    if (SharedParamManager.lockSharedKeys(callerContext.getId(), gatewayId)) {
-                                        long syncingStartTime = System.currentTimeMillis();
-                                        syncThrottleWindowParams(callerContext, false);
-                                        syncThrottleCounterParams(callerContext, false, new RequestContext(System.currentTimeMillis()));
-                                        SharedParamManager.releaseSharedKeys(callerContext.getId());
-                                        long timeNow = System.currentTimeMillis();
-                                        if (log.isDebugEnabled()) {
-                                            log.debug("Current time:" + timeNow + "(" + ThrottleUtils.getReadableTime(
-                                                    timeNow) + ")" + "In force syncing process, Lock released in " + (
-                                                    timeNow - syncingStartTime) + " ms for callerContext: " + callerContext.getId()
-                                                    + GatewayUtils.getThreadNameAndIdToLog());
-                                        }
-
-                                    } else {
-                                        if (log.isTraceEnabled()) {
-                                            log.trace("Current time:" + System.currentTimeMillis() + "(" + ThrottleUtils.getReadableTime(System.currentTimeMillis()) + ")"
-                                                    + " Failed to acquire lock for callerContext: " + callerContext.getId() + " message:" + syncModeInitMsg
-                                                    + GatewayUtils.getThreadNameAndIdToLog());
-                                        }
-                                    }
-                                }
-                            } else {
-                                if (log.isTraceEnabled()) {
-                                    log.trace("CallerContext is null so not running syncing tasks"
-                                            + " message:" + syncModeInitMsg + GatewayUtils.getThreadNameAndIdToLog());
-                                }
-                            }
-                        } else {
-                            if (log.isTraceEnabled()) {
-                                log.trace("DataHolder is null so not running syncing tasks"
-                                        + " message:" + syncModeInitMsg + GatewayUtils.getThreadNameAndIdToLog());
-                            }
-                        }
-                    }
-                };
-                subscribeWithRetry(jedisPubSub);
-            }
-
-            public void subscribeWithRetry(JedisPubSub jedisPubSub) {
-                try (Jedis jedis = redisPool.getResource()) {
-                    jedis.subscribe(jedisPubSub, WSO2_SYNC_MODE_INIT_CHANNEL);
-                } catch (JedisConnectionException e) {
-                    log.error(
-                            "Could not establish connection by retrieving a resource from the redis pool. So error "
-                                    + "occurred while subscribing to channel: " + WSO2_SYNC_MODE_INIT_CHANNEL, e);
-                    log.info("Next retry to subscribe to channel " + WSO2_SYNC_MODE_INIT_CHANNEL + " + in 10 seconds");
-                    try {
-                        Thread.sleep(10000); // TODO: decide whether to make this configurable
-                    } catch (InterruptedException ex) {
-                        throw new RuntimeException(ex);
-                    }
-                    subscribeWithRetry(jedisPubSub);
-                }
-            }
-        };
-        thread.start();
+        ScheduledExecutorService syncModeInitChannelSubscriptionExecutor = Executors.newScheduledThreadPool(1);
+        syncModeInitChannelSubscriptionExecutor.scheduleAtFixedRate(new SyncModeInitChannelSubscription(), 0,
+                1, TimeUnit.MILLISECONDS);
 
         ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
         String gatewayCountCheckingFrequency = "30000";
@@ -196,6 +71,138 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
                 Integer.parseInt(gatewayCountCheckingFrequency), TimeUnit.MILLISECONDS);
     }
 
+    private class SyncModeInitChannelSubscription implements Runnable {
+        public void run() {
+            if (log.isTraceEnabled()) {
+                log.trace("SyncModeInitChannelSubscription Thread Running" + GatewayUtils.getThreadNameAndIdToLog());
+            }
+            JedisPubSub jedisPubSub = new JedisPubSub() {
+                @Override
+                public void onSubscribe(String channel, int subscribedChannels) {
+                    super.onSubscribe(channel, subscribedChannels);
+                    if (log.isTraceEnabled()) {
+                        log.trace("Gateway is Subscribed to " + channel);
+                    }
+                }
+
+                @Override
+                public void onUnsubscribe(String channel, int subscribedChannels) {
+                    super.onUnsubscribe(channel, subscribedChannels);
+                    if (log.isWarnEnabled()) {
+                        log.warn("Gateway client is Unsubscribed from channel: " + channel);
+                    }
+                }
+
+                @Override
+                public void onMessage(String channel, String syncModeInitMsg) {
+                    super.onMessage(channel, syncModeInitMsg);
+                    if (log.isTraceEnabled()) {
+                        log.trace("\n\nSync mode changed message received to this node" + gatewayId + ". Channel: "
+                                + channel + " " + "Msg: " + syncModeInitMsg + GatewayUtils.getThreadNameAndIdToLog());
+                    }
+                    if (syncModeInitMsg.startsWith(gatewayId)) {
+                        if (log.isTraceEnabled()) {
+                            log.trace("Ignoring as message received to own node ! "
+                                    + GatewayUtils.getThreadNameAndIdToLog());
+                        }
+                        return;
+                    }
+                    if (log.isTraceEnabled()) {
+                        log.trace("Message received from channel: " + channel + " Message: " + syncModeInitMsg
+                                + GatewayUtils.getThreadNameAndIdToLog());
+                    }
+                    String[] messageParts = syncModeInitMsg.split(SYNC_MODE_MSG_PART_DELIMITER);
+                    // messageParts[0] = gatewayId , messageParts[1] = callerContextId , messageParts[2] = nextTimeWindow
+                    String callerContextId = messageParts[1];
+                    String nextTimeWindow = messageParts[2];
+                    if (log.isTraceEnabled()) {
+                        log.trace("Going to put callerContextId: " + callerContextId
+                                + " into syncModeNotifiedSet with nextTimeWindow: " + nextTimeWindow + "("
+                                + ThrottleUtils.getReadableTime(Long.parseLong(nextTimeWindow)) + " )"
+                                + GatewayUtils.getThreadNameAndIdToLog());
+                    }
+
+                    syncModeNotifiedMap.put(callerContextId, nextTimeWindow);
+                    if (log.isTraceEnabled()) {
+                        log.trace("\n Caller " + callerContextId + " SWITCHED TO SYNC MODE by message received ! :"
+                                + GatewayUtils.getThreadNameAndIdToLog());
+                    }
+                    // sync throttle params to redis to consider local unpublished request counts in distributed counters
+                    if (dataHolder != null) {
+                        if (log.isTraceEnabled()) {
+                            log.trace("DataHolder is not null so running syncing tasks." + " message:" + syncModeInitMsg
+                                    + GatewayUtils.getThreadNameAndIdToLog());
+                        }
+
+                        CallerContext callerContext = dataHolder.getCallerContext(callerContextId);
+                        if (callerContext != null) {
+                            if (log.isTraceEnabled()) {
+                                log.trace("Running forced syncing tasks for callerContext: " + callerContext.getId()
+                                        + " message:" + syncModeInitMsg + GatewayUtils.getThreadNameAndIdToLog());
+                            }
+                            synchronized (callerContext.getId().intern()) {
+                                if (SharedParamManager.lockSharedKeys(callerContext.getId(), gatewayId)) {
+                                    long syncingStartTime = System.currentTimeMillis();
+                                    syncThrottleWindowParams(callerContext, false);
+                                    syncThrottleCounterParams(callerContext, false,
+                                            new RequestContext(System.currentTimeMillis()));
+                                    SharedParamManager.releaseSharedKeys(callerContext.getId());
+                                    long timeNow = System.currentTimeMillis();
+                                    if (log.isDebugEnabled()) {
+                                        log.debug(
+                                                "Current time:" + timeNow + "(" + ThrottleUtils.getReadableTime(timeNow)
+                                                        + ")" + "In force syncing process, Lock released in " + (timeNow
+                                                        - syncingStartTime) + " ms for callerContext: "
+                                                        + callerContext.getId()
+                                                        + GatewayUtils.getThreadNameAndIdToLog());
+                                    }
+
+                                } else {
+                                    if (log.isTraceEnabled()) {
+                                        log.trace("Current time:" + System.currentTimeMillis() + "("
+                                                + ThrottleUtils.getReadableTime(System.currentTimeMillis()) + ")"
+                                                + " Failed to acquire lock for callerContext: " + callerContext.getId()
+                                                + " message:" + syncModeInitMsg
+                                                + GatewayUtils.getThreadNameAndIdToLog());
+                                    }
+                                }
+                            }
+                        } else {
+                            if (log.isTraceEnabled()) {
+                                log.trace("CallerContext is null so not running syncing tasks" + " message:"
+                                        + syncModeInitMsg + GatewayUtils.getThreadNameAndIdToLog());
+                            }
+                        }
+                    } else {
+                        if (log.isTraceEnabled()) {
+                            log.trace("DataHolder is null so not running syncing tasks" + " message:" + syncModeInitMsg
+                                    + GatewayUtils.getThreadNameAndIdToLog());
+                        }
+                    }
+                }
+            };
+            subscribeWithRetry(jedisPubSub);
+        }
+
+        /**
+         * This method is used to subscribe to the channel in Redis with reconnection tries if connection was broken.
+         */
+        public void subscribeWithRetry(JedisPubSub jedisPubSub) {
+            try (Jedis jedis = redisPool.getResource()) {
+                jedis.subscribe(jedisPubSub, WSO2_SYNC_MODE_INIT_CHANNEL);
+            } catch (JedisConnectionException e) {
+                log.error("Could not establish connection by retrieving a resource from the redis pool. So error "
+                        + "occurred while subscribing to channel: " + WSO2_SYNC_MODE_INIT_CHANNEL, e);
+                log.info("Next retry to subscribe to channel " + WSO2_SYNC_MODE_INIT_CHANNEL + " + in 10 seconds");
+                try {
+                    Thread.sleep(10000); // TODO: decide whether to make this configurable
+                } catch (InterruptedException ex) {
+                    throw new RuntimeException(ex);
+                }
+                subscribeWithRetry(jedisPubSub);
+            }
+        }
+    }
     /**
      * This task is used to count the number of gateways subscribed to the channel in Redis.
      */
