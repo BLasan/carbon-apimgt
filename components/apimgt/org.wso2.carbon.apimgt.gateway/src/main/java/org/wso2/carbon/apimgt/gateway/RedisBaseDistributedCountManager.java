@@ -465,7 +465,7 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
         }
     }
 
-    public long setLockWithExpiry(String key, String value, long expiryTimeStamp) {
+    public boolean setLockWithExpiry(String key, String value, long expiryTimeStamp) {
         long startTime = 0;
         try {
             startTime = System.currentTimeMillis();
@@ -476,22 +476,28 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
                 transaction.exec();
                 long pexpireAtResponseCode = pexpireAtResponse.get();
                 if (pexpireAtResponseCode == 1) {
-                    log.trace("expiry time of key:" + key + " was set successfully." + "Thread name:"
-                            + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
+                    if (log.isTraceEnabled()) {
+                        log.trace("expiry time of key:" + key + " was set successfully." + "Thread name:" + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
+                    }
+                    return true;
                 } else if (pexpireAtResponseCode == 0) {
-                    log.trace("expiry time was not set of key:" + key
-                            + " e.g. key doesn't exist, or operation skipped due to the provided arguments."
-                            + "Thread name:" + Thread.currentThread().getName() + " Thread id: "
-                            + Thread.currentThread().getId());
+                    if (log.isTraceEnabled()) {
+                        log.trace("expiry time was not set of key:" + key + " e.g. key doesn't exist, or operation skipped due to the provided arguments."
+                                + "Thread name:" + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
+                    }
+                    return false;
                 } else {
-                    log.trace("expiry time was not set of key:" + " Thread name:" + Thread.currentThread().getName()
-                            + " Thread id: " + Thread.currentThread().getId());
+                    if (log.isTraceEnabled()) {
+                        log.trace("expiry time was not set of key:" + " Thread name:" + Thread.currentThread().getName()
+                                + " Thread id: " + Thread.currentThread().getId());
+                    }
+                    return false;
                 }
-                return pexpireAtResponseCode;
             }
         } finally {
             if (log.isTraceEnabled()) {
-                log.trace("Time Taken to setLock :" + (System.currentTimeMillis() - startTime));
+                log.trace("Time Taken to setLock :" + (System.currentTimeMillis() - startTime) + " Thread name:"
+                        + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
             }
         }
     }
