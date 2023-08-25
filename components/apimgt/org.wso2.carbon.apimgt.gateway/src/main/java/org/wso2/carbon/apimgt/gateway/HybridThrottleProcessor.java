@@ -31,8 +31,8 @@ import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPubSub;
 import redis.clients.jedis.exceptions.JedisConnectionException;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -48,7 +48,7 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
     /**
      * callerContextId to nextTimeWindow mapping
      */
-    HashMap<String, String> syncModeNotifiedMap = new HashMap<>();
+    ConcurrentHashMap<String, String> syncModeNotifiedMap = new ConcurrentHashMap<>();
     JedisPool redisPool;
     private ThrottleDataHolder dataHolder;
     private String gatewayId;
