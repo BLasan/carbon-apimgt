@@ -193,9 +193,11 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
             } catch (JedisConnectionException e) {
                 log.error("Could not establish connection by retrieving a resource from the redis pool. So error "
                         + "occurred while subscribing to channel: " + WSO2_SYNC_MODE_INIT_CHANNEL, e);
-                log.info("Next retry to subscribe to channel " + WSO2_SYNC_MODE_INIT_CHANNEL + " + in 10 seconds");
+                log.info(
+                        "Next retry to subscribe to channel " + WSO2_SYNC_MODE_INIT_CHANNEL + " in " + retryInterval * 2
+                                + " seconds");
                 try {
-                    // sleep for given 10 seconds duration before retrying to subscribe, if the redis channel
+                    // sleep for given duration before retrying to subscribe, if the redis channel
                     // subscription failed
                     Thread.sleep(retryInterval * 2); // TODO: decide whether to make this configurable
                 } catch (InterruptedException ex) {
