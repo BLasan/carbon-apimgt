@@ -66,14 +66,14 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
                 TimeUnit.MILLISECONDS);
 
         ScheduledExecutorService channelSubscriptionCounterExecutor = Executors.newScheduledThreadPool(1);
-        String gatewayCountCheckingFrequency = "30000";
-        //TODO: Decide whether to make the first and second arg of scheduleAtFixedRate() configurable
+        int gatewayCountCheckingFrequency = 10000;
         channelSubscriptionCounterExecutor.scheduleAtFixedRate(new ChannelSubscriptionCounterTask(), 15000,
-                Integer.parseInt(gatewayCountCheckingFrequency), TimeUnit.MILLISECONDS);
+                gatewayCountCheckingFrequency, TimeUnit.MILLISECONDS);
     }
 
     private class SyncModeInitChannelSubscription implements Runnable {
-        long redisConnectionRetryInterval = 10000;
+        private static final int initialRedisConnectionRetryInterval = 5000;
+        long redisConnectionRetryInterval = initialRedisConnectionRetryInterval;
 
         public void run() {
             if (log.isTraceEnabled()) {
@@ -85,7 +85,7 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
                     if (log.isTraceEnabled()) {
                         log.trace("Gateway is Subscribed to " + channel);
                     }
-                    redisConnectionRetryInterval = 10000;
+                    redisConnectionRetryInterval = initialRedisConnectionRetryInterval;
                 }
 
                 @Override public void onUnsubscribe(String channel, int subscribedChannels) {
@@ -193,7 +193,7 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
                 try {
                     // sleep for given duration before retrying to subscribe, if the redis channel
                     // subscription failed
-                    Thread.sleep(redisConnectionRetryInterval); // TODO: decide whether to make this configurable
+                    Thread.sleep(redisConnectionRetryInterval);
                     redisConnectionRetryInterval *= 2;
                 } catch (InterruptedException ex) {
                     log.error("Error while sleeping before retrying to subscribe to channel: "
@@ -960,7 +960,7 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
         }
         short localQuotaBufferPercentage = Short.parseShort(
                 ThrottleServiceDataHolder.getInstance().getThrottleProperties().getLocalQuotaBufferPercentage());
-        long localQuota = (maxRequests - maxRequests * localQuotaBufferPercentage / 100) / gatewayCount; // TODO: add a config
+        long localQuota = (maxRequests - maxRequests * localQuotaBufferPercentage / 100) / gatewayCount;
         if (log.isTraceEnabled()) {
             log.trace("Set local quota to " + localQuota + " for " + callerContext.getId() + " in hybrid throttling");
         }
