@@ -26,7 +26,6 @@ import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Response;
 import redis.clients.jedis.Transaction;
 import org.wso2.carbon.apimgt.gateway.throttling.util.ThrottleUtils;
-import org.wso2.carbon.apimgt.gateway.utils.GatewayUtils;
 import org.wso2.carbon.apimgt.impl.dto.RedisConfig;
 
 /**
@@ -295,12 +294,12 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
                 transaction.exec();
 
                 if (response != null && response.get() != null) {
-                    log.trace("RedisBaseDistributedCountManager*****getTimestamp. key:" + key + ". Timestamp not null ** getTimestamp:" + ThrottleUtils.getReadableTime(Long.parseLong(response.get())) + "(" + response.get() + ")");
-
+                    log.trace("Getting timestamp of key:" + key + ". Timestamp not null. Value:"
+                            + ThrottleUtils.getReadableTime(Long.parseLong(response.get())) + "(" + response.get()
+                            + ")");
                     return Long.parseLong(response.get());
-
                 } else {
-                    log.trace("RedisBaseDistributedCountManager*****TIMESTAMP NOT EXIST !!!. key: " + key + "  So set to 0. ** :");
+                    log.trace("Timestamp key doesn't exist !!!. key: " + key + "  So returning 0");
                 }
                 return 0;
             }
@@ -326,7 +325,7 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
         } finally {
             if (log.isTraceEnabled()) {
                 log.trace("Time Taken to setTimestamp :" + ThrottleUtils.getReadableTime(timeStamp) + "(" +
-                        timeStamp + "):" + (System.currentTimeMillis() - startTime) + GatewayUtils.getThreadNameAndIdToLog());
+                        timeStamp + "):" + (System.currentTimeMillis() - startTime));
             }
         }
     }
@@ -352,7 +351,7 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
                     log.trace("Expire timeout was not set");
                 }
                 log.trace("setTimestamp " + ThrottleUtils.getReadableTime(timeStamp) + "(" +
-                        timeStamp + ").  Thread name:" + GatewayUtils.getThreadNameAndIdToLog());
+                        timeStamp + ")");
             }
         } finally {
             if (log.isTraceEnabled()) {
@@ -384,19 +383,14 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
     @Override
     public void setExpiry(String key, long expiryTimeStamp) {
         long currentTime = System.currentTimeMillis();
-
         if (log.isTraceEnabled()) {
-            log.trace(
-                    "Setting expiry of key :" + key + " to:" + ThrottleUtils.getReadableTime(expiryTimeStamp) + " (" + expiryTimeStamp
-                            + ")" + " current timestamp:" + ThrottleUtils.getReadableTime(currentTime) + " (" + currentTime + ")"
-                            + "  Thread name:" + GatewayUtils.getThreadNameAndIdToLog());
+            log.trace("Setting expiry of key :" + key + " to:" + ThrottleUtils.getReadableTime(expiryTimeStamp) + " ("
+                    + expiryTimeStamp + ")" + " current timestamp:" + ThrottleUtils.getReadableTime(currentTime) + " ("
+                    + currentTime + ")");
         }
-
         long startTime = 0;
-
         try {
             startTime = System.currentTimeMillis();
-
             try (Jedis jedis = redisPool.getResource()) {
                 Transaction transaction = jedis.multi();
                 Response<Long> expireSetResponse = transaction.pexpireAt(key, expiryTimeStamp);
@@ -419,7 +413,7 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
 
     public long getTtl(String key) {
         long startTime = 0;
-        long ttl = 0;
+        long ttl;
         try {
             try (Jedis jedis = redisPool.getResource()) {
                 Transaction transaction = jedis.multi();
@@ -455,7 +449,7 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
                     log.trace("Key was not set. It is already available");
 
                 }
-                log.trace("setLock with key" + key + "with value " + value + GatewayUtils.getThreadNameAndIdToLog());
+                log.trace("setLock with key" + key + "with value " + value);
                 return responseCode;
             }
         } finally {
@@ -477,27 +471,25 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
                 long pexpireAtResponseCode = pexpireAtResponse.get();
                 if (pexpireAtResponseCode == 1) {
                     if (log.isTraceEnabled()) {
-                        log.trace("expiry time of key:" + key + " was set successfully." + "Thread name:" + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
+                        log.trace("expiry time of key:" + key + " was set successfully.");
                     }
                     return true;
                 } else if (pexpireAtResponseCode == 0) {
                     if (log.isTraceEnabled()) {
-                        log.trace("expiry time was not set of key:" + key + " e.g. key doesn't exist, or operation skipped due to the provided arguments."
-                                + "Thread name:" + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
+                        log.trace("expiry time was not set of key:" + key
+                                + " e.g. key doesn't exist, or operation skipped due to the provided arguments.");
                     }
                     return false;
                 } else {
                     if (log.isTraceEnabled()) {
-                        log.trace("expiry time was not set of key:" + " Thread name:" + Thread.currentThread().getName()
-                                + " Thread id: " + Thread.currentThread().getId());
+                        log.trace("expiry time was not set of key:" + key);
                     }
                     return false;
                 }
             }
         } finally {
             if (log.isTraceEnabled()) {
-                log.trace("Time Taken to setLock :" + (System.currentTimeMillis() - startTime) + " Thread name:"
-                        + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId());
+                log.trace("Time Taken to setLock :" + (System.currentTimeMillis() - startTime));
             }
         }
     }

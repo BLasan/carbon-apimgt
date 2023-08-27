@@ -1554,8 +1554,4 @@ public class GatewayUtils {
                         .getGatewayArtifactSynchronizerProperties();
         return gatewayArtifactSynchronizerProperties.isOnDemandLoading();
     }
-
-    public static String getThreadNameAndIdToLog() {
-        return " Thread name: " + Thread.currentThread().getName() + " Thread id: " + Thread.currentThread().getId();
-    }
 }
