@@ -22,6 +22,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.commons.throttle.core.*;
 import org.apache.synapse.commons.throttle.core.internal.DistributedThrottleProcessor;
+import org.apache.synapse.commons.throttle.core.internal.ThrottleServiceDataHolder;
 import org.wso2.carbon.apimgt.gateway.internal.ServiceReferenceHolder;
 import org.wso2.carbon.apimgt.gateway.throttling.util.ThrottleUtils;
 import org.wso2.carbon.apimgt.gateway.utils.GatewayUtils;
@@ -957,7 +958,9 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
                         + " min_gateway_count configuration");
             }
         }
-        long localQuota = (maxRequests - maxRequests * 20 / 100) / gatewayCount; // TODO: add a config
+        short localQuotaBufferPercentage = Short.parseShort(
+                ThrottleServiceDataHolder.getInstance().getThrottleProperties().getLocalQuotaBufferPercentage());
+        long localQuota = (maxRequests - maxRequests * localQuotaBufferPercentage / 100) / gatewayCount; // TODO: add a config
         if (log.isTraceEnabled()) {
             log.trace("Set local quota to " + localQuota + " for " + callerContext.getId() + " in hybrid throttling");
         }
