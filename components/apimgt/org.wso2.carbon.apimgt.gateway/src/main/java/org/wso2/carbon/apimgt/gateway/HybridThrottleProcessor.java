@@ -101,8 +101,8 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
                 public void onMessage(String channel, String syncModeInitMsg) {
                     super.onMessage(channel, syncModeInitMsg);
                     if (log.isTraceEnabled()) {
-                        log.trace("\n\nSync mode changed message received to this node" + gatewayId + ". Channel: "
-                                + channel + " " + "Msg: " + syncModeInitMsg);
+                        log.trace("\n\nSync mode changed message received to this node " + gatewayId + ". Channel: "
+                                + channel + " " + "Msg : " + syncModeInitMsg);
                     }
                     if (syncModeInitMsg.startsWith(gatewayId)) {
                         if (log.isTraceEnabled()) {
@@ -118,8 +118,8 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
                     String callerContextId = messageParts[1];
                     String nextTimeWindow = messageParts[2];
                     if (log.isTraceEnabled()) {
-                        log.trace("Going to put callerContextId: " + callerContextId
-                                + " into syncModeNotifiedSet with nextTimeWindow: " + nextTimeWindow + "("
+                        log.trace("Going to put callerContextId " + callerContextId
+                                + " into syncModeNotifiedSet with nextTimeWindow " + nextTimeWindow + "("
                                 + ThrottleUtils.getReadableTime(Long.parseLong(nextTimeWindow)) + " )");
                     }
 
@@ -222,7 +222,7 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
                 int gatewayCount = Integer.parseInt(entry.getValue());
                 ServiceReferenceHolder.getInstance().setGatewayCount(gatewayCount);
                 if (log.isTraceEnabled()) {
-                    log.trace("ChannelSubscriptionCounterTask : channel: " + channel + " Set Gateway count to: "
+                    log.trace("ChannelSubscriptionCounterTask : channel = " + channel + ". Set Gateway count to "
                             + gatewayCount);
                 }
             }
@@ -274,7 +274,7 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
         if (callerContext.getLocalHits() == callerContext.getLocalQuota()
                 && !callerContext.isThrottleParamSyncingModeSync() && canAccess == true) {
             if (log.isTraceEnabled()) {
-                log.trace("\n\n Local quota reached. SWITCHED TO SYNC MODE !!!. callerContext.getLocalHits()  : "
+                log.trace("\n\n Local quota reached. SWITCHED TO SYNC MODE !!!. local hits = "
                         + callerContext.getLocalHits() + "\n");
             }
             callerContext.setIsThrottleParamSyncingModeSync(true);
@@ -296,29 +296,29 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
                         if (log.isDebugEnabled()) {
                             log.debug(timeNow + "(" + ThrottleUtils.getReadableTime(timeNow) + ")"
                                     + "Evaluating whether can access based on unit time. Lock released in " + (timeNow
-                                    - syncingStartTime) + " ms for callerContext: " + callerContext.getId());
+                                    - syncingStartTime) + " ms for callerContext " + callerContext.getId());
                         }
                     } else {
                         if (log.isWarnEnabled()) {
                             log.warn("Current time:" + System.currentTimeMillis() + "(" + ThrottleUtils.getReadableTime(
                                     System.currentTimeMillis()) + ")"
                                     + "Evaluating whether can access based on unit time."
-                                    + "  Failed to lock shared keys, hence skipped " + "syncing tasks. key: "
+                                    + "  Failed to lock shared keys, hence skipped " + "syncing tasks. key =  "
                                     + callerContext.getId());
                         }
                     }
                 }
             }
             if (log.isDebugEnabled()) {
-                log.debug("Sync mode started: request time:" + requestContext.getRequestTime() + "("
-                        + ThrottleUtils.getReadableTime(requestContext.getRequestTime()) + ")" + " firstAccessTime: ("
+                log.debug("Sync mode started: request time = " + requestContext.getRequestTime() + "("
+                        + ThrottleUtils.getReadableTime(requestContext.getRequestTime()) + ")" + ", firstAccessTime = ("
                         + callerContext.getFirstAccessTime() + ")" + ThrottleUtils.getReadableTime(
-                        callerContext.getFirstAccessTime()) + " callerContext.getNextTimeWindow():"
+                        callerContext.getFirstAccessTime()) + ", next time window = "
                         + callerContext.getNextTimeWindow() + "(" + ThrottleUtils.getReadableTime(
-                        callerContext.getNextTimeWindow()) + ")" + " nextAccessTime:"
+                        callerContext.getNextTimeWindow()) + ")" + ", nextAccessTime = "
                         + callerContext.getNextAccessTime() + "(" + ThrottleUtils.getReadableTime(
-                        callerContext.getNextAccessTime()) + ")" + "  localHits: " + callerContext.getLocalHits()
-                        + " localQuota: " + callerContext.getLocalQuota());
+                        callerContext.getNextAccessTime()) + ")" + ", localHits = " + callerContext.getLocalHits()
+                        + ", localQuota = " + callerContext.getLocalQuota());
             }
 
             syncModeNotifiedMap.put(callerContext.getId(), String.valueOf(callerContext.getNextTimeWindow()));
@@ -388,14 +388,15 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
             if (log.isTraceEnabled()) {
                 log.trace("CallerContext Checking access if unit time is not over and less than max count>> Access "
                         + "allowed=" + maxRequest + " available=" + (
-                        maxRequest - (callerContext.getGlobalCounter() + callerContext.getLocalCounter() - 1) + " key="
-                                + callerContext.getId() + " currentGlobalCount=" + callerContext.getGlobalCounter()
-                                + " currentTime=" + requestContext.getRequestTime() + "("
-                                + ThrottleUtils.getReadableTime(requestContext.getRequestTime()) + ") "
-                                + "nextTimeWindow=" + ThrottleUtils.getReadableTime(callerContext.getNextTimeWindow())
-                                + " currentLocalCount=" + callerContext.getLocalCounter() + " Tier="
-                                + configuration.getID() + " nextAccessTime=" + ThrottleUtils.getReadableTime(
-                                callerContext.getNextAccessTime()) + " firstAccessTime:"
+                        maxRequest - (callerContext.getGlobalCounter() + callerContext.getLocalCounter() - 1) + " key"
+                                + " = " + callerContext.getId() + ", currentGlobalCount = "
+                                + callerContext.getGlobalCounter() + ", currentTime = "
+                                + requestContext.getRequestTime() + "(" + ThrottleUtils.getReadableTime(
+                                requestContext.getRequestTime()) + ") " + ", nextTimeWindow = "
+                                + ThrottleUtils.getReadableTime(callerContext.getNextTimeWindow())
+                                + ", currentLocalCount = " + callerContext.getLocalCounter() + " tier = "
+                                + configuration.getID() + ", nextAccessTime =" + ThrottleUtils.getReadableTime(
+                                callerContext.getNextAccessTime()) + ", firstAccessTime = "
                                 + callerContext.getFirstAccessTime() + "(" + ThrottleUtils.getReadableTime(
                                 callerContext.getFirstAccessTime()) + ")"));
             }
@@ -403,7 +404,7 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
             if (callerContext.getFirstAccessTime() >= callerContext.getNextAccessTime()) {
                 callerContext.setNextAccessTime(0);
                 if (log.isTraceEnabled()) {
-                    log.trace("canAccessIfUnitTimeNotOver: nextAccessTime is setted to 0");
+                    log.trace("Evaluating whether can access if unit time is not over. nextAccessTime is set to 0");
                 }
             }
 
@@ -411,21 +412,21 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
                     <= maxRequest) {    //(If the globalCount is less than max request). // Very first requests to cluster hits into this block
                 if (log.isTraceEnabled()) {
                     log.trace(
-                            "If the globalCount is less than max request : (callerContext.getglobalCount.get() + callerContext.getlocalCount.get()) = "
+                            "If the globalCount is less than max request : (global count + local count) = "
                                     + (callerContext.getGlobalCounter() + callerContext.getLocalCounter()));
                     log.trace(
-                            "Evaluating whether can access if unit time is not over." + "Values: allowed=" + maxRequest
+                            "Evaluating whether can access if unit time is not over." + "Values: allowed = " + maxRequest
                                     + " available" + "=" + (
                                     maxRequest - (callerContext.getGlobalCounter() + callerContext.getLocalCounter())
-                                            + " key=" + callerContext.getId() + " currentGlobalCount="
-                                            + callerContext.getGlobalCounter() + " currentTime="
+                                            + ", key = " + callerContext.getId() + ", currentGlobalCount = "
+                                            + callerContext.getGlobalCounter() + ", currentTime = "
                                             + requestContext.getRequestTime() + "(" + ThrottleUtils.getReadableTime(
-                                            requestContext.getRequestTime()) + ") " + "nextTimeWindow="
+                                            requestContext.getRequestTime()) + ") " + ", nextTimeWindow = "
                                             + ThrottleUtils.getReadableTime(callerContext.getNextTimeWindow())
-                                            + " currentLocalCount=" + callerContext.getLocalCounter() + " Tier="
-                                            + configuration.getID() + " nextAccessTime="
+                                            + ", currentLocalCount = " + callerContext.getLocalCounter() + ", tier = "
+                                            + configuration.getID() + ", nextAccessTime = "
                                             + ThrottleUtils.getReadableTime(callerContext.getNextAccessTime())
-                                            + " firstAccessTime:" + callerContext.getFirstAccessTime() + "("
+                                            + ", firstAccessTime = " + callerContext.getFirstAccessTime() + "("
                                             + ThrottleUtils.getReadableTime(callerContext.getFirstAccessTime()) + ")"));
                 }
                 canAccess = true; // can continue access
@@ -475,14 +476,14 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
                         if (log.isTraceEnabled()) {
                             log.trace(
                                     "CallerContext Checking access if unit time is not over before time window exceed: "
-                                            + "Access allowed=" + maxRequest + " available=" + (maxRequest - (
+                                            + "Access allowed = " + maxRequest + ", available = " + (maxRequest - (
                                             callerContext.getGlobalCounter() + callerContext.getLocalCounter()))
-                                            + " key=" + callerContext.getId() + " currentGlobalCount="
-                                            + callerContext.getGlobalCounter() + " currentTime="
-                                            + requestContext.getRequestTime() + " " + "nextTimeWindow="
+                                            + " key=" + callerContext.getId() + ", currentGlobalCount = "
+                                            + callerContext.getGlobalCounter() + ", currentTime = "
+                                            + requestContext.getRequestTime() + ", nextTimeWindow = "
                                             + ThrottleUtils.getReadableTime(callerContext.getNextTimeWindow())
-                                            + " currentLocalCount=" + callerContext.getLocalCounter() + " " + "Tier="
-                                            + configuration.getID() + " nextAccessTime="
+                                            + " currentLocalCount = " + callerContext.getLocalCounter() + ", Tier = "
+                                            + configuration.getID() + ", nextAccessTime = "
                                             + ThrottleUtils.getReadableTime(callerContext.getNextAccessTime()));
                         }
                         // remove previous caller context
@@ -507,10 +508,11 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
                         callerContext.setFirstAccessTime(requestContext.getRequestTime());
                         callerContext.setNextTimeWindow(requestContext.getRequestTime() + configuration.getUnitTime());
                         if (log.isTraceEnabled()) {
-                            log.trace("canAccessIfUnitTimeNotOver: globalCount:" + callerContext.getGlobalCounter()
-                                    + " , localCount:" + callerContext.getLocalCounter() + ", firstAccessTime:"
+                            log.trace("Evaluating whether can access if unit time is not over: globalCount = "
+                                    + callerContext.getGlobalCounter() + " , localCount = "
+                                    + callerContext.getLocalCounter() + ", firstAccessTime = "
                                     + ThrottleUtils.getReadableTime(callerContext.getFirstAccessTime())
-                                    + " , nextTimeWindow:" + ThrottleUtils.getReadableTime(
+                                    + " , nextTimeWindow = " + ThrottleUtils.getReadableTime(
                                     callerContext.getNextTimeWindow()));
                         }
 
@@ -538,15 +540,15 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
             }
         }
         if (log.isDebugEnabled()) {
-            log.debug(" request time:" + requestContext.getRequestTime() + "(" + ThrottleUtils.getReadableTime(
+            log.debug(" request time = " + requestContext.getRequestTime() + "(" + ThrottleUtils.getReadableTime(
                     requestContext.getRequestTime()) + ")"
-                    + "Evaluating whether can access if unit time is not over.  DECISION MADE. CAN ACCESS: " + canAccess
-                    + " firstAccessTime: (" + callerContext.getFirstAccessTime() + ")" + ThrottleUtils.getReadableTime(
-                    callerContext.getFirstAccessTime()) + " next time window:" + callerContext.getNextTimeWindow() + "("
-                    + ThrottleUtils.getReadableTime(callerContext.getNextTimeWindow()) + ")" + " nextAccessTime:"
+                    + ". Evaluating whether can access if unit time is not over.  DECISION MADE. CAN ACCESS: " + canAccess
+                    + ", firstAccessTime = (" + callerContext.getFirstAccessTime() + ")" + ThrottleUtils.getReadableTime(
+                    callerContext.getFirstAccessTime()) + ", next time window = " + callerContext.getNextTimeWindow() + "("
+                    + ThrottleUtils.getReadableTime(callerContext.getNextTimeWindow()) + ")" + ", nextAccessTime = "
                     + callerContext.getNextAccessTime() + "(" + ThrottleUtils.getReadableTime(
-                    callerContext.getNextAccessTime()) + ")" + " localHits:" + callerContext.getLocalHits()
-                    + " globalHits :" + callerContext.getGlobalCounter());
+                    callerContext.getNextAccessTime()) + ")" + ", localHits = " + callerContext.getLocalHits()
+                    + ", globalHits = " + callerContext.getGlobalCounter());
         }
 
         return canAccess;
@@ -567,12 +569,12 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
         // if number of access for a unit time is less than MAX and if the unit time period (session time) has just over
         int maxRequest = configuration.getMaximumRequestPerUnitTime();
         if (log.isTraceEnabled()) {
-            log.trace("Evaluating whether can access if unit time is over. globalCount:"
-                    + callerContext.getGlobalCounter() + " , localCount:" + callerContext.getLocalCounter()
-                    + ", firstAccessTime:" + ThrottleUtils.getReadableTime(callerContext.getFirstAccessTime())
-                    + " , nextTimeWindow:" + ThrottleUtils.getReadableTime(callerContext.getNextTimeWindow())
-                    + " localHits:" + callerContext.getLocalHits() + " isThrottleParamSyncingModeSync:"
-                    + callerContext.isThrottleParamSyncingModeSync() + " , nextAccessTime:"
+            log.trace("Evaluating whether can access if unit time is over. globalCount = "
+                    + callerContext.getGlobalCounter() + " , localCount = " + callerContext.getLocalCounter()
+                    + ", firstAccessTime = " + ThrottleUtils.getReadableTime(callerContext.getFirstAccessTime())
+                    + ", nextTimeWindow = " + ThrottleUtils.getReadableTime(callerContext.getNextTimeWindow())
+                    + ", localHits = " + callerContext.getLocalHits() + ", isThrottleParamSyncingModeSync = "
+                    + callerContext.isThrottleParamSyncingModeSync() + ", nextAccessTime = "
                     + ThrottleUtils.getReadableTime(callerContext.getNextAccessTime()));
         }
 
@@ -592,7 +594,7 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
                     if (log.isDebugEnabled()) {
                         log.debug("current time:" + timeNow + "(" + ThrottleUtils.getReadableTime(timeNow) + ")"
                                 + "Evaluating whether can access if unit time is over. Lock released in " + (timeNow
-                                - syncingStartTime) + " ms for callerContext: " + callerContext.getId());
+                                - syncingStartTime) + " ms for callerContext " + callerContext.getId());
                     }
 
                 } else {
@@ -600,7 +602,7 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
                         log.warn("current time:" + System.currentTimeMillis() + "(" + ThrottleUtils.getReadableTime(
                                 System.currentTimeMillis()) + ")"
                                 + " Evaluating whether can access if unit time is over. Failed to lock shared keys, "
-                                + "hence skipped syncing tasks. key=" + callerContext.getId());
+                                + "hence skipped syncing tasks. key = " + callerContext.getId());
                     }
                     // increment local counter since, sync tasks didn't run where incrementing should have happened
                     // (https://github.com/wso2/api-manager/issues/1982#issuecomment-1624920455)
@@ -634,21 +636,21 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
                     callerContext.setNextTimeWindow(requestContext.getRequestTime() + configuration.getUnitTime());
                     throttleContext.addAndFlushCallerContext(callerContext, callerContext.getId());
                     if (log.isTraceEnabled()) {
-                        log.trace("canAccessIfUnitTimeOver:  globalCount:" + callerContext.getGlobalCounter()
-                                + " , localCount:" + callerContext.getLocalCounter() + ", firstAccessTime:"
+                        log.trace("Evaluating whether can access if unit time is over:  globalCount = " + callerContext.getGlobalCounter()
+                                + " , localCount = " + callerContext.getLocalCounter() + ", firstAccessTime = "
                                 + ThrottleUtils.getReadableTime(callerContext.getFirstAccessTime())
-                                + " , nextTimeWindow:" + ThrottleUtils.getReadableTime(
+                                + " , nextTimeWindow = " + ThrottleUtils.getReadableTime(
                                 callerContext.getNextTimeWindow()));
                     }
                 }
                 if (log.isTraceEnabled()) {
-                    log.trace("CallerContext Checking access if unit time over next time window>> Access allowed="
-                            + maxRequest + " available=" + (maxRequest - (callerContext.getGlobalCounter()
-                            + callerContext.getLocalCounter())) + " key=" + callerContext.getId()
-                            + " currentGlobalCount=" + callerContext.getGlobalCounter() + " currentTime="
-                            + requestContext.getRequestTime() + " nextTimeWindow=" + ThrottleUtils.getReadableTime(
-                            callerContext.getNextTimeWindow()) + " currentLocalCount=" + callerContext.getLocalCounter()
-                            + " Tier=" + configuration.getID() + " nextAccessTime=" + ThrottleUtils.getReadableTime(
+                    log.trace("CallerContext Checking access if unit time over next time window: Access allowed = "
+                            + maxRequest + ", available = " + (maxRequest - (callerContext.getGlobalCounter()
+                            + callerContext.getLocalCounter())) + ", key = " + callerContext.getId()
+                            + ", currentGlobalCount = " + callerContext.getGlobalCounter() + ", currentTime = "
+                            + requestContext.getRequestTime() + ", nextTimeWindow = " + ThrottleUtils.getReadableTime(
+                            callerContext.getNextTimeWindow()) + ", currentLocalCount = " + callerContext.getLocalCounter()
+                            + " Tier=" + configuration.getID() + ", nextAccessTime = " + ThrottleUtils.getReadableTime(
                             callerContext.getNextAccessTime()));
                 }
                 if (callerContext.getGlobalCounter() <= maxRequest) {
@@ -687,12 +689,13 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
                     // registers caller and send the current state to others (clustered env)
                     throttleContext.addAndFlushCallerContext(callerContext, callerContext.getId());
                     if (log.isTraceEnabled()) {
-                        log.trace("Evaluating whether can access if unit time is over.  globalCount:"
-                                + callerContext.getGlobalCounter() + " , localCount:" + callerContext.getLocalCounter()
-                                + ", firstAccessTime:" + ThrottleUtils.getReadableTime(
-                                callerContext.getFirstAccessTime()) + " , nextTimeWindow:"
-                                + ThrottleUtils.getReadableTime(callerContext.getNextTimeWindow()));
-                        log.trace("Caller=" + callerContext.getId()
+                        log.trace("Evaluating whether can access if unit time is over.  globalCount = "
+                                + callerContext.getGlobalCounter() + " , localCount = "
+                                + callerContext.getLocalCounter() + ", firstAccessTime = "
+                                + ThrottleUtils.getReadableTime(callerContext.getFirstAccessTime())
+                                + " , nextTimeWindow = " + ThrottleUtils.getReadableTime(
+                                callerContext.getNextTimeWindow()));
+                        log.trace("Caller = " + callerContext.getId()
                                 + " has reset counters and added for replication when unit time is over");
                     }
 
@@ -711,13 +714,13 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
         }
         if (log.isDebugEnabled()) {
             log.debug("Evaluating whether can access if unit time is over. DECISION MADE. CAN ACCESS: " + canAccess
-                    + " request time:" + requestContext.getRequestTime() + "(" + ThrottleUtils.getReadableTime(
-                    requestContext.getRequestTime()) + ")" + " firstAccessTime: (" + callerContext.getFirstAccessTime()
-                    + ")" + ThrottleUtils.getReadableTime(callerContext.getFirstAccessTime()) + " next time window:"
-                    + callerContext.getNextTimeWindow() + "(" + ThrottleUtils.getReadableTime(
-                    callerContext.getNextTimeWindow()) + ")" + " nextAccessTime:" + callerContext.getNextAccessTime()
-                    + "(" + ThrottleUtils.getReadableTime(callerContext.getNextAccessTime()) + ")" + " localHits:"
-                    + callerContext.getLocalHits() + " globalHits :" + callerContext.getGlobalCounter());
+                    + ", request time = " + requestContext.getRequestTime() + "(" + ThrottleUtils.getReadableTime(
+                    requestContext.getRequestTime()) + ")" + ", firstAccessTime = " + callerContext.getFirstAccessTime()
+                    + " (" + ThrottleUtils.getReadableTime(callerContext.getFirstAccessTime()) + "),  next time "
+                    + "window = " + callerContext.getNextTimeWindow() + "(" + ThrottleUtils.getReadableTime(
+                    callerContext.getNextTimeWindow()) + ")" + ", nextAccessTime = " + callerContext.getNextAccessTime()
+                    + "(" + ThrottleUtils.getReadableTime(callerContext.getNextAccessTime()) + ")" + ", localHits = "
+                    + callerContext.getLocalHits() + ", globalHits = " + callerContext.getGlobalCounter());
         }
 
         return canAccess;
@@ -770,12 +773,12 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
     public void syncThrottleCounterParams(CallerContext callerContext, boolean isInvocationFlow,
             RequestContext requestContext) {
         if (log.isTraceEnabled()) {
-            log.trace("\n\nWhen running syncing throttle counter params: isInvocationFlow:" + isInvocationFlow);
+            log.trace("\n\nWhen running syncing throttle counter params: isInvocationFlow = " + isInvocationFlow);
         }
         synchronized (callerContext.getId().intern()) {
             long syncingStartTime = System.currentTimeMillis();
             if (log.isTraceEnabled()) {
-                log.trace("When running syncing throttle counter params: next time window:"
+                log.trace("When running syncing throttle counter params: next time window = "
                         + callerContext.getNextTimeWindow() + "(" + ThrottleUtils.getReadableTime(
                         callerContext.getNextTimeWindow()) + ") ");
             }
@@ -786,9 +789,9 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
                 }
                 String id = callerContext.getId();
                 if (log.isTraceEnabled()) {
-                    log.trace("When running syncing throttle counter params: Initial Local counter:"
-                            + callerContext.getLocalCounter() + " , globalCounter:" + callerContext.getGlobalCounter()
-                            + " distributedCounter :" + SharedParamManager.getDistributedCounter(id));
+                    log.trace("When running syncing throttle counter params: Initial Local counter = "
+                            + callerContext.getLocalCounter() + " , globalCounter = " + callerContext.getGlobalCounter()
+                            + ", distributedCounter = " + SharedParamManager.getDistributedCounter(id));
                 }
 
                 if (isInvocationFlow) {
@@ -797,16 +800,14 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
                 long localCounter = callerContext.getLocalCounter();
                 if (log.isTraceEnabled()) {
                     log.trace(
-                            "When running syncing throttle counter params: localCounter increased to:" + localCounter);
+                            "When running syncing throttle counter params: localCounter increased to " + localCounter);
                 }
 
                 callerContext.resetLocalCounter();
                 Long distributedCounter = SharedParamManager.addAndGetDistributedCounter(id, localCounter);
 
                 if (log.isTraceEnabled()) {
-                    log.trace("When running syncing throttle counter params: After adding and getting distributed"
-                            + " counter, checking the shared counter availability now.");
-                    log.trace("When running syncing throttle counter params: Finally distributedCounter :"
+                    log.trace("When running syncing throttle counter params: Finally distributedCounter = "
                             + distributedCounter);
                 }
 
@@ -814,8 +815,8 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
                 long x = callerContext.getGlobalCounter();
                 callerContext.setGlobalCounter(distributedCounter);
                 if (log.isTraceEnabled()) {
-                    log.trace("When running syncing throttle counter params: Finally globalCounter increased from:" + x
-                            + " to : " + callerContext.getGlobalCounter());
+                    log.trace("When running syncing throttle counter params: Finally globalCounter increased from " + x
+                            + " to " + callerContext.getGlobalCounter());
                     log.trace(
                             "When running syncing throttle counter params: finally local counter reset to 0\n\n");
                 }
@@ -827,7 +828,7 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
             }
             if (log.isDebugEnabled()) {
                 log.debug("Latency for running syncing throttle counter params: " + (System.currentTimeMillis()
-                        - syncingStartTime) + " ms for callerContext: " + callerContext.getId());
+                        - syncingStartTime) + " ms for callerContext " + callerContext.getId());
             }
         }
     }
@@ -840,32 +841,32 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
         synchronized (callerContext.getId().intern()) {
             long syncingStartTime = System.currentTimeMillis();
             if (log.isTraceEnabled()) {
-                log.trace("\n\n When running syncing throttle window params: isInvocationFlow:" + isInvocationFlow);
+                log.trace("\n\n When running syncing throttle window params: isInvocationFlow = " + isInvocationFlow);
             }
 
             String callerId = callerContext.getId();
             long sharedTimestamp = SharedParamManager.getSharedTimestamp(
                     callerContext.getId());  // this will be set 0 if the redis key-value pair is not available
             if (log.isTraceEnabled()) {
-                log.trace("Got sharedTimestamp from redis. sharedTimestamp :" + sharedTimestamp + "("
+                log.trace("Got sharedTimestamp from redis. sharedTimestamp = " + sharedTimestamp + "("
                         + ThrottleUtils.getReadableTime(sharedTimestamp) + ") ");
             }
             long sharedNextWindow = sharedTimestamp + callerContext.getUnitTime();
             long localFirstAccessTime = callerContext.getFirstAccessTime();
 
             if (log.isTraceEnabled()) {
-                log.trace("Initial: sharedTimestamp :" + ThrottleUtils.getReadableTime(sharedTimestamp)
-                        + " sharedNextWindow :" + ThrottleUtils.getReadableTime(sharedNextWindow)
-                        + " localFirstAccessTime :" + ThrottleUtils.getReadableTime(localFirstAccessTime)
-                        + " callerContext.getUnitTime():" + callerContext.getUnitTime());
+                log.trace("Initial: sharedTimestamp = " + ThrottleUtils.getReadableTime(sharedTimestamp)
+                        + ", sharedNextWindow = " + ThrottleUtils.getReadableTime(sharedNextWindow)
+                        + ", localFirstAccessTime = " + ThrottleUtils.getReadableTime(localFirstAccessTime)
+                        + ", unit time = " + callerContext.getUnitTime());
             }
 
             long distributedCounter = SharedParamManager.getDistributedCounter(callerId);
             if (log.isTraceEnabled()) {
-                log.trace("Got distributedCounter from redis. distributedCounter :" + distributedCounter);
-                log.trace("When running syncing throttle window params: localCounter:" + callerContext.getLocalCounter()
-                        + ", " + "globalCounter:" + callerContext.getGlobalCounter() + " , distributedCounter:"
-                        + distributedCounter + ", localHits:" + callerContext.getLocalHits());
+                log.trace("When running syncing throttle window params : distributedCounter = " + distributedCounter
+                        + ", localCounter = " + callerContext.getLocalCounter() + ", globalCounter = "
+                        + callerContext.getGlobalCounter() + ", distributedCounter = " + distributedCounter
+                        + ", localHits = " + callerContext.getLocalHits());
             }
             // If this is a new time window. If a sync msg is received from another node, this will be true
             if (localFirstAccessTime < sharedTimestamp) {
@@ -897,7 +898,7 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
                 }
                 callerContext.setGlobalCounter(distributedCounter);
                 if (log.isTraceEnabled()) {
-                    log.trace("When running syncing throttle window params: globalCounter :"
+                    log.trace("When running syncing throttle window params: globalCounter = "
                             + callerContext.getGlobalCounter());
                 }
             } else if (localFirstAccessTime > sharedTimestamp && localFirstAccessTime < sharedNextWindow) {
@@ -905,11 +906,11 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
                 callerContext.setFirstAccessTime(sharedTimestamp);
                 callerContext.setNextTimeWindow(sharedNextWindow);
                 if (log.isTraceEnabled()) {
-                    log.trace("When running syncing throttle window params: distributedCounter :" + distributedCounter);
+                    log.trace("When running syncing throttle window params: distributedCounter = " + distributedCounter);
                 }
                 callerContext.setGlobalCounter(distributedCounter);
                 if (log.isTraceEnabled()) {
-                    log.trace("When running syncing throttle window params: Global Counter :"
+                    log.trace("When running syncing throttle window params: Global Counter = "
                             + callerContext.getGlobalCounter());
                 }
             /* If above conditions are not met, this is the place where node set new window if
@@ -932,19 +933,19 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
 
                 if (log.isTraceEnabled()) {
                     log.trace("Finished setting distributed counter. Set value 0. ");
-                    log.trace("\n When running syncing throttle window params: Completed resetting time window of="
+                    log.trace("\n When running syncing throttle window params: Completed resetting time window of "
                             + callerId);
                 }
             }
             if (log.isTraceEnabled()) {
-                log.trace("When running syncing throttle window params:" + ThrottleUtils.getReadableTime(
-                        SharedParamManager.getSharedTimestamp(callerId)) + " sharedNextWindow :"
-                        + ThrottleUtils.getReadableTime(sharedNextWindow) + " localFirstAccessTime :"
+                log.trace("When running syncing throttle window params :" + ThrottleUtils.getReadableTime(
+                        SharedParamManager.getSharedTimestamp(callerId)) + ", sharedNextWindow = "
+                        + ThrottleUtils.getReadableTime(sharedNextWindow) + ", localFirstAccessTime = "
                         + ThrottleUtils.getReadableTime(localFirstAccessTime));
             }
             if (log.isDebugEnabled()) {
                 log.debug("Latency for running syncing throttle window params: " + (System.currentTimeMillis()
-                        - syncingStartTime) + " ms for callerContext: " + callerContext.getId());
+                        - syncingStartTime) + " ms for callerContext " + callerContext.getId());
             }
         }
     }
