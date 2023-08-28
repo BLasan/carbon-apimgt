@@ -75,6 +75,7 @@ import org.wso2.carbon.apimgt.tracing.TracingSpan;
 import org.wso2.carbon.apimgt.tracing.TracingTracer;
 import org.wso2.carbon.apimgt.tracing.Util;
 import org.wso2.carbon.apimgt.tracing.telemetry.TelemetrySpan;
+import org.wso2.carbon.apimgt.tracing.telemetry.TelemetryTracer;
 import org.wso2.carbon.apimgt.tracing.telemetry.TelemetryUtil;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.oauth.config.OAuthServerConfiguration;
@@ -84,6 +85,7 @@ import org.wso2.carbon.registry.core.exceptions.RegistryException;
 import org.wso2.carbon.registry.core.session.UserRegistry;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
+import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
@@ -1022,6 +1024,12 @@ public class GatewayUtils {
                 Map<String, Object> claims = jwtInfoDto.getJwtValidationInfo().getClaims();
                 if (claims.get(JWTConstants.SUB) != null) {
                     String sub = (String) jwtInfoDto.getJwtValidationInfo().getClaims().get(JWTConstants.SUB);
+
+                    // A system property is used to enable/disable getting the tenant aware username as sub claim.
+                    String tenantAwareSubClaim = System.getProperty(APIConstants.ENABLE_TENANT_AWARE_SUB_CLAIM);
+                    if (StringUtils.isNotEmpty(tenantAwareSubClaim) && Boolean.parseBoolean(tenantAwareSubClaim)) {
+                        sub = MultitenantUtils.getTenantAwareUsername(sub);
+                    }
                     jwtInfoDto.setSub(sub);
                 }
                 if (claims.get(JWTConstants.ORGANIZATIONS) != null) {
@@ -1365,7 +1373,12 @@ public class GatewayUtils {
         try {
             MessageContext.setCurrentMessageContext(createAxis2MessageContext());
             RESTAPIAdminServiceProxy restapiAdminServiceProxy = new RESTAPIAdminServiceProxy(tenantDomain);
-            String qualifiedName = GatewayUtils.getQualifiedApiName(apiName, version);
+            String qualifiedName;
+            if (version != null) {
+                qualifiedName = GatewayUtils.getQualifiedApiName(apiName, version);
+            } else {
+                qualifiedName = apiName;
+            }
             OMElement api = restapiAdminServiceProxy.getApiContent(qualifiedName);
             if (api != null) {
                 return api.toString();
@@ -1533,6 +1546,10 @@ public class GatewayUtils {
 
     public static TracingTracer getTracingTracer() {
         return ServiceReferenceHolder.getInstance().getTracer();
+    }
+
+    public static TelemetryTracer getTelemetryTracer() {
+        return ServiceReferenceHolder.getInstance().getTelemetryTracer();
     }
 
     public static boolean isAllApisDeployed () {

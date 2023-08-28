@@ -1262,6 +1262,13 @@ public class SQLConstants {
             "SELECT MAP.CONSUMER_KEY, MAP.CREATE_MODE, KM.NAME, KM.ORGANIZATION FROM AM_APPLICATION_KEY_MAPPING MAP,"
                     + " AM_KEY_MANAGER KM WHERE MAP.APPLICATION_ID = ? AND MAP.KEY_MANAGER = KM.UUID";
 
+    public static final String GET_APPLICATIONS_OF_KEY_MANAGERS_SQL =
+            "SELECT DISTINCT APP.UUID, APP.CREATED_BY, APP.NAME, APP.APPLICATION_STATUS, APP.ORGANIZATION, " +
+                    "APP.SUBSCRIBER_ID FROM AM_APPLICATION_KEY_MAPPING MAP, AM_KEY_MANAGER KM, AM_APPLICATION APP " +
+                    "WHERE MAP.KEY_MANAGER = ? " +
+                    "AND MAP.KEY_MANAGER = KM.UUID " +
+                    "AND APP.APPLICATION_ID = MAP.APPLICATION_ID";
+
     public static final String REMOVE_APPLICATION_FROM_SUBSCRIPTIONS_SQL =
             "DELETE FROM AM_SUBSCRIPTION WHERE APPLICATION_ID = ?";
 
@@ -3347,6 +3354,9 @@ public class SQLConstants {
 
         public static final String CHECK_CLIENT_CREDENTIALS_EXISTS = "SELECT CONSUMER_KEY,CONSUMER_SECRET " +
                 "FROM AM_SYSTEM_APPS WHERE NAME = ? AND TENANT_DOMAIN = ?";
+
+        public static final String GET_BYPASS_CLIENT_CREDENTIALS_ENABLED =
+                "SELECT PROPERTY_VALUE FROM IDN_OIDC_PROPERTY WHERE CONSUMER_KEY = ? AND PROPERTY_KEY = ? ";
     }
 
     public static class BotDataConstants {
@@ -4083,6 +4093,38 @@ public class SQLConstants {
         public static final String GET_COMMON_OPERATION_POLICY_NAMES_FOR_ORGANIZATION =
                 "SELECT OP.POLICY_NAME, OP.POLICY_VERSION FROM AM_OPERATION_POLICY OP INNER JOIN AM_COMMON_OPERATION_POLICY COP " +
                         " ON OP.POLICY_UUID = COP.POLICY_UUID WHERE OP.ORGANIZATION = ?";
+
+        public static final String ADD_API_POLICY_MAPPING =
+                "INSERT INTO AM_API_POLICY_MAPPING " +
+                        " (API_UUID, REVISION_UUID, POLICY_UUID, DIRECTION, PARAMETERS, POLICY_ORDER) " +
+                        " VALUES (?,?,?,?,?,?)";
+
+        public static final String DELETE_API_POLICY_MAPPING =
+                "DELETE FROM AM_API_POLICY_MAPPING WHERE API_UUID = ? AND REVISION_UUID IS null";
+
+        public static final String GET_API_POLICIES_FOR_API_REVISION_SQL =
+                " SELECT " +
+                        " OP.POLICY_NAME, OP.POLICY_VERSION, APM.PARAMETERS, APM.DIRECTION, APM.POLICY_ORDER, APM.POLICY_UUID" +
+                        " FROM " +
+                        " AM_API_POLICY_MAPPING APM " +
+                        " INNER JOIN AM_OPERATION_POLICY OP ON APM.POLICY_UUID = OP.POLICY_UUID " +
+                        " WHERE " +
+                        " APM.API_UUID = ? " +
+                        " AND " +
+                        " APM.REVISION_UUID = ? " +
+                        " ORDER BY APM.API_POLICY_MAPPING_ID ASC ";
+
+        public static final String GET_API_POLICIES_OF_API_SQL =
+                " SELECT " +
+                        " OP.POLICY_NAME, OP.POLICY_VERSION, APM.PARAMETERS, APM.DIRECTION, APM.POLICY_ORDER, APM.POLICY_UUID" +
+                        " FROM " +
+                        " AM_API_POLICY_MAPPING APM " +
+                        " INNER JOIN AM_OPERATION_POLICY OP ON APM.POLICY_UUID = OP.POLICY_UUID " +
+                        " WHERE " +
+                        " APM.API_UUID = ? " +
+                        " AND " +
+                        " APM.REVISION_UUID IS NULL " +
+                        " ORDER BY APM.API_POLICY_MAPPING_ID ASC ";
     }
 
     /**

@@ -165,6 +165,7 @@ import org.wso2.carbon.apimgt.impl.dto.SubscribedApiDTO;
 import org.wso2.carbon.apimgt.impl.dto.SubscriptionPolicyDTO;
 import org.wso2.carbon.apimgt.impl.dto.ThrottleProperties;
 import org.wso2.carbon.apimgt.impl.dto.WorkflowDTO;
+import org.wso2.carbon.apimgt.impl.gatewayartifactsynchronizer.exception.DataLoadingException;
 import org.wso2.carbon.apimgt.impl.internal.APIManagerComponent;
 import org.wso2.carbon.apimgt.impl.internal.ServiceReferenceHolder;
 import org.wso2.carbon.apimgt.impl.kmclient.ApacheFeignHttpClient;
@@ -286,6 +287,7 @@ import javax.cache.CacheConfiguration;
 import javax.cache.CacheManager;
 import javax.cache.Caching;
 import javax.security.cert.X509Certificate;
+import javax.validation.constraints.NotNull;
 import javax.xml.namespace.QName;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -306,6 +308,8 @@ public final class APIUtil {
     private static boolean isContextCacheInitialized = false;
 
     public static final String DISABLE_ROLE_VALIDATION_AT_SCOPE_CREATION = "disableRoleValidationAtScopeCreation";
+
+    public static final String DISABLE_API_CONTEXT_VALIDATION = "disableApiContextValidation";
 
     private static final int ENTITY_EXPANSION_LIMIT = 0;
 
@@ -338,6 +342,7 @@ public final class APIUtil {
 
     private static Schema tenantConfigJsonSchema;
     private static Schema operationPolicySpecSchema;
+    private static final String contextRegex = "^[a-zA-Z0-9_${}/.;()-]+$";
 
     private APIUtil() {
 
@@ -368,6 +373,10 @@ public final class APIUtil {
     private static String hostAddress = null;
     private static final int timeoutInSeconds = 15;
     private static final int retries = 2;
+    private static long retrievalTimeout;
+    private static final long maxRetrievalTimeout = 1000 * 60 * 60;
+    private static double retryProgressionFactor;
+    private static int maxRetryCount;
 
     //constants for getting masked token
     private static final int MAX_LEN = 36;
@@ -390,6 +399,10 @@ public final class APIUtil {
                 .getFirstProperty(APIConstants.PUBLISHER_ROLE_CACHE_ENABLED);
         isPublisherRoleCacheEnabled = isPublisherRoleCacheEnabledConfiguration == null || Boolean
                 .parseBoolean(isPublisherRoleCacheEnabledConfiguration);
+        retrievalTimeout = apiManagerConfiguration.getGatewayArtifactSynchronizerProperties().getRetryDuartion();
+        maxRetryCount = apiManagerConfiguration.getGatewayArtifactSynchronizerProperties().getMaxRetryCount();
+        retryProgressionFactor = apiManagerConfiguration.getGatewayArtifactSynchronizerProperties()
+                .getRetryProgressionFactor();
         try {
             eventPublisherFactory = ServiceReferenceHolder.getInstance().getEventPublisherFactory();
             eventPublishers.putIfAbsent(EventPublisherType.ASYNC_WEBHOOKS,
@@ -462,6 +475,56 @@ public final class APIUtil {
                         // Ignore
                     }
                 } else {
+                    throw ex;
+                }
+            }
+        } while (retry);
+        return httpResponse;
+    }
+
+    /**
+     * This method is used to execute an HTTP request with retry parameters obtained from configuration parameters.
+     *
+     * @param method       HttpRequest Type
+     * @param httpClient   HttpClient
+     * @return CloseableHttpResponse
+     */
+    public static CloseableHttpResponse executeHTTPRequestWithRetries(HttpRequestBase method, HttpClient httpClient)
+            throws IOException, APIManagementException {
+
+        CloseableHttpResponse httpResponse = null;
+        String path = method.getURI().getPath();
+        long retryDuration = retrievalTimeout;
+        int retryCount = 0;
+        boolean retry;
+        do {
+            try {
+                httpResponse = (CloseableHttpResponse) httpClient.execute(method);
+                if (HttpStatus.SC_OK != httpResponse.getStatusLine().getStatusCode()) {
+                    throw new DataLoadingException("Error while retrieving "
+                            + path + ". Received response with status code "
+                            + httpResponse.getStatusLine().getStatusCode());
+                }
+                retry = false;
+            } catch (IOException | DataLoadingException ex) {
+                retryCount++;
+                if (retryCount <= maxRetryCount) {
+                    retry = true;
+                    log.error("Failed to retrieve " + path + " from remote endpoint: " + ex.getMessage()
+                            + ". Retry attempt " + retryCount + " in " + (retryDuration / 1000) +
+                            " seconds.");
+                    try {
+                        Thread.sleep(retryDuration);
+                        retryDuration = (long) (retryDuration * retryProgressionFactor);
+                        if (retryDuration > maxRetrievalTimeout) {
+                            retryDuration = maxRetrievalTimeout;
+                        }
+                    } catch (InterruptedException e) {
+                        // Ignore
+                    }
+                } else {
+                    log.error("Failed to retrieve " + path + " from remote endpoint. Maximum retry count exceeded."
+                            + ex.getMessage());
                     throw ex;
                 }
             }
@@ -2689,6 +2752,95 @@ public final class APIUtil {
                     APIConstants.EMAIL_DOMAIN_SEPARATOR);
         }
         return input;
+    }
+
+    /**
+     * This method is used to get the APIProvider instance for a given username
+     *
+     * @param context API Context of the API
+     * @throws APIManagementException If the context is not valid
+     */
+    public static void validateAPIContext(String context, String apiName) throws APIManagementException {
+        String disableAPIContextValidation = System.getProperty(DISABLE_API_CONTEXT_VALIDATION);
+        if (Boolean.parseBoolean(disableAPIContextValidation)) {
+            return;
+        }
+        Pattern pattern = Pattern.compile(contextRegex);
+        String errorMsg = ExceptionCodes.API_CONTEXT_MALFORMED_EXCEPTION.getErrorMessage();
+
+        if (context == null || context.isEmpty()) {
+            errorMsg = errorMsg + " For API " + apiName + ", context cannot be empty or null";
+            log.error(errorMsg);
+            throw new APIManagementException(errorMsg);
+        }
+
+        if (context.endsWith("/")) {
+            errorMsg = errorMsg + " For API " + apiName + ", context " + context + " cannot end with /";
+            log.error(errorMsg);
+            throw new APIManagementException(errorMsg);
+        }
+
+        Matcher matcher = pattern.matcher(context);
+
+        // if the context has allowed characters
+        if (matcher.matches()) {
+            context = context.startsWith("/") ? context : "/".concat(context);
+            String split[] = context.split("/");
+
+            for (String param : split) {
+                if (param != null && !APIConstants.VERSION_PLACEHOLDER.equals(param)) {
+                    if (param.contains(APIConstants.VERSION_PLACEHOLDER)) {
+                        errorMsg = errorMsg + " For API " + apiName +
+                                ", {version} cannot exist as a substring of a sub-context";
+                        log.error(errorMsg);
+                        throw new APIManagementException(errorMsg);
+                    } else if (param.contains("{") || param.contains("}")) {
+                        errorMsg = errorMsg + " For API " + apiName +
+                                ", { or } cannot exist as a substring of a sub-context";
+                        log.error(errorMsg);
+                        throw new APIManagementException(errorMsg);
+                    }
+                }
+            }
+
+            //check whether the parentheses are balanced
+            boolean isBalanced = checkBalancedParentheses(context);
+            if (!isBalanced) {
+                errorMsg = errorMsg + " Unbalanced parenthesis cannot be used in context " + context + " for API "
+                        + apiName;
+                throw new APIManagementException(errorMsg);
+            }
+        } else {
+            errorMsg = errorMsg + " Special characters cannot be used in context " + context + " for API "+ apiName;
+            log.error(errorMsg);
+            throw new APIManagementException(errorMsg);
+        }
+    }
+
+    /**
+     * Check whether the parentheses are balanced
+     *
+     * @param input API Context
+     * @throws APIManagementException If parentheses are not balanced
+     */
+    public static boolean checkBalancedParentheses(@NotNull String input) throws APIManagementException {
+        int count = 0;
+        for (int i = 0; i < input.length(); i++) {
+            if (input.charAt(i) == '(') {
+                count++;
+            } else if (input.charAt(i) == ')') {
+                count--;
+            }
+            if (count < 0) {
+                log.error("Unbalanced parentheses in : " + input);
+                return false;
+            }
+        }
+        if (count != 0) {
+            log.error("Unbalanced parentheses in : " + input);
+            return false;
+        }
+        return true;
     }
 
     public static void copyResourcePermissions(String username, String sourceArtifactPath, String targetArtifactPath)
@@ -7805,47 +7957,6 @@ public final class APIUtil {
     }
 
     /**
-     * Utility method to generate JWT header with public certificate thumbprint for signature verification.
-     *
-     * @param publicCert         - The public certificate which needs to include in the header as thumbprint
-     * @param signatureAlgorithm signature algorithm which needs to include in the header
-     * @throws APIManagementException
-     */
-    public static String generateHeader(Certificate publicCert, String signatureAlgorithm) throws APIManagementException {
-
-        try {
-            //generate the SHA-1 thumbprint of the certificate
-            MessageDigest digestValue = MessageDigest.getInstance("SHA-1");
-            byte[] der = publicCert.getEncoded();
-            digestValue.update(der);
-            byte[] digestInBytes = digestValue.digest();
-            String publicCertThumbprint = hexify(digestInBytes);
-            String base64UrlEncodedThumbPrint;
-            base64UrlEncodedThumbPrint = java.util.Base64.getUrlEncoder()
-                    .encodeToString(publicCertThumbprint.getBytes("UTF-8"));
-            StringBuilder jwtHeader = new StringBuilder();
-            /*
-             * Sample header
-             * {"typ":"JWT", "alg":"SHA256withRSA", "x5t":"a_jhNus21KVuoFx65LmkW2O_l10",
-             * "kid":"a_jhNus21KVuoFx65LmkW2O_l10_RS256"}
-             * {"typ":"JWT", "alg":"[2]", "x5t":"[1]", "x5t":"[1]"}
-             * */
-            jwtHeader.append("{\"typ\":\"JWT\",");
-            jwtHeader.append("\"alg\":\"");
-            jwtHeader.append(getJWSCompliantAlgorithmCode(signatureAlgorithm));
-            jwtHeader.append("\",");
-
-            jwtHeader.append("\"x5t\":\"");
-            jwtHeader.append(base64UrlEncodedThumbPrint);
-            jwtHeader.append("\"}");
-            return jwtHeader.toString();
-
-        } catch (Exception e) {
-            throw new APIManagementException("Error in generating public certificate thumbprint", e);
-        }
-    }
-
-    /**
      * Get the JWS compliant signature algorithm code of the algorithm used to sign the JWT.
      *
      * @param signatureAlgorithm - The algorithm used to sign the JWT. If signing is disabled, the value will be NONE.
@@ -9440,9 +9551,10 @@ public final class APIUtil {
         UrlValidator urlValidator = new UrlValidator(authorityValidator, validatorOptions);
 
         for (String endpoint : endpoints) {
-            // If url is a JMS connection url or a Consul service discovery related url, validation is skipped.
-            // If not, validity is checked.
-            if (!endpoint.startsWith("jms:") && !endpoint.startsWith("consul(") && !urlValidator.isValid(endpoint)) {
+            // If url is a JMS connection url or a Consul service discovery related url, or a parameterized URL
+            // validation is skipped. If not, validity is checked.
+            if (!endpoint.startsWith("jms:") && !endpoint.startsWith("consul(") && !endpoint.contains("{") &&
+                    !endpoint.contains("}") && !urlValidator.isValid(endpoint)) {
                 try {
                     // If the url is not identified as valid from the above check,
                     // next step is determine the validity of the encoded url (done through the URI constructor).
@@ -9708,10 +9820,14 @@ public final class APIUtil {
             throws APIManagementException {
 
         Schema schema = APIUtil.retrieveOperationPolicySpecificationJsonSchema();
+        org.json.JSONObject policySpecJson = null;
         if (schema != null) {
             try {
-                org.json.JSONObject uploadedConfig = new org.json.JSONObject(policySpecAsString);
-                schema.validate(uploadedConfig);
+                policySpecJson = new org.json.JSONObject(policySpecAsString);
+                if (policySpecJson.has(APIConstants.DATA)) {
+                    policySpecJson = policySpecJson.getJSONObject(APIConstants.DATA);
+                }
+                schema.validate(policySpecJson);
             } catch (ValidationException e) {
                 List<String> errors = e.getAllMessages();
                 String errorMessage = errors.size() + " validation error(s) found. Error(s) :" + errors.toString();
@@ -9719,9 +9835,9 @@ public final class APIUtil {
                         ExceptionCodes.from(ExceptionCodes.INVALID_OPERATION_POLICY_SPECIFICATION,
                                 errorMessage));
             }
-            return new Gson().fromJson(policySpecAsString, OperationPolicySpecification.class);
+            return new Gson().fromJson(policySpecJson.toString(), OperationPolicySpecification.class);
         }
-        return null;
+        throw new APIManagementException("API policy schema not found");
     }
 
     /**
@@ -10080,5 +10196,26 @@ public final class APIUtil {
             return tenantConfig.get(propertyName).toString();
         }
         return null;
+    }
+
+    /**
+     * This method will check whether API level policy support feature is enabled.
+     *
+     * @return true if API level policy support feature is enabled, false otherwise.
+     */
+    public static boolean isAPILevelPolicySupportEnabled() {
+        boolean isApiLevelPolicySupportEnabled = ServiceReferenceHolder.getInstance().isAPIPoliciesEnabled();
+
+        // If the config is set via deployment.toml, but the "AM_API_POLICY_MAPPING" table is not created,
+        // then the API level policy feature will be disabled.
+        APIManagerConfiguration configuration = ServiceReferenceHolder.getInstance().
+                getAPIManagerConfigurationService().getAPIManagerConfiguration();
+        String isApiLevelPolicySupportEnabledConfig = configuration.getFirstProperty(APIConstants.ENABLE_API_POLICIES);
+        if (!isApiLevelPolicySupportEnabled && Boolean.parseBoolean(isApiLevelPolicySupportEnabledConfig)) {
+            log.warn("API level policy support feature is disabled. Please make sure that the " +
+                    "AM_API_POLICY_MAPPING table is created.");
+        }
+
+        return isApiLevelPolicySupportEnabled;
     }
 }

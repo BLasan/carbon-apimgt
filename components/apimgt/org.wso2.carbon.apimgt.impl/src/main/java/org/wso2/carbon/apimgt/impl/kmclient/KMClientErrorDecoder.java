@@ -52,7 +52,7 @@ public class KMClientErrorDecoder implements ErrorDecoder {
         String errorDescription = null;
         if (response.body() != null) {
             try {
-                String responseStr = IOUtils.toString(response.body().asInputStream(), UTF_8);
+                String responseStr = IOUtils.toString(response.body().asInputStream(), String.valueOf(UTF_8));
                 JSONParser jsonParser = new JSONParser();
                 JSONObject responseJson = (JSONObject) jsonParser.parse(responseStr);
                 Object errorObj = responseJson.get("error_description");

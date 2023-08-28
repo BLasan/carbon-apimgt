@@ -22,6 +22,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.conn.ssl.DefaultHostnameVerifier;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
+import org.apache.http.conn.ssl.SSLSocketFactory;
 import org.apache.http.ssl.SSLContexts;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
@@ -86,6 +87,7 @@ import org.wso2.carbon.apimgt.impl.notifier.Notifier;
 import org.wso2.carbon.apimgt.impl.notifier.PolicyNotifier;
 import org.wso2.carbon.apimgt.impl.notifier.ScopesNotifier;
 import org.wso2.carbon.apimgt.impl.notifier.SubscriptionsNotifier;
+import org.wso2.carbon.apimgt.impl.notifier.KeyTemplateNotifier;
 import org.wso2.carbon.apimgt.impl.observers.APIStatusObserverList;
 import org.wso2.carbon.apimgt.impl.observers.CommonConfigDeployer;
 import org.wso2.carbon.apimgt.impl.observers.KeyMgtConfigDeployer;
@@ -142,14 +144,17 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.cache.Cache;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
 
 import static org.wso2.carbon.apimgt.common.gateway.util.CommonAPIUtil.ALLOW_ALL;
+import static org.wso2.carbon.apimgt.common.gateway.util.CommonAPIUtil.DEFAULT_AND_LOCALHOST;
 import static org.wso2.carbon.apimgt.common.gateway.util.CommonAPIUtil.HOST_NAME_VERIFIER;
 import static org.wso2.carbon.apimgt.common.gateway.util.CommonAPIUtil.STRICT;
 
@@ -207,6 +212,7 @@ public class APIManagerComponent {
             bundleContext.registerService(Notifier.class.getName(),new GoogleAnalyticsNotifier(),null);
             bundleContext.registerService(Notifier.class.getName(),new ExternalGatewayNotifier(),null);
             bundleContext.registerService(Notifier.class.getName(),new ExternallyDeployedApiNotifier(),null);
+            bundleContext.registerService(Notifier.class.getName(),new KeyTemplateNotifier(), null);
             bundleContext.registerService(Notifier.class.getName(), new CorrelationConfigNotifier(), null);
             APIManagerConfigurationServiceImpl configurationService = new APIManagerConfigurationServiceImpl(configuration);
             ServiceReferenceHolder.getInstance().setAPIManagerConfigurationService(configurationService);
@@ -336,13 +342,19 @@ public class APIManagerComponent {
                 }
             }
             bundleContext.registerService(ScopeValidator.class, new SystemScopesIssuer(), null);
+
+            // Check if API level policy support feature is enabled or not
+            String isAPIPoliciesEnabledConfig = configuration.getFirstProperty(APIConstants.ENABLE_API_POLICIES);
+            boolean isPolicyTableExists = ApiMgtDAO.getInstance().isTableExists("AM_API_POLICY_MAPPING");
+            boolean isAPIPoliciesEnabled = Boolean.parseBoolean(isAPIPoliciesEnabledConfig) && isPolicyTableExists;
+            ServiceReferenceHolder.getInstance().setAPIPoliciesEnabled(isAPIPoliciesEnabled);
+
         } catch (APIManagementException e) {
             log.error("Error while initializing the API manager component", e);
         } catch (APIManagerDatabaseException e) {
             log.fatal("Error while Creating the database", e);
         }
     }
-
 
     @Deactivate
     protected void deactivate(ComponentContext componentContext) {
@@ -1019,9 +1031,7 @@ public class APIManagerComponent {
             int proxyPort = Integer.parseInt(configuration.getFirstProperty(APIConstants.PROXY_PORT));
             String proxyUsername = configuration.getFirstProperty(APIConstants.PROXY_USERNAME);
             String proxyPassword = configuration.getFirstProperty(APIConstants.PROXY_PASSWORD);
-            String nonProxyHostsString = configuration.getFirstProperty(APIConstants.NON_PROXY_HOSTS);
-            String[] nonProxyHosts = configuration.getFirstProperty(nonProxyHostsString) != null ?
-                    nonProxyHostsString.split("\\|") : null;
+            String[] nonProxyHosts = getNonProxyHostsListByNonProxyHostsStringConfiguration(configuration);
             String proxyProtocol = configuration.getFirstProperty(APIConstants.PROXY_PROTOCOL);
             builder = builder.withProxy(proxyHost, proxyPort, proxyUsername, proxyPassword, proxyProtocol,
                     nonProxyHosts);
@@ -1049,12 +1059,33 @@ public class APIManagerComponent {
             case STRICT:
                 hostnameVerifier = new DefaultHostnameVerifier();
                 break;
+            case DEFAULT_AND_LOCALHOST:
+                hostnameVerifier = new HostnameVerifier() {
+                    final String[] localhosts = { "::1", "127.0.0.1", "localhost", "localhost.localdomain" };
+                    @Override
+                    public boolean verify(String urlHostName, SSLSession session) {
+                        return SSLSocketFactory.BROWSER_COMPATIBLE_HOSTNAME_VERIFIER.verify(urlHostName, session)
+                                || Arrays.asList(localhosts).contains(urlHostName);
+                    }
+                };
+                break;
             default:
                 hostnameVerifier = new BrowserHostnameVerifier();
         }
         configuration.setHttpClientConfiguration(builder.withConnectionParams(maxTotal, defaultMaxPerRoute)
                 .withSSLContext(sslContext, hostnameVerifier).build());
     }
+
+    /**
+     * Populate list of NonProxyHosts for given nonProxyHostsString through APIManager Configuration
+     *
+     * @return String array of proxy list
+     */
+    String[] getNonProxyHostsListByNonProxyHostsStringConfiguration(APIManagerConfiguration config) {
+        String nonProxyHostsString = config.getFirstProperty(APIConstants.NON_PROXY_HOSTS);
+        return nonProxyHostsString != null ? nonProxyHostsString.split("\\|") : null;
+    }
+
     @Reference(
             name = "apim.workflow.task.service",
             service = org.wso2.carbon.apimgt.api.model.WorkflowTaskService.class,

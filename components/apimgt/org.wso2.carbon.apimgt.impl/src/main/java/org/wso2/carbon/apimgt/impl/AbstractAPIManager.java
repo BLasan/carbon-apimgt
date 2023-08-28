@@ -361,10 +361,6 @@ public abstract class AbstractAPIManager implements APIManager {
             DocumentationContent docContent = null;
             if (content != null) {
                 docContent = DocumentMapper.INSTANCE.toDocumentationContent(content);
-            } else {
-                String msg = "Failed to get the document content. Artifact corresponding to document id " + docId
-                        + " does not exist";
-                throw new APIMgtResourceNotFoundException(msg);
             }
             return docContent;
         } catch (DocumentationPersistenceException e) {
@@ -1475,7 +1471,7 @@ public abstract class AbstractAPIManager implements APIManager {
             }
             List<APICategory> categoryList = new ArrayList<>();
 
-            if (!categoriesOfAPI.isEmpty()) {
+            if (!categoriesOfAPI.isEmpty() && migrationEnabled == null) {
                 // category array retrieved from artifact has only the category name, therefore we need to fetch
                 // categories
                 // and fill out missing attributes before attaching the list to the api

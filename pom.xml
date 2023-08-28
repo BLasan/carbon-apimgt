@@ -4,7 +4,7 @@
     <groupId>org.wso2.carbon.apimgt</groupId>
     <artifactId>carbon-apimgt</artifactId>
     <packaging>pom</packaging>
-    <version>9.28.116</version>
+    <version>9.28.116.74-SNAPSHOT</version>
     <name>WSO2 Carbon - API Management Aggregator POM</name>
     <url>https://wso2.org</url>
 
@@ -20,7 +20,8 @@
         <developerConnection>scm:git:https://github.com/wso2-support/carbon-apimgt.git</developerConnection>
         <connection>scm:git:https://github.com/wso2-support/carbon-apimgt.git</connection>
         
-    </scm>
+      <tag>HEAD</tag>
+  </scm>
 
     <modules>
         <module>service-stubs/apimgt</module>
@@ -1089,6 +1090,10 @@
                         <groupId>org.wso2.orbit.org.opensaml</groupId>
                         <artifactId>opensaml</artifactId>
                     </exclusion>
+                    <exclusion>
+                        <groupId>ua.parser.wso2</groupId>
+                        <artifactId>ua-parser</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
 
@@ -1933,11 +1938,21 @@
                 <artifactId>org.wso2.carbon.logging.correlation</artifactId>
                 <version>${carbon.kernel.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.apache.tika</groupId>
+                <artifactId>tika-core</artifactId>
+                <version>${tika.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.xmlgraphics</groupId>
+                <artifactId>batik-all</artifactId>
+                <version>${batik.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
     <properties>
-        <project.scm.id>scm-server</project.scm.id>
+        <project.scm.id>wso2-scm-server</project.scm.id>
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
         <sonar.organization>wso2</sonar.organization>
         <sonar.projectKey>wso2_carbon-apimgt</sonar.projectKey>
@@ -1949,7 +1964,7 @@
 
         <!-- APIM Component Version -->
         <hamcrest.version>1.3</hamcrest.version>
-        <carbon.apimgt.version>9.28.116</carbon.apimgt.version>
+        <carbon.apimgt.version>9.28.116.74-SNAPSHOT</carbon.apimgt.version>
         <carbon.apimgt.imp.pkg.version>[9.0.0, 10.0.0)</carbon.apimgt.imp.pkg.version>
 
         <carbon.analytics.common.version>5.3.5</carbon.analytics.common.version>
@@ -1958,7 +1973,7 @@
         <carbon.kernel.feature.version>${carbon.kernel.version}</carbon.kernel.feature.version>
         <carbon.kernel.package.import.version.range>[4.5.0, 5.0.0)</carbon.kernel.package.import.version.range>
 
-        <carbon.commons.version>4.9.2</carbon.commons.version>
+        <carbon.commons.version>4.9.2.2</carbon.commons.version>
 
         <carbon.registry.version>4.8.13</carbon.registry.version>
         <carbon.mediation.version>4.7.175</carbon.mediation.version>
@@ -1977,7 +1992,8 @@
         <saml.common.util.version>1.2.1</saml.common.util.version>
         <saml.common.util.version.range>[1.0.0,2.0.0)</saml.common.util.version.range>
 
-        <graphql.java.version>19.2.wso2v2</graphql.java.version>
+        <graphql.java.version>19.6.wso2v1</graphql.java.version>
+        <graphql.java.version.range>[19.0,20.0)</graphql.java.version.range>
 
         <carbon.governance.version>4.8.30</carbon.governance.version>
         <carbon.deployment.version>4.11.7</carbon.deployment.version>
@@ -2040,7 +2056,7 @@
         <imp.package.version.osgi.framework>[1.6.0, 2.0.0)</imp.package.version.osgi.framework>
 
         <!-- Misc Versions -->
-        <synapse.version>4.0.0-wso2v20</synapse.version>
+        <synapse.version>4.0.0-wso2v20.6</synapse.version>
 
         <orbit.version.json>3.0.0.wso2v1</orbit.version.json>
 
@@ -2069,7 +2085,7 @@
         <httpclient.version>4.3.6.wso2v3</httpclient.version>
         <wss4j.version>1.5.11-wso2v18</wss4j.version>
         <commons-logging.version>1.1.1</commons-logging.version>
-        <commons-io.version>2.4.0.wso2v1</commons-io.version>
+        <commons-io.version>2.7.0.wso2v1</commons-io.version>
         <commons-httpclient.version>3.1</commons-httpclient.version>
         <google.code.gson.version>2.9.1</google.code.gson.version>
         <httpcomponents.version>4.5.10</httpcomponents.version>
@@ -2114,7 +2130,7 @@
         <event.processor.core.version>2.3.5</event.processor.core.version>
         <swagger.inflector.version>1.0.16.wso2v1</swagger.inflector.version>
         <swagger.inflector.oas3.version>2.0.5.wso2v2</swagger.inflector.oas3.version>
-        <swagger.parser.v3.version>2.1.10.wso2v1</swagger.parser.v3.version>
+        <swagger.parser.v3.version>2.1.13.wso2v1</swagger.parser.v3.version>
         <swagger.core.version>1.6.9</swagger.core.version>
         <swagger.models.version>1.6.9</swagger.models.version>
         <swagger.annotations.version>1.6.9</swagger.annotations.version>
@@ -2123,14 +2139,14 @@
         <xercesImpl.version>2.8.1.wso2v2</xercesImpl.version>
         <commons.scxml.version>0.9.0.wso2v2</commons.scxml.version>
         <velocity.version>2.3</velocity.version>
-        <fasterxml.jackson.version>2.14.1</fasterxml.jackson.version>
-        <fasterxml.jackson.databind.version>2.14.1</fasterxml.jackson.databind.version>
-        <fasterxml.jackson.core.version>2.14.1</fasterxml.jackson.core.version>
+        <fasterxml.jackson.version>2.15.0</fasterxml.jackson.version>
+        <fasterxml.jackson.databind.version>2.15.0</fasterxml.jackson.databind.version>
+        <fasterxml.jackson.core.version>2.15.0</fasterxml.jackson.core.version>
         <javax.validation-api>2.0.1.Final</javax.validation-api>
         <carbon.broker.version>3.3.27</carbon.broker.version>
         <andes.version>3.3.25</andes.version>
         <waffle-jna.version>1.6.wso2v7</waffle-jna.version>
-        <version.snake.yaml>1.33</version.snake.yaml>
+        <version.snake.yaml>2.0</version.snake.yaml>
         <wsdl4j.version>1.6.3.wso2v3</wsdl4j.version>
         <slf4j.test.version>1.7.29</slf4j.test.version>
         <reflection.version>0.9.11</reflection.version>
@@ -2209,5 +2225,7 @@
         <jinjava.version>2.5.6</jinjava.version>
         <h2.orbit.version>2.1.210.wso2v1</h2.orbit.version>
         <tomcat.version>9.0.53</tomcat.version>
+        <tika.version>2.7.0</tika.version>
+        <batik.version>1.16</batik.version>
     </properties>
 </project>

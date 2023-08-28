@@ -493,7 +493,9 @@ public class RegistryPersistenceUtil {
 
                 if (registry.resourceExists(govRelativePath)) {
                     // set anonymous user permission to RXTs
-                    authManager.authorizeRole(APIConstants.ANONYMOUS_ROLE, resourcePath, ActionConstants.GET);
+                    if (!authManager.isRoleAuthorized(APIConstants.ANONYMOUS_ROLE, resourcePath, ActionConstants.GET)) {
+                        authManager.authorizeRole(APIConstants.ANONYMOUS_ROLE, resourcePath, ActionConstants.GET);
+                    }
                     continue;
                 }
 
@@ -1384,6 +1386,7 @@ public class RegistryPersistenceUtil {
             api.setVersion(apiArtifact.getAttribute(APIConstants.API_OVERVIEW_VERSION));
             api.setAdvertiseOnly(Boolean.parseBoolean(apiArtifact
                     .getAttribute(APIConstants.API_OVERVIEW_ADVERTISE_ONLY)));
+            api.setThumbnail(apiArtifact.getAttribute(APIConstants.API_OVERVIEW_THUMBNAIL_URL));
 
         } catch (GovernanceException e) {
             throw new APIPersistenceException("Error while extracting api attributes ", e);

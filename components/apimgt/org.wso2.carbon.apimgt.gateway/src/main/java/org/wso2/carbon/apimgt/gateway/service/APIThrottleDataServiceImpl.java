@@ -23,6 +23,7 @@ package org.wso2.carbon.apimgt.gateway.service;
 import org.wso2.carbon.apimgt.gateway.throttling.ThrottleDataHolder;
 import org.wso2.carbon.apimgt.impl.APIConstants;
 import org.wso2.carbon.apimgt.impl.dto.ConditionDto;
+import org.wso2.carbon.apimgt.impl.notifier.events.KeyTemplateEvent;
 import org.wso2.carbon.apimgt.impl.throttling.APIThrottleDataService;
 import java.util.List;
 
@@ -134,16 +135,13 @@ public class APIThrottleDataServiceImpl implements APIThrottleDataService {
 
     @Override
     public void addKeyTemplate(String key, String keyTemplateValue) {
-
         throttleDataHolder.addKeyTemplate(key, keyTemplateValue);
     }
 
     @Override
     public void removeKeyTemplate(String key) {
-
         throttleDataHolder.removeKeyTemplate(key);
     }
-
     public void setThrottleDataHolder(ThrottleDataHolder holder) {
 
         this.throttleDataHolder = holder;

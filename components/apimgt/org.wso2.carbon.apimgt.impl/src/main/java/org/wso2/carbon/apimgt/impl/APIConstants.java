@@ -39,6 +39,8 @@ public final class APIConstants {
     //key value of the APIImpl rxt
     public static final String API_KEY = "api";
 
+    public static final String VERSION_PLACEHOLDER = "{version}";
+
     //governance registry apimgt root location
     public static final String APIMGT_REGISTRY_LOCATION = "/apimgt";
 
@@ -339,6 +341,7 @@ public final class APIConstants {
     public static final String DEFAULT_API_SECURITY_OAUTH2 = "oauth2";
     public static final String API_SECURITY_MUTUAL_SSL = "mutualssl";
     public static final String API_SECURITY_BASIC_AUTH = "basic_auth";
+    public static final String SWAGGER_API_SECURITY_BASIC_AUTH_TYPE = "basic";
     public static final String API_SECURITY_API_KEY = "api_key";
     public static final String API_SECURITY_MUTUAL_SSL_MANDATORY = "mutualssl_mandatory";
     public static final String API_SECURITY_OAUTH_BASIC_AUTH_API_KEY_MANDATORY = "oauth_basic_auth_api_key_mandatory";
@@ -437,11 +440,13 @@ public final class APIConstants {
     public static final String JWT_DEFAULT_AUDIENCE = "http://org.wso2.apimgt/gateway";
     public static final String JWT_CONFIGS = "JWTConfiguration";
     public static final String JWT_HEADER = "JWTHeader";
+    public static final String JWT_DECODING = "JWTDecoding";
     public static final String ENABLE_USER_CLAIMS = "EnableUserClaims";
     public static final String BINDING_FEDERATED_USER_CLAIMS = "EnableBindingFederatedUserClaims";
     public static final String TOKEN_GENERATOR_IMPL = "JWTGeneratorImpl";
     public static final String ENABLE_JWT_GENERATION = "EnableJWTGeneration";
     public static final String CLAIMS_RETRIEVER_CLASS = "ClaimsRetrieverImplClass";
+    public static final String USE_KID = "UseKidProperty";
     public static final String CONSUMER_DIALECT_URI = "ConsumerDialectURI";
     public static final String JWT_SIGNATURE_ALGORITHM = "SignatureAlgorithm";
     public static final String GATEWAY_JWT_GENERATOR = "GatewayJWTGeneration";
@@ -1476,8 +1481,6 @@ public final class APIConstants {
     public static final String API_MANAGER_HOSTNAME = "HostName";
     public static final String API_MANAGER_HOSTNAME_UNKNOWN = "UNKNOWN_HOST";
 
-    public static final String VERSION_PLACEHOLDER = "{version}";
-
     public enum SupportedHTTPVerbs {
         GET,
         POST,
@@ -1578,6 +1581,9 @@ public final class APIConstants {
     public static final String SWAGGER_IS_MISSING_MSG = "swagger is missing";
     public static final String OPENAPI_IS_MISSING_MSG = "openapi is missing";
     public static final String SWAGGER_X_SCOPES_BINDINGS = "x-scopes-bindings";
+    public static final String SWAGGER_X_BASIC_AUTH_SCOPES = "x-scopes";
+    public static final String SWAGGER_X_BASIC_AUTH_RESOURCE_SCOPES = "x-basic-auth-scopes";
+    public static final String OPENAPI_SECURITY_SCHEMA_KEY = "default";
 
     //swagger v1.2 constants
     public static final String SWAGGER_RESOURCES = "resources";
@@ -1951,6 +1957,7 @@ public final class APIConstants {
         public static final String EVALUATED_CONDITIONS = "evaluatedConditions";
         public static final String TRUE = "true";
         public static final String ADD = "add";
+        public static final String DELETE = "delete";
         public static final String ENABLE_POLICY_DEPLOYMENT = "EnablePolicyDeployment";
     }
 
@@ -2238,6 +2245,8 @@ public final class APIConstants {
     public static final String API_SUBSCRIPTION_TYPE = "API";
     public static final String TYPE = "type";
     public static final String TYPE_SEARCH_TYPE_KEY = "type=";
+    public static final String API_USAGE_BY_KEY_MANAGER_QUERY = "overview_keyManagers:\\*\"$1\"\\* " +
+            " AND mediaType:application\\/vnd.wso2\\-api\\+xml";
 
     public static class OASResourceAuthTypes {
 
@@ -2608,7 +2617,8 @@ public final class APIConstants {
         SCOPE,
         CERTIFICATE,
         GA_CONFIG,
-        CORRELATION_CONFIG
+        CORRELATION_CONFIG,
+        KEY_TEMPLATE
     }
 
     // Supported Event Types
@@ -2638,7 +2648,10 @@ public final class APIConstants {
         ENDPOINT_CERTIFICATE_REMOVE,
         GA_CONFIG_UPDATE,
         UDATE_API_LOG_LEVEL,
-        UPDATE_CORRELATION_CONFIGS
+        UPDATE_CORRELATION_CONFIGS,
+        CUSTOM_POLICY_ADD,
+        CUSTOM_POLICY_DELETE,
+        CUSTOM_POLICY_UPDATE
     }
 
     public enum EventAction {
@@ -2653,6 +2666,8 @@ public final class APIConstants {
         public static final String SAVER_CONFIG = "ArtifactSaver";
         public static final String RETRIEVER_CONFIG = "ArtifactRetriever";
         public static final String RETRY_DUARTION = "RetryDuration";
+        public static final String MAX_RETRY_COUNT = "MaxRetryCount";
+        public static final String RETRY_PROGRESSION_FACTOR = "RetryProgressionFactor";
         public static final String PUBLISH_DIRECTLY_TO_GW_CONFIG = "PublishDirectlyToGW";
         public static final String GATEWAY_LABELS_CONFIG = "GatewayLabels";
         public static final String LABEL_CONFIG = "Label";
@@ -2921,6 +2936,7 @@ public final class APIConstants {
     public static final String OPERATION_SEQUENCE_TYPE_RESPONSE = "response";
     public static final String OPERATION_SEQUENCE_TYPE_FAULT = "fault";
     public static final String SYNAPSE_POLICY_DEFINITION_EXTENSION = ".j2";
+    public static final String SYNAPSE_POLICY_DEFINITION_EXTENSION_XML = ".xml";
     public static final String CC_POLICY_DEFINITION_EXTENSION = ".gotmpl";
     public static final String YAML_CONTENT_TYPE = "text/yaml";
     public static final String COMMON_OPERATION_POLICY_SPECIFICATIONS_LOCATION = "repository" + File.separator
@@ -2978,4 +2994,10 @@ public final class APIConstants {
     public static final String CASE_SENSITIVE_CHECK_PATH =    "caseSensitiveRoleValidation";
     public static final String MIGRATE = "migrate";
     public static final String SWAGGER_RELAXED_VALIDATION = "swaggerRelaxedValidation";
+
+    //Property for enabling tenant aware sub claims when invoking APIs with API key
+    public static final String ENABLE_TENANT_AWARE_SUB_CLAIM= "enable.tenant.aware.subclaim";
+
+    // Property for enabling API level policy support feature
+    public static final String ENABLE_API_POLICIES = "EnableAPIPolicies";
 }

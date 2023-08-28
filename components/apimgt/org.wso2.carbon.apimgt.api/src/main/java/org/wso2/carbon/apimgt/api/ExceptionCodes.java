@@ -35,6 +35,7 @@ public enum ExceptionCodes implements ErrorHandler {
 
     API_PRODUCT_CONTEXT_ALREADY_EXISTS(900275, "The API Product context already exists.", 409, "An API Product with context '%s' already exists"),
 
+    API_CONTEXT_MALFORMED_EXCEPTION(900253, "The API context is malformed.", 400, "'%s'"),
     API_ALREADY_EXISTS(900300, "The API already exists.", 409, "The API already exists"),
     APPLICATION_ALREADY_EXISTS(900301, "The application already exists.", 409, "The application already exists"),
     APIMGT_DAO_EXCEPTION(900302, "Internal server error.", 500, "Error occurred while persisting/retrieving data"),
@@ -163,6 +164,8 @@ public enum ExceptionCodes implements ErrorHandler {
             400, "Name of the gateway is read only"),
     GATEWAY_ENVIRONMENT_VHOST_NOT_PROVIDED(900511, "Gateway Environment virtual hosts name not provided",
             400, "Gateway Environment VHOST name not provided"),
+    INVALID_VHOST(900512, "Invalid virtual host name provided",
+            400, "Virtual host with provided vhost name does not exist"),
 
     // Workflow related codes
     WORKFLOW_EXCEPTION(900550, "Workflow error", 500,
@@ -502,39 +505,45 @@ public enum ExceptionCodes implements ErrorHandler {
             "Invalid Endpoint Security credentials. %s", false),
     INVALID_TENANT_CONFIG(902001, "Invalid tenant-config found", 400, "Invalid tenant-config found with error %s", false),
 
-    //Operation Policies related error codes
-    INVALID_OPERATION_POLICY(902005, "Cannot find the selected operation policy", 400,
-            "Selected operation policy is not found"),
-    INVALID_OPERATION_POLICY_SPECIFICATION(902006, "Invalid operation policy specification found", 400,
-            "Invalid operation policy specification. %s", false),
+    // Operation level/API level policies related error codes
+    INVALID_OPERATION_POLICY(902005, "Cannot find the selected policy", 400,
+            "Selected policy is not found"),
+    INVALID_OPERATION_POLICY_SPECIFICATION(902006, "Invalid policy specification found", 400,
+            "Invalid policy specification. %s", false),
 
-    INVALID_OPERATION_POLICY_PARAMETERS(902007, "Missing required parameters for operation policy specification", 400,
-            "Required parameter(s) %s for operation policy specification %s are either missing or empty"),
-    OPERATION_POLICY_NOT_ALLOWED_IN_THE_APPLIED_FLOW(902008, "Operation policy is not allowed in the applied flow", 400,
-            "%s policy is not allowed in response flow"),
-    MISSING_MANDATORY_POLICY_ATTRIBUTES(902009, "Missing mandatory operation policy attribute", 400,
-            "Required attributes(s) %s for operation policy specification %s are either missing or empty"),
-    OPERATION_POLICY_NOT_FOUND(902010, "Operation Policy Not Found", 404,
-            "Requested operation policy with id '%s' not found"),
+    INVALID_OPERATION_POLICY_PARAMETERS(902007, "Missing required parameters for policy specification", 400,
+            "Required parameter(s) %s for policy specification %s are either missing or empty"),
+    OPERATION_POLICY_NOT_ALLOWED_IN_THE_APPLIED_FLOW(902008, "Policy is not allowed in the applied flow", 400,
+            "%s policy is not allowed in applied flow"),
 
-    OPERATION_POLICY_ALREADY_EXISTS(903001, "The Operation Policy already exists.", 409, "An Operation Policy with name '%s' and version '%s' already exists"),
+    MISSING_MANDATORY_POLICY_ATTRIBUTES(902009, "Missing mandatory operation/api policy attribute", 400,
+            "Required attributes(s) %s for policy specification %s are either missing or empty"),
+    OPERATION_POLICY_NOT_FOUND(902010, "Operation/API Policy Not Found", 404,
+            "Requested operation/api policy with id '%s' not found"),
 
-    OPERATION_POLICY_NOT_FOUND_WITH_NAME_AND_VERSION(903004, "Operation Policy Not Found with given name and version", 404,
-            "Requested operation policy with name '%s' and version '%s not found"),
+    OPERATION_POLICY_ALREADY_EXISTS(903001, "Policy already exists.", 409,
+            "Policy with name '%s' and version '%s' already exists"),
+
+    OPERATION_POLICY_NOT_FOUND_WITH_NAME_AND_VERSION(903004, "Policy with given name and version not found", 404,
+            "Requested policy with name '%s' and version '%s not found"),
 
     OPERATION_POLICY_GATEWAY_ERROR(903008,
             "Either Synapse or Choreo Gateway Definition files or both should be present", 400,
-            "Operation Policy cannot be imported due to the missing Gateway files."),
+            "Policy cannot be imported due to the missing Gateway files."),
     ERROR_VALIDATING_API_POLICY(902011, "Error while validating API policies enforced for the API", 400,
             "Error while validating the API policies enforced for the API"),
-
+    API_POLICY_SUPPORT_DISABLED(902012, "API level policy support disabled", 400,
+            "API level policy support is disabled in the system. Please enable it and try again"),
     SUBSCRIPTION_TIER_NOT_ALLOWED(902002, "Subscription Tier is not allowed for user", 403, "Subscription Tier %s is" +
             " not allowed for user %s ", false),
     INVALID_KEY_MANAGER_REQUEST(902003, "Invalid Request sent to Key Manager.", 400, "Invalid Request sent to Key Manager.Error from Backend : %s", false),
     INTERNAL_SERVER_ERROR_FROM_KEY_MANAGER(902004, "Internal Server Error from Key Manager", 500, "Internal Server Error from Key Manager.Error from Backend : %s", true),
     REVISION_ALREADY_DEPLOYED(902005, "Revision deployment state conflicted", 409,
             "Revision deployment request conflicted with the current deployment state of the revision %s. Please try again later", false),
-    INVALID_API_ID(902006, "Invalid API ID", 404, "The provided API ID is not found %s", false);
+    INVALID_API_ID(902006, "Invalid API ID", 404, "The provided API ID is not found %s", false),
+    ARTIFACT_SYNC_HTTP_REQUEST_FAILED(903009, "Error while retrieving from remote endpoint", 500, "Error while executing HTTP request to retrieve from remote endpoint"),
+    KEY_MANAGER_DELETE_FAILED(902013, "Key Manager Delete error", 412,"Key Manager Delete error. %s", false),
+    KEYS_DELETE_FAILED(902014, "Key Delete error", 412,"Keys delete error. %s", false);
 
     private final long errorCode;
     private final String errorMessage;

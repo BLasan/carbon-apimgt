@@ -189,6 +189,10 @@ public class JWTValidator {
                 log.debug("Begin subscription validation via Key Manager: " + jwtValidationInfo.getKeyManager());
                 apiKeyValidationInfoDTO = validateSubscriptionUsingKeyManager(synCtx, jwtValidationInfo);
 
+                synCtx.setProperty(
+                        APIMgtGatewayConstants.APPLICATION_NAME, apiKeyValidationInfoDTO.getApplicationName()
+                );
+                synCtx.setProperty(APIMgtGatewayConstants.END_USER_NAME, apiKeyValidationInfoDTO.getEndUserName());
                 if (log.isDebugEnabled()) {
                     log.debug("Subscription validation via Key Manager. Status: "
                             + apiKeyValidationInfoDTO.isAuthorized());
@@ -286,7 +290,12 @@ public class JWTValidator {
             if (token != null) {
                 endUserToken = (String) token;
                 String[] splitToken = ((String) token).split("\\.");
-                JSONObject payload = new JSONObject(new String(Base64.getUrlDecoder().decode(splitToken[1])));
+                JSONObject payload;
+                if (jwtConfigurationDto.getJwtDecoding().equals("base64url")) {
+                    payload = new JSONObject(new String(Base64.getUrlDecoder().decode(splitToken[1])));
+                } else {
+                    payload = new JSONObject(new String(Base64.getDecoder().decode(splitToken[1])));
+                }
                 long exp = payload.getLong("exp") * 1000L;
                 long timestampSkew = getTimeStampSkewInSeconds() * 1000;
                 valid = (exp - System.currentTimeMillis() > timestampSkew);
@@ -654,8 +663,7 @@ public class JWTValidator {
                     }
                     jwtValidationInfo = tempJWTValidationInfo;
                 }
-            } else if (SignedJWTInfo.ValidationStatus.INVALID.equals(signedJWTInfo.getValidationStatus())
-                    && getInvalidTokenCache().get(jti) != null) {
+            } else if (getInvalidTokenCache().get(jti) != null) {
                 if (log.isDebugEnabled()) {
                     log.debug("Token retrieved from the invalid token cache. Token: " + GatewayUtils
                             .getMaskedToken(jwtHeader));

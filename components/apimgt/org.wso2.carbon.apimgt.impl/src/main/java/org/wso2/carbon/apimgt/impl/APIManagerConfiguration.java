@@ -718,8 +718,8 @@ public class APIManagerConfiguration {
 
             //Prefix websub endpoints with 'websub_' so that the endpoint URL
             // would begin with: 'websub_http://', since API type is identified by the URL protocol below.
-            webSubHttpEp = "websub_" + webSubHttpEp;
-            webSubHttpsEp = "websub_" + webSubHttpsEp;
+            webSubHttpEp = StringUtils.isNotBlank(webSubHttpEp) ? "websub_" + webSubHttpEp : webSubHttpEp;
+            webSubHttpsEp = StringUtils.isNotBlank(webSubHttpsEp) ? "websub_" + webSubHttpsEp : webSubHttpsEp;
 
             VHost vhost = VHost.fromEndpointUrls(new String[]{
                     httpEp, httpsEp, wsEp, wssEp, webSubHttpEp, webSubHttpsEp});
@@ -1586,10 +1586,20 @@ public class APIManagerConfiguration {
             if (claimRetrieverImplElement != null) {
                 jwtConfigurationDto.setClaimRetrieverImplClass(claimRetrieverImplElement.getText());
             }
+            OMElement useKidElement =
+                    omElement.getFirstChildWithName(new QName(APIConstants.USE_KID));
+            if (useKidElement != null) {
+                jwtConfigurationDto.setUseKid(Boolean.parseBoolean(useKidElement.getText()));
+            }
             OMElement jwtHeaderElement =
                     omElement.getFirstChildWithName(new QName(APIConstants.JWT_HEADER));
             if (jwtHeaderElement != null) {
                 jwtConfigurationDto.setJwtHeader(jwtHeaderElement.getText());
+            }
+            OMElement jwtDecoding =
+                    omElement.getFirstChildWithName(new QName(APIConstants.JWT_DECODING));
+            if (jwtDecoding != null) {
+                jwtConfigurationDto.setJwtDecoding(jwtDecoding.getText());
             }
             OMElement jwtUserClaimsElement =
                     omElement.getFirstChildWithName(new QName(APIConstants.ENABLE_USER_CLAIMS));
@@ -2094,7 +2104,25 @@ public class APIManagerConfiguration {
             long retryDuration = Long.valueOf(retryDurationElement.getText());
             gatewayArtifactSynchronizerProperties.setRetryDuartion(retryDuration);
         } else {
-            log.debug("Retry Duration Element is not set. Set to default duaration");
+            log.debug("Retry Duration Element is not set. Set to default duration");
+        }
+
+        OMElement maxRetryCountElement = omElement.getFirstChildWithName(
+                new QName(APIConstants.GatewayArtifactSynchronizer.MAX_RETRY_COUNT));
+        if (maxRetryCountElement != null) {
+            int retryCount = Integer.parseInt(maxRetryCountElement.getText());
+            gatewayArtifactSynchronizerProperties.setMaxRetryCount(retryCount);
+        } else {
+            log.debug("Max Retry Count Element is not set. Set to default count");
+        }
+
+        OMElement retryProgressionFactorElement = omElement.getFirstChildWithName(
+                new QName(APIConstants.GatewayArtifactSynchronizer.RETRY_PROGRESSION_FACTOR));
+        if (retryProgressionFactorElement != null) {
+            double retryProgressionFactor = Double.parseDouble(retryProgressionFactorElement.getText());
+            gatewayArtifactSynchronizerProperties.setRetryProgressionFactor(retryProgressionFactor);
+        } else {
+            log.debug("Retry Progression Factor Element is not set. Set to default value");
         }
 
         OMElement dataRetrievalModeElement = omElement.getFirstChildWithName(
