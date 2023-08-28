@@ -411,6 +411,7 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
         }
     }
 
+    @Override
     public long getTtl(String key) {
         long startTime = 0;
         long ttl;
@@ -434,6 +435,7 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
         }
     }
 
+    @Override
     public long setLock(String key, String value) {
         long startTime = 0;
         try {
@@ -459,6 +461,7 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
         }
     }
 
+    @Override
     public boolean setLockWithExpiry(String key, String value, long expiryTimeStamp) {
         long startTime = 0;
         try {
@@ -495,7 +498,6 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
     }
 
     @Override
-
     public boolean isEnable() {
 
         return true;

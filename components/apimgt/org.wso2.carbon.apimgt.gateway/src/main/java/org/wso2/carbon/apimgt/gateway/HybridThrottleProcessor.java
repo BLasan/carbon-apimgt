@@ -80,7 +80,8 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
                 log.trace("SyncModeInitChannelSubscription Thread Running");
             }
             JedisPubSub jedisPubSub = new JedisPubSub() {
-                @Override public void onSubscribe(String channel, int subscribedChannels) {
+                @Override
+                public void onSubscribe(String channel, int subscribedChannels) {
                     super.onSubscribe(channel, subscribedChannels);
                     if (log.isTraceEnabled()) {
                         log.trace("Gateway is Subscribed to " + channel);
@@ -88,14 +89,16 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
                     redisConnectionRetryInterval = initialRedisConnectionRetryInterval;
                 }
 
-                @Override public void onUnsubscribe(String channel, int subscribedChannels) {
+                @Override
+                public void onUnsubscribe(String channel, int subscribedChannels) {
                     super.onUnsubscribe(channel, subscribedChannels);
                     if (log.isWarnEnabled()) {
                         log.warn("Gateway client is Unsubscribed from channel: " + channel);
                     }
                 }
 
-                @Override public void onMessage(String channel, String syncModeInitMsg) {
+                @Override
+                public void onMessage(String channel, String syncModeInitMsg) {
                     super.onMessage(channel, syncModeInitMsg);
                     if (log.isTraceEnabled()) {
                         log.trace("\n\nSync mode changed message received to this node" + gatewayId + ". Channel: "
@@ -231,7 +234,8 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
      *
      * @return boolean value indicating whether the request can be accessed or not
      */
-    @Override public boolean canAccessBasedOnUnitTime(CallerContext callerContext, CallerConfiguration configuration,
+    @Override
+    public boolean canAccessBasedOnUnitTime(CallerContext callerContext, CallerConfiguration configuration,
             ThrottleContext throttleContext, RequestContext requestContext) {
         if (log.isTraceEnabled()) {
             log.trace("Starting evaluating whether can access based on unit time.");
@@ -333,7 +337,8 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
      *
      * @return boolean value indicating whether the request can be accessed or not
      */
-    @Override public boolean canAccessIfUnitTimeNotOver(CallerContext callerContext, CallerConfiguration configuration,
+    @Override
+    public boolean canAccessIfUnitTimeNotOver(CallerContext callerContext, CallerConfiguration configuration,
             ThrottleContext throttleContext, RequestContext requestContext) {
         if (log.isTraceEnabled()) {
             log.trace("Starting evaluating whether can access if unit time is not over. ");
@@ -552,7 +557,8 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
      *
      * @return boolean value indicating whether the request can be accessed or not
      */
-    @Override public boolean canAccessIfUnitTimeOver(CallerContext callerContext, CallerConfiguration configuration,
+    @Override
+    public boolean canAccessIfUnitTimeOver(CallerContext callerContext, CallerConfiguration configuration,
             ThrottleContext throttleContext, RequestContext requestContext) {
         if (log.isTraceEnabled()) {
             log.trace("Evaluating whether can access if unit time is over. ");
@@ -760,7 +766,8 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
      *
      * @param isInvocationFlow Whether the flow is just a syncing flow which doesn't increase request counters
      */
-    @Override public void syncThrottleCounterParams(CallerContext callerContext, boolean isInvocationFlow,
+    @Override
+    public void syncThrottleCounterParams(CallerContext callerContext, boolean isInvocationFlow,
             RequestContext requestContext) {
         if (log.isTraceEnabled()) {
             log.trace("\n\nWhen running syncing throttle counter params: isInvocationFlow:" + isInvocationFlow);
@@ -828,7 +835,8 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
     /**
      * Syncs the throttle window related parameters
      */
-    @Override public void syncThrottleWindowParams(CallerContext callerContext, boolean isInvocationFlow) {
+    @Override
+    public void syncThrottleWindowParams(CallerContext callerContext, boolean isInvocationFlow) {
         synchronized (callerContext.getId().intern()) {
             long syncingStartTime = System.currentTimeMillis();
             if (log.isTraceEnabled()) {
