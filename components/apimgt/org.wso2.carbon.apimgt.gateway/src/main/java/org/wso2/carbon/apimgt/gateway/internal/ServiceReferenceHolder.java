@@ -105,6 +105,7 @@ public class ServiceReferenceHolder {
         return throttleDataHolder;
     }
     private ArtifactRetriever artifactRetriever;
+    private int gatewayCount = 1;
 
     private ServiceReferenceHolder() {
 
@@ -438,4 +439,13 @@ public class ServiceReferenceHolder {
             }
         }
     }
+
+    public int getGatewayCount() {
+        return gatewayCount;
+    }
+
+    public void setGatewayCount(int gatewayCount) {
+        this.gatewayCount = gatewayCount;
+    }
+
 }
