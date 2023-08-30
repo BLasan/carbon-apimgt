@@ -101,7 +101,7 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
                 public void onMessage(String channel, String syncModeInitMsg) {
                     super.onMessage(channel, syncModeInitMsg);
                     if (log.isTraceEnabled()) {
-                        log.trace("\n\nSync mode changed message received to this node " + gatewayId + ". Channel: "
+                        log.trace("Sync mode changed message received to this node " + gatewayId + ". Channel: "
                                 + channel + " " + "Msg : " + syncModeInitMsg);
                     }
                     if (syncModeInitMsg.startsWith(gatewayId)) {
@@ -124,7 +124,7 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
 
                     syncModeNotifiedMap.put(callerContextId, nextTimeWindow);
                     if (log.isTraceEnabled()) {
-                        log.trace("\n Caller " + callerContextId + " SWITCHED TO SYNC MODE by message received ! :");
+                        log.trace("Caller " + callerContextId + " SWITCHED TO SYNC MODE by message received ! :");
                     }
                     // sync throttle params to redis to consider local unpublished request counts in distributed counters
                     if (dataHolder != null) {
@@ -271,8 +271,8 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
         if (callerContext.getLocalHits() == callerContext.getLocalQuota()
                 && !callerContext.isThrottleParamSyncingModeSync() && canAccess == true) {
             if (log.isTraceEnabled()) {
-                log.trace("\n\n Local quota reached. SWITCHED TO SYNC MODE !!!. local hits = "
-                        + callerContext.getLocalHits() + "\n");
+                log.trace("Local quota reached. SWITCHED TO SYNC MODE !!! local hits = "
+                        + callerContext.getLocalHits());
             }
             callerContext.setIsThrottleParamSyncingModeSync(true);
             String message =
@@ -702,8 +702,8 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
      */
     private void setThrottleParamSyncMode(CallerContext callerContext, RequestContext requestContext) {
         if (log.isTraceEnabled()) {
-            log.trace("Setting ThrottleParam Sync Mode for callerContext" + callerContext.getId()
-                    + ". \nsyncModeNotifiedMap:" + syncModeNotifiedMap.entrySet());
+            log.trace("Setting ThrottleParam Sync Mode for callerContext." + callerContext.getId()
+                    + ". syncModeNotifiedMap:" + syncModeNotifiedMap.entrySet());
         }
         if (callerContext.isThrottleParamSyncingModeSync()) {
             if (log.isTraceEnabled()) {
@@ -744,7 +744,7 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
     public void syncThrottleCounterParams(CallerContext callerContext, boolean isInvocationFlow,
             RequestContext requestContext) {
         if (log.isTraceEnabled()) {
-            log.trace("\n\nWhen running syncing throttle counter params: isInvocationFlow = " + isInvocationFlow);
+            log.trace("When running syncing throttle counter params: isInvocationFlow = " + isInvocationFlow);
         }
         synchronized (callerContext.getId().intern()) {
             long syncingStartTime = System.currentTimeMillis();
@@ -788,12 +788,12 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
                     log.trace("When running syncing throttle counter params: Finally globalCounter increased from " + x
                             + " to " + callerContext.getGlobalCounter());
                     log.trace(
-                            "When running syncing throttle counter params: finally local counter reset to 0\n\n");
+                            "When running syncing throttle counter params: finally local counter reset to 0");
                 }
 
             } else {
                 if (log.isTraceEnabled()) {
-                    log.trace("Throttle Counter Sync task skipped \n");
+                    log.trace("Throttle Counter Sync task skipped");
                 }
             }
             if (log.isDebugEnabled()) {
@@ -811,7 +811,7 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
         synchronized (callerContext.getId().intern()) {
             long syncingStartTime = System.currentTimeMillis();
             if (log.isTraceEnabled()) {
-                log.trace("\n\n When running syncing throttle window params: isInvocationFlow = " + isInvocationFlow);
+                log.trace("When running syncing throttle window params: isInvocationFlow = " + isInvocationFlow);
             }
 
             String callerId = callerContext.getId();
@@ -889,19 +889,19 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
                 /* In the flow this is the first time that reaches throttleWindowParamSync method. And then at
                  canAccessIfUnitTimeOver flow, the first call after the sharedTimestamp is removed from redis. */
                 if (log.isTraceEnabled()) {
-                    log.trace("\n\nSetting Shared Timestamp");
+                    log.trace("Setting Shared Timestamp");
                 }
                 SharedParamManager.setSharedTimestampWithExpiry(callerId, localFirstAccessTime,
                         callerContext.getUnitTime() + localFirstAccessTime);
                 if (log.isTraceEnabled()) {
-                    log.trace("\n\nSetting Distributed Counter With Expiry");
+                    log.trace("Setting Distributed Counter With Expiry");
                 }
                 SharedParamManager.setDistributedCounterWithExpiry(callerId, 0,
                         callerContext.getUnitTime() + localFirstAccessTime);
 
                 if (log.isTraceEnabled()) {
                     log.trace("Finished setting distributed counter. Set value 0. ");
-                    log.trace("\n When running syncing throttle window params: Completed resetting time window of "
+                    log.trace("When running syncing throttle window params: Completed resetting time window of "
                             + callerId);
                 }
             }
