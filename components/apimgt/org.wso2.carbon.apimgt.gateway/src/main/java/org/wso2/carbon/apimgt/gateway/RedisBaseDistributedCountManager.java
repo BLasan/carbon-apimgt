@@ -294,9 +294,7 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
                 transaction.exec();
 
                 if (response != null && response.get() != null) {
-                    log.trace("Getting timestamp of key:" + key + ". Timestamp not null. Value:"
-                            + ThrottleUtils.getReadableTime(Long.parseLong(response.get())) + "(" + response.get()
-                            + ")");
+                    log.trace("Getting timestamp of key:" + key + ". Timestamp not null. Value:" + response.get());
                     return Long.parseLong(response.get());
                 } else {
                     log.trace("Timestamp key doesn't exist !!!. key: " + key + "  So returning 0");
@@ -324,14 +322,13 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
             }
         } finally {
             if (log.isTraceEnabled()) {
-                log.trace("Time Taken to setTimestamp :" + ThrottleUtils.getReadableTime(timeStamp) + "(" +
-                        timeStamp + "):" + (System.currentTimeMillis() - startTime));
+                log.trace(
+                        "Time Taken to setTimestamp " + +timeStamp + " : " + (System.currentTimeMillis() - startTime));
             }
         }
     }
 
     public void setTimestampWithExpiry(String key, long timeStamp, long expiryTime) {
-        log.trace("Checking ttl before calling timestamp. TTL:" + getTtl(key));
         long startTime = 0;
         try {
             startTime = System.currentTimeMillis();
@@ -350,8 +347,7 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
                 } else {
                     log.trace("Expire timeout was not set");
                 }
-                log.trace("setTimestamp " + ThrottleUtils.getReadableTime(timeStamp) + "(" +
-                        timeStamp + ")");
+                log.trace("setTimestamp :" + timeStamp);
             }
         } finally {
             if (log.isTraceEnabled()) {
@@ -384,9 +380,7 @@ public class RedisBaseDistributedCountManager implements DistributedCounterManag
     public void setExpiry(String key, long expiryTimeStamp) {
         long currentTime = System.currentTimeMillis();
         if (log.isTraceEnabled()) {
-            log.trace("Setting expiry of key :" + key + " to:" + ThrottleUtils.getReadableTime(expiryTimeStamp) + " ("
-                    + expiryTimeStamp + ")" + " current timestamp:" + ThrottleUtils.getReadableTime(currentTime) + " ("
-                    + currentTime + ")");
+            log.trace("Setting expiry of key " + key + " to " + expiryTimeStamp + " current timestamp:" + currentTime);
         }
         long startTime = 0;
         try {
