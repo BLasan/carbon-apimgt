@@ -388,9 +388,6 @@ public class APIManagerConfiguration {
                         new QName(APIConstants.CONFIG_REDIS_MIN_GATEWAY_COUNT));
                 OMElement keyLockRetrievalTimeout = element.getFirstChildWithName(
                         new QName(APIConstants.CONFIG_REDIS_KEY_LOCK_RETRIEVAL_TIMEOUT));
-                OMElement isProductionUnitTimeSec = element.getFirstChildWithName(
-                        new QName(APIConstants.CONFIG_IS_PRODUCTION_UNIT_TIME_IN_SEC));//TODO: remove
-
                 redisConfig.setRedisEnabled(true);
                 redisConfig.setHost(redisHost.getText());
                 redisConfig.setPort(Integer.parseInt(redisPort.getText()));
@@ -406,9 +403,6 @@ public class APIManagerConfiguration {
                 if (keyLockRetrievalTimeout != null) {
                     redisConfig.setKeyLockRetrievalTimeout(Integer.parseInt(keyLockRetrievalTimeout.getText()));
                 }
-                redisConfig.setProductionUnitTimeInSec(
-                        Boolean.parseBoolean(isProductionUnitTimeSec.getText())); //TODO: remove
-
                 if (redisUser != null) {
                     redisConfig.setUser(redisUser.getText());
                 }
