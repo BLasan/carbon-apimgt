@@ -338,7 +338,7 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
         }
         boolean canAccess = false;
         int maxRequest = configuration.getMaximumRequestPerUnitTime();
-        boolean localCounterReseted = true;
+        boolean localCounterResettingDone = true;
         if (maxRequest != 0) {
             if (callerContext.isThrottleParamSyncingModeSync()) {
                 if (log.isTraceEnabled()) {
@@ -374,7 +374,7 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
                             "Evaluating whether can access if unit time is not over. Serving api calls in async mode");
                 }
                 callerContext.incrementLocalCounter();
-                localCounterReseted = false;
+                localCounterResettingDone = false;
             }
 
             if (log.isTraceEnabled()) {
@@ -514,7 +514,7 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
                 }
             }
             // if throttle param processing was async and if the request was not allowed, then need to reset the local counter and hits
-            if (!localCounterReseted && canAccess == false) {
+            if (!localCounterResettingDone && canAccess == false) {
                 callerContext.resetLocalCounter(); //
                 callerContext.setLocalHits(0);
             }
@@ -782,15 +782,13 @@ public class HybridThrottleProcessor implements DistributedThrottleProcessor {
                 }
 
                 //Update instance's global counter value with distributed counter
-                long x = callerContext.getGlobalCounter();
+                long oldGlobalCounter = callerContext.getGlobalCounter();
                 callerContext.setGlobalCounter(distributedCounter);
                 if (log.isTraceEnabled()) {
-                    log.trace("When running syncing throttle counter params: Finally globalCounter increased from " + x
-                            + " to " + callerContext.getGlobalCounter());
-                    log.trace(
-                            "When running syncing throttle counter params: finally local counter reset to 0");
+                    log.trace("When running syncing throttle counter params: Finally globalCounter increased from "
+                            + oldGlobalCounter + " to " + callerContext.getGlobalCounter());
+                    log.trace("When running syncing throttle counter params: finally local counter reset to 0");
                 }
-
             } else {
                 if (log.isTraceEnabled()) {
                     log.trace("Throttle Counter Sync task skipped");
