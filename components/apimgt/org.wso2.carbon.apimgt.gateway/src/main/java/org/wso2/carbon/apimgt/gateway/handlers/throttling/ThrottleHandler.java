@@ -136,14 +136,6 @@ public class ThrottleHandler extends AbstractHandler implements ManagedLifecycle
             log.debug("Throttle Handler initialized");
         }
         this.roleBasedAccessController = new RoleBasedAccessRateController();
-
-        // TODO: debuging config; remove
-        RedisConfig redisConfig = org.wso2.carbon.apimgt.impl.internal.ServiceReferenceHolder.
-                getInstance().getAPIManagerConfigurationService().getAPIManagerConfiguration().getRedisConfig();
-        boolean isProductionUnitTimeInSec = redisConfig.isProductionUnitTimeInSec();
-        if (!isProductionUnitTimeInSec) {
-            productionUnitTime = "60000";
-        }
     }
 
 
