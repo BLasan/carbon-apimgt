@@ -21,11 +21,13 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.cxf.jaxrs.ext.MessageContext;
+import org.hibernate.loader.custom.Return;
 import org.wso2.carbon.apimgt.api.APIManagementException;
 import org.wso2.carbon.apimgt.api.model.ApplicationConstants;
 import org.wso2.carbon.apimgt.api.model.OAuthAppRequest;
 import org.wso2.carbon.apimgt.api.model.OAuthApplicationInfo;
 import org.wso2.carbon.apimgt.impl.APIConstants;
+import org.wso2.carbon.apimgt.impl.internal.ServiceReferenceHolder;
 import org.wso2.carbon.apimgt.rest.api.common.RestApiCommonUtil;
 import org.wso2.carbon.apimgt.rest.api.dcr.web.RegistrationService;
 import org.wso2.carbon.apimgt.rest.api.dcr.web.dto.FaultResponse;
@@ -47,6 +49,7 @@ import org.wso2.carbon.identity.oauth.common.OAuthConstants;
 import org.wso2.carbon.identity.oauth.dto.OAuthConsumerAppDTO;
 import org.wso2.carbon.identity.oauth2.util.OAuth2Util;
 import org.wso2.carbon.user.api.RealmConfiguration;
+import org.wso2.carbon.user.api.UserStoreManager;
 import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.UserStoreException;
 import org.wso2.carbon.user.core.config.RealmConfigXMLProcessor;
@@ -108,6 +111,25 @@ public class RegistrationServiceImpl implements RegistrationService {
             String loggedInUserTenantDomain;
             String owner = profile.getOwner();
             String authUserName = RestApiCommonUtil.getLoggedInUsername();
+
+            if (isUserSuperAdmin(authUserName)) {
+                String tenantDomain = MultitenantUtils.getTenantDomain(authUserName);
+                String tenantAwareUserName = MultitenantUtils.getTenantAwareUsername(owner);
+                try {
+                    int tenantId = ServiceReferenceHolder.getInstance().getRealmService().getTenantManager()
+                            .getTenantId(tenantDomain);
+                    UserStoreManager manager = ServiceReferenceHolder.getInstance().getRealmService()
+                            .getTenantUserRealm(tenantId).getUserStoreManager();
+                    if (!manager.isExistingUser(tenantAwareUserName)) {
+                        String errorMsg = "Application owner: " + owner + " does not exists";
+                        log.error(errorMsg);
+                        errorDTO = RestApiUtil.getErrorDTO(errorMsg, 403L, errorMsg);
+                        return Response.status(Response.Status.FORBIDDEN).entity(errorDTO).build();
+                    }
+                } catch (org.wso2.carbon.user.api.UserStoreException e) {
+                    throw new APIManagementException("Error while checking application owner existence.");
+                }
+            }
 
             //If user is in a secondory userstore, update the owner of the application with
             //correct domain
@@ -304,6 +326,7 @@ public class RegistrationServiceImpl implements RegistrationService {
         String tenantDomain = MultitenantUtils.getTenantDomain(userId);
 
         try {
+            PrivilegedCarbonContext.getThreadLocalCarbonContext().setUsername(userName);
             if (tenantDomain != null && !MultitenantConstants.SUPER_TENANT_DOMAIN_NAME.
                     equals(tenantDomain)) {
                 isTenantFlowStarted = true;
