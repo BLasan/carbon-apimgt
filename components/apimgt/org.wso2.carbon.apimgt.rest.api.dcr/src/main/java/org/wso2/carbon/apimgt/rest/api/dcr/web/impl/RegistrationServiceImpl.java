@@ -83,6 +83,7 @@ public class RegistrationServiceImpl implements RegistrationService {
 
     private static final Log log = LogFactory.getLog(RegistrationServiceImpl.class);
     private static final String APP_DISPLAY_NAME = "DisplayName";
+    private final String AT_SUPER_TENANT_DOMAIN = "@carbon.super";
 
     @Context
     MessageContext securityContext;
@@ -149,6 +150,16 @@ public class RegistrationServiceImpl implements RegistrationService {
                 }
             }
 
+            if(RestApiCommonUtil.getLoggedInUserTenantDomain().equals("carbon.super") && !owner.equals(authUserName)){
+                if(owner.contains(AT_SUPER_TENANT_DOMAIN) && !authUserName.contains(AT_SUPER_TENANT_DOMAIN)){
+                    authUserName = authUserName + AT_SUPER_TENANT_DOMAIN;
+                }
+
+                if(!owner.contains(AT_SUPER_TENANT_DOMAIN) && authUserName.contains(AT_SUPER_TENANT_DOMAIN)){
+                    owner = owner + AT_SUPER_TENANT_DOMAIN;
+                }
+            }
+
             //Validates if the application owner and logged in username is same.
             if (authUserName != null && ((authUserName.equals(owner))|| isUserSuperAdmin(authUserName))) {
                 //Getting client credentials from the profile
@@ -205,12 +216,19 @@ public class RegistrationServiceImpl implements RegistrationService {
                     log.error("Error occurred while checking the existence of the application " +
                             applicationName, e);
                 }
+
+
                 //Retrieving the existing application
                 if (appServiceProvider != null) {
                     returnedAPP = this.getExistingApp(applicationName, appServiceProvider.isSaasApp());
                 } else {
                     //create a new application if the application doesn't exists.
                     returnedAPP = this.createApplication(applicationName, appRequest, grantTypes);
+                }
+
+                if (owner.contains(AT_SUPER_TENANT_DOMAIN) && userId.contains(AT_SUPER_TENANT_DOMAIN)
+                        && !returnedAPP.getAppOwner().contains(AT_SUPER_TENANT_DOMAIN)) {
+                    returnedAPP.setAppOwner(returnedAPP.getAppOwner() + AT_SUPER_TENANT_DOMAIN);
                 }
                 //ReturnedAPP is null
                 if (returnedAPP == null) {
@@ -293,10 +311,16 @@ public class RegistrationServiceImpl implements RegistrationService {
             Map<String, String> valueMap = new HashMap<String, String>();
             valueMap.put(OAUTH_CLIENT_GRANT, consumerAppDTO.getGrantTypes());
 
+            String username = consumerAppDTO.getUsername();
+            String tenantAwareUsername;
+            if (MultitenantUtils.getTenantDomain(username).equals("carbon.super")) {
+                tenantAwareUsername = MultitenantUtils.getTenantAwareUsername(username);
+            } else {
+                tenantAwareUsername = username;
+            }
             appToReturn = this.fromAppDTOToApplicationInfo(consumerAppDTO.getOauthConsumerKey(),
                     consumerAppDTO.getApplicationName(), consumerAppDTO.getCallbackUrl(),
-                    consumerAppDTO.getOauthConsumerSecret(), saasApp, MultitenantUtils
-                            .getTenantAwareUsername(consumerAppDTO.getUsername()), consumerAppDTO.getTokenType(),
+                    consumerAppDTO.getOauthConsumerSecret(), saasApp, tenantAwareUsername, consumerAppDTO.getTokenType(),
                     valueMap);
         } catch (IdentityOAuthAdminException e) {
             log.error("error occurred while trying to get OAuth Application data", e);
@@ -389,7 +413,7 @@ public class RegistrationServiceImpl implements RegistrationService {
             //creating the OAuth app
             OAuthConsumerAppDTO createdOauthApp =
                     this.createOAuthApp(applicationName, applicationInfo, grantType, userName);
-
+            createdOauthApp.setUsername(MultitenantUtils.getTenantAwareUsername(createdOauthApp.getUsername()));
             // Set the OAuthApp in InboundAuthenticationConfig
             InboundAuthenticationConfig inboundAuthenticationConfig = new InboundAuthenticationConfig();
             InboundAuthenticationRequestConfig[] inboundAuthenticationRequestConfigs =
