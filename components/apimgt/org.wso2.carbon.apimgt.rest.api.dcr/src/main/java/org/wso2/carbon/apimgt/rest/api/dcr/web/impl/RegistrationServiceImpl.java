@@ -273,8 +273,8 @@ public class RegistrationServiceImpl implements RegistrationService {
             String appOwner = consumerAppDTO.getUsername();
 
             if (MultitenantConstants.SUPER_TENANT_DOMAIN_NAME.equals(
-                    MultitenantUtils.getTenantDomain(consumerAppDTO.getUsername()))
-            ) {
+                    MultitenantUtils.getTenantDomain(consumerAppDTO.getUsername())) &&
+                    appOwner.equals(MultitenantUtils.getTenantAwareUsername(consumerAppDTO.getUsername()))) {
                 appOwner = applicationOwner;
             }
 
