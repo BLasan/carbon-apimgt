@@ -84,6 +84,7 @@ public class RegistrationServiceImpl implements RegistrationService {
     private static final Log log = LogFactory.getLog(RegistrationServiceImpl.class);
     private static final String APP_DISPLAY_NAME = "DisplayName";
     private final String AT_SUPER_TENANT_DOMAIN = "@carbon.super";
+    private final String SUPER_TENANT_DOMAIN = "carbon.super";
 
     @Context
     MessageContext securityContext;
@@ -150,12 +151,13 @@ public class RegistrationServiceImpl implements RegistrationService {
                 }
             }
 
-            if(RestApiCommonUtil.getLoggedInUserTenantDomain().equals("carbon.super") && !owner.equals(authUserName)){
-                if(owner.contains(AT_SUPER_TENANT_DOMAIN) && !authUserName.contains(AT_SUPER_TENANT_DOMAIN)){
+            if (RestApiCommonUtil.getLoggedInUserTenantDomain().equals(SUPER_TENANT_DOMAIN)
+                    && !owner.equals(authUserName)) {
+                if (owner.contains(AT_SUPER_TENANT_DOMAIN) && !authUserName.contains(AT_SUPER_TENANT_DOMAIN)) {
                     authUserName = authUserName + AT_SUPER_TENANT_DOMAIN;
                 }
 
-                if(!owner.contains(AT_SUPER_TENANT_DOMAIN) && authUserName.contains(AT_SUPER_TENANT_DOMAIN)){
+                if (!owner.contains(AT_SUPER_TENANT_DOMAIN) && authUserName.contains(AT_SUPER_TENANT_DOMAIN)) {
                     owner = owner + AT_SUPER_TENANT_DOMAIN;
                 }
             }
