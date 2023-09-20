@@ -270,6 +270,7 @@ public class RegistrationServiceImpl implements RegistrationService {
                     getOAuthApplicationDataByAppName(applicationName);
             Map<String, String> valueMap = new HashMap<String, String>();
             valueMap.put(OAUTH_CLIENT_GRANT, consumerAppDTO.getGrantTypes());
+
             String appOwner = consumerAppDTO.getUsername();
 
             if (MultitenantConstants.SUPER_TENANT_DOMAIN_NAME.equals(
