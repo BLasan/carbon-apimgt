@@ -280,7 +280,8 @@ public class RegistrationServiceImpl implements RegistrationService {
 
             appToReturn = this.fromAppDTOToApplicationInfo(consumerAppDTO.getOauthConsumerKey(),
                     consumerAppDTO.getApplicationName(), consumerAppDTO.getCallbackUrl(),
-                    consumerAppDTO.getOauthConsumerSecret(), saasApp, appOwner, consumerAppDTO.getTokenType(),
+                    consumerAppDTO.getOauthConsumerSecret(), saasApp, MultitenantUtils
+                            .getTenantAwareUsername(consumerAppDTO.getUsername()), consumerAppDTO.getTokenType(),
                     valueMap);
         } catch (IdentityOAuthAdminException e) {
             log.error("error occurred while trying to get OAuth Application data", e);
