@@ -93,7 +93,7 @@ public class WorkflowUtils {
             SubscribedAPI sub = ApiMgtDAO.getInstance()
                     .getSubscriptionById(Integer.parseInt(subWFDto.getWorkflowReference()));
             SubscriptionEvent subscriptionEvent;
-            String orgId = sub.getOrganization();
+            String orgId = subWFDto.getTenantDomain();
             if (sub.getAPIIdentifier() != null) {
                 subscriptionEvent = new SubscriptionEvent(UUID.randomUUID().toString(),
                         System.currentTimeMillis(), APIConstants.EventType.SUBSCRIPTIONS_CREATE.name(),
