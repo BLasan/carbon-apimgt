@@ -465,10 +465,10 @@ public class SystemScopesIssuer implements ScopeValidator {
      * Returns the admin role of the current tenant
      *
      * @param authenticatedUser Current authenticated user
-     * @return                  Admin role of the current tenant
+     * @return Admin role of the current tenant
      */
     private String getAdminRole(AuthenticatedUser authenticatedUser) {
-		String adminRole = null;
+        String adminRole = null;
 
         String tenantDomain;
         String username;
@@ -492,25 +492,25 @@ public class SystemScopesIssuer implements ScopeValidator {
             log.error("Error when getting the tenant's UserStoreManager or when getting admin role ", e);
         }
         return adminRole;
-	}
+    }
 
     /**
      * Checks and replaces the admin role name if the admin role has been changed for the admin user
      *
-     * @param role                  The role allocated for the scope
-     * @param isAdminRoleChanged    Has the admin role changed
-     * @param newAdminRole          The new admin role
-     * @return                      Updated admin role name
+     * @param role               The role allocated for the scope
+     * @param isAdminRoleChanged Has the admin role changed
+     * @param newAdminRole       The new admin role
+     * @return Updated admin role name
      */
     private String checkAndReplaceAdminRole(String role, boolean isAdminRoleChanged, String newAdminRole) {
-		String updatedRole;
-		if (isAdminRoleChanged && DEFAULT_ADMIN_ROLE.equals(role)) {
-			updatedRole = newAdminRole;
-		} else {
-			updatedRole = role;
-		}
-		return updatedRole;
-	}
+        String updatedRole;
+        if (isAdminRoleChanged && DEFAULT_ADMIN_ROLE.equals(role)) {
+            updatedRole = newAdminRole;
+        } else {
+            updatedRole = role;
+        }
+        return updatedRole;
+    }
 
 	/**
      * Extract the roles from the user attributes.
