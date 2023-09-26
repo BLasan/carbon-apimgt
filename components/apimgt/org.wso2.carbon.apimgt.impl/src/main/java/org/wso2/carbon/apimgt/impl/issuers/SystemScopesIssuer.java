@@ -95,6 +95,7 @@ public class SystemScopesIssuer implements ScopeValidator {
     private IdentityProvider identityProvider = null;
     // set role based scopes issuer as the default
     private static final String ISSUER_PREFIX = "default";
+    private static final String DEFAULT_ADMIN_ROLE = "admin";
 
     @Override
     public boolean validateScope(OAuthAuthzReqMessageContext oAuthAuthzReqMessageContext) throws
@@ -429,7 +430,7 @@ public class SystemScopesIssuer implements ScopeValidator {
         // Check whether the admin role has been changed
         boolean isAdminRoleChanged = false;        
         String adminRole = getAdminRole(authenticatedUser);
-        if (!"admin".equals(adminRole)) {
+        if (!DEFAULT_ADMIN_ROLE.equals(adminRole)) {
             isAdminRoleChanged = true;
         }
 
@@ -503,7 +504,7 @@ public class SystemScopesIssuer implements ScopeValidator {
      */
     private String checkAndReplaceAdminRole(String role, boolean isAdminRoleChanged, String newAdminRole) {
 		String updatedRole;
-		if (isAdminRoleChanged && "admin".equals(role)) {
+		if (isAdminRoleChanged && DEFAULT_ADMIN_ROLE.equals(role)) {
 			updatedRole = newAdminRole;
 		} else {
 			updatedRole = role;
