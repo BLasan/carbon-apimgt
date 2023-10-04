@@ -153,7 +153,8 @@ public class RegistrationServiceImpl implements RegistrationService {
 
             if (RestApiCommonUtil.getLoggedInUserTenantDomain().equals(SUPER_TENANT_DOMAIN)
                     && !owner.equals(authUserName)) {
-                if (owner.contains(AT_SUPER_TENANT_DOMAIN) && !authUserName.contains(AT_SUPER_TENANT_DOMAIN)) {
+                if (owner.contains(AT_SUPER_TENANT_DOMAIN) && !authUserName.contains(AT_SUPER_TENANT_DOMAIN)
+                        && !isUserSuperAdmin(authUserName)) {
                     authUserName = authUserName + AT_SUPER_TENANT_DOMAIN;
                 }
 
