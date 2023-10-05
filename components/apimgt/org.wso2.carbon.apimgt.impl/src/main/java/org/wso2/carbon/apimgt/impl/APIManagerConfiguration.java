@@ -1347,7 +1347,7 @@ public class APIManagerConfiguration {
                         OMElement jobQueueSizeElement = jmsTaskManagerElement
                                 .getFirstChildWithName(new QName
                                         (APIConstants.AdvancedThrottleConstants.JOB_QUEUE_SIZE));
-                        if (keepAliveTimeInMillisElement != null) {
+                        if (jobQueueSizeElement != null) {
                             jmsTaskManagerProperties.setJobQueueSize(Integer.parseInt(jobQueueSizeElement.getText()));
                         }
                     }
