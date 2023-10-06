@@ -1220,7 +1220,7 @@ public class JWTValidatorTest {
             Mockito.when(gatewayKeyCache.get(signedJWT.getJWTClaimsSet().getJWTID())).thenReturn(jwtValidationInfo);
             jwtValidator.authenticate(signedJWTInfo, messageContext);
         } catch (APISecurityException e) {
-            Assert.assertEquals("Unclassified Authentication Failure", e.getMessage());
+            Assert.assertEquals("Invalid Credentials", e.getMessage());
         }
     }
 
