@@ -2089,15 +2089,17 @@ public class ImportUtils {
      *
      * @param pathToArchive Location of the extracted folder of the API
      * @param apiProvider   API Provider
-     * @param organization Identifier of the organization
+     * @param organization  Identifier of the organization
+     * @param isOverwrite   Whether to overwrite the existing certificates
+     * @param tenantId      Tenant Id
      * @throws APIImportExportException
      */
     private static void addClientCertificates(String pathToArchive, APIProvider apiProvider,
-                                              ApiTypeWrapper apiTypeWrapper, String organization, boolean isOverwrite, int tenantId)
+            ApiTypeWrapper apiTypeWrapper, String organization, boolean isOverwrite, int tenantId)
             throws APIManagementException {
 
         try {
-            Identifier apiIdentifier  = apiTypeWrapper.getId();
+            Identifier apiIdentifier = apiTypeWrapper.getId();
             List<ClientCertificateDTO> certificateMetadataDTOS = retrieveClientCertificates(pathToArchive);
             for (ClientCertificateDTO certDTO : certificateMetadataDTOS) {
                 if (ResponseCode.ALIAS_EXISTS_IN_TRUST_STORE.getResponseCode() == (apiProvider.addClientCertificate(
