@@ -1792,6 +1792,8 @@ public class PublisherCommonUtils {
             apiProductDTO.setAuthorizationHeader(APIConstants.AUTHORIZATION_HEADER_DEFAULT);
         }
 
+        apiProductDTO.setIsDefaultVersion(true);
+
         //Remove the /{version} from the context.
         if (context.endsWith("/" + RestApiConstants.API_VERSION_PARAM)) {
             context = context.replace("/" + RestApiConstants.API_VERSION_PARAM, "");
@@ -1948,15 +1950,16 @@ public class PublisherCommonUtils {
 
         APIProvider apiProvider = RestApiCommonUtil.getLoggedInUserProvider();
         Map<String, Object> apiLCData = apiProvider.getAPILifeCycleData(identifier.getUUID(), organization);
+        String apiType;
+        if (identifier instanceof APIProductIdentifier) {
+            apiType = APIConstants.API_PRODUCT;
+        } else {
+            apiType = APIConstants.API_IDENTIFIER_TYPE;
+        }
+
         if (apiLCData == null) {
-            String type;
-            if (identifier instanceof APIProductIdentifier) {
-                type = APIConstants.API_PRODUCT;
-            } else {
-                type = APIConstants.API_IDENTIFIER_TYPE;
-            }
-            throw new APIManagementException("Error while getting lifecycle state for " + type + " with ID "
-                    + identifier, ExceptionCodes.from(ExceptionCodes.LIFECYCLE_STATE_INFORMATION_NOT_FOUND, type,
+            throw new APIManagementException("Error while getting lifecycle state for " + apiType + " with ID "
+                    + identifier, ExceptionCodes.from(ExceptionCodes.LIFECYCLE_STATE_INFORMATION_NOT_FOUND, apiType,
                     identifier.getUUID()));
         } else {
             boolean apiOlderVersionExist = false;
@@ -1972,7 +1975,7 @@ public class PublisherCommonUtils {
                     break;
                 }
             }
-            return APIMappingUtil.fromLifecycleModelToDTO(apiLCData, apiOlderVersionExist);
+            return APIMappingUtil.fromLifecycleModelToDTO(apiLCData, apiOlderVersionExist, apiType);
         }
     }
 

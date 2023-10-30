@@ -2080,7 +2080,7 @@ public class ApiMgtDAO {
      * @return Set of subscribers
      * @throws APIManagementException if failed to get subscribers for given provider
      */
-    public Set<Subscriber> getSubscribersOfAPIWithoutDuplicates(APIIdentifier identifier,
+    public Set<Subscriber> getSubscribersOfAPIWithoutDuplicates(Identifier identifier,
             Map<Integer, Integer> subscriberMap) throws APIManagementException {
 
         Set<Subscriber> subscribers = new HashSet<Subscriber>();
@@ -2089,7 +2089,7 @@ public class ApiMgtDAO {
                 PreparedStatement ps = connection.prepareStatement(SQLConstants.GET_SUBSCRIBERS_OF_API_SQL);) {
 
             ps.setString(1, APIUtil.replaceEmailDomainBack(identifier.getProviderName()));
-            ps.setString(2, identifier.getApiName());
+            ps.setString(2, identifier.getName());
             ps.setString(3, identifier.getVersion());
 
             try (ResultSet resultSet = ps.executeQuery()) {
@@ -2104,7 +2104,7 @@ public class ApiMgtDAO {
                 }
             }
         } catch (SQLException e) {
-            handleException("Failed to get subscribers for :" + identifier.getApiName(), e);
+            handleException("Failed to get subscribers for :" + identifier.getName(), e);
         }
         return subscribers;
     }
@@ -4986,7 +4986,7 @@ public class ApiMgtDAO {
         }
     }
 
-    public void updateDefaultAPIPublishedVersion(APIIdentifier identifier)
+    public void updateDefaultAPIPublishedVersion(Identifier identifier)
             throws APIManagementException {
 
         try (Connection conn = APIMgtDBUtil.getConnection()) {
@@ -5043,93 +5043,43 @@ public class ApiMgtDAO {
         return events;
     }
 
-    public List<SubscribedAPI> makeKeysForwardCompatible(ApiTypeWrapper apiTypeWrapper, List<API> oldAPIVersions) throws APIManagementException {
+    /**
+     *
+     *  This method is used to copy the subscriptions for new API Version
+     *
+     * @param  apiTypeWrapper apiTypeWrapper
+     * @param  oldAPIVersions oldAPIVersions
+     * @return List<SubscribedAPI> list of Subscribed APIs
+     * @throws APIManagementException APIManagementException
+     */
+    public List<SubscribedAPI> makeKeysForwardCompatibleForNewAPIVersion(ApiTypeWrapper apiTypeWrapper,
+            List<API> oldAPIVersions) throws APIManagementException {
+        int versionCount;
         List<SubscribedAPI> subscribedAPISet = new ArrayList<>();
+
         //if there are no previous versions, there is no need to copy subscriptions
-        if (oldAPIVersions == null || oldAPIVersions.isEmpty()) {
+        versionCount = getNoOfVersionsToCopySubscription(apiTypeWrapper, oldAPIVersions, null);
+        if (versionCount == 0) {
             return subscribedAPISet;
         }
+
         String getSubscriptionDataQuery = SQLConstants.GET_SUBSCRIPTION_DATA_SQL.replaceAll("_API_VERSION_LIST_",
-                String.join(",", Collections.nCopies(oldAPIVersions.size(), "?")));
-        APIIdentifier apiIdentifier = apiTypeWrapper.getApi().getId();
+                String.join(",", Collections.nCopies(versionCount, "?")));
+
         try {
             // Retrieve all the existing subscription for the old version
             try (Connection connection = APIMgtDBUtil.getConnection()) {
                 connection.setAutoCommit(false);
                 try (PreparedStatement prepStmt = connection.prepareStatement(getSubscriptionDataQuery)) {
-                    prepStmt.setString(1, APIUtil.replaceEmailDomainBack(apiIdentifier.getProviderName()));
-                    prepStmt.setString(2, apiIdentifier.getApiName());
+                    prepStmt.setString(1,
+                            APIUtil.replaceEmailDomainBack(apiTypeWrapper.getId().getProviderName()));
+                    prepStmt.setString(2, apiTypeWrapper.getId().getName());
                     int index = 3;
                     for (API oldAPI : oldAPIVersions) {
                         prepStmt.setString(index++, oldAPI.getId().getVersion());
                     }
-                    try (ResultSet rs = prepStmt.executeQuery()) {
-                        List<SubscriptionInfo> subscriptionData = new ArrayList<SubscriptionInfo>();
-                        while (rs.next() && !(APIConstants.SubscriptionStatus.ON_HOLD.equals(rs.getString("SUB_STATUS"
-                        )))) {
-                            int subscriptionId = rs.getInt("SUBSCRIPTION_ID");
-                            String tierId = rs.getString("TIER_ID");
-                            int applicationId = rs.getInt("APPLICATION_ID");
-                            String apiVersion = rs.getString("VERSION");
-                            String subscriptionStatus = rs.getString("SUB_STATUS");
-                            SubscriptionInfo info = new SubscriptionInfo(subscriptionId, tierId, applicationId,
-                                    apiVersion, subscriptionStatus);
-                            subscriptionData.add(info);
-                        }
-                        // To keep track of already added subscriptions (apps)
-                        List<Integer> addedApplications = new ArrayList<>();
-                        for (int i = oldAPIVersions.size() - 1; i >= 0; i--) {
-                            API oldAPI = oldAPIVersions.get(i);
-                            for (SubscriptionInfo info : subscriptionData) {
-                                try {
-                                    if (info.getApiVersion().equals(oldAPI.getId().getVersion()) &&
-                                            !addedApplications.contains(info.getApplicationId())) {
-                                        String subscriptionStatus;
-                                        if (APIConstants.SubscriptionStatus.BLOCKED.equalsIgnoreCase(info.getSubscriptionStatus())) {
-                                            subscriptionStatus = APIConstants.SubscriptionStatus.BLOCKED;
-                                        } else if (APIConstants.SubscriptionStatus.UNBLOCKED.equalsIgnoreCase(info.getSubscriptionStatus())) {
-                                            subscriptionStatus = APIConstants.SubscriptionStatus.UNBLOCKED;
-                                        } else if (APIConstants.SubscriptionStatus.PROD_ONLY_BLOCKED.equalsIgnoreCase(info.getSubscriptionStatus())) {
-                                            subscriptionStatus = APIConstants.SubscriptionStatus.PROD_ONLY_BLOCKED;
-                                        } else if (APIConstants.SubscriptionStatus.REJECTED.equalsIgnoreCase(info.getSubscriptionStatus())) {
-                                            subscriptionStatus = APIConstants.SubscriptionStatus.REJECTED;
-                                        } else {
-                                            subscriptionStatus = APIConstants.SubscriptionStatus.ON_HOLD;
-                                        }
-                                        apiTypeWrapper.setTier(info.getTierId());
-                                        Application application = getLightweightApplicationById(connection,
-                                                info.getApplicationId());
-                                        String subscriptionUUID = UUID.randomUUID().toString();
-                                        int subscriptionId = addSubscription(connection, apiTypeWrapper, application,
-                                                subscriptionStatus, apiIdentifier.getProviderName(), subscriptionUUID);
-                                        if (subscriptionId == -1) {
-                                            String msg =
-                                                    "Unable to add a new subscription for the API: " + apiIdentifier.getName() +
-                                                            ":v" + apiIdentifier.getVersion();
-                                            log.error(msg);
-                                            throw new APIManagementException(msg);
-                                        }
-                                        SubscribedAPI subscribedAPI = new SubscribedAPI(subscriptionUUID);
-                                        subscribedAPI.setApplication(application);
-                                        subscribedAPI.setTier(new Tier(info.getTierId()));
-                                        subscribedAPI.setOrganization(apiTypeWrapper.getOrganization());
-                                        subscribedAPI.setIdentifier(apiTypeWrapper);
-                                        subscribedAPI.setSubStatus(subscriptionStatus);
-                                        subscribedAPI.setSubscriptionId(subscriptionId);
-                                        addedApplications.add(info.getApplicationId());
-                                        subscribedAPISet.add(subscribedAPI);
-                                    }
-                                    // catching the exception because when copy the api without the option "require
-                                    // re-subscription"
-                                    // need to go forward rather throwing the exception
-                                } catch (SubscriptionAlreadyExistingException e) {
-                                    log.error("Error while adding subscription " + e.getMessage(), e);
-                                } catch (SubscriptionBlockedException e) {
-                                    log.info("Subscription is blocked: " + e.getMessage());
-                                }
-                            }
-                        }
-                    }
+                    retrieveSubscriptionDataOfAPIs(apiTypeWrapper, oldAPIVersions, versionCount, subscribedAPISet,
+                            connection, prepStmt);
                     connection.commit();
                 } catch (SQLException e) {
                     connection.rollback();
@@ -5140,6 +5090,180 @@ public class ApiMgtDAO {
             handleException("Error when executing the SQL queries", e);
         }
         return subscribedAPISet;
+    }
+
+    /**
+     *
+     * @param apiTypeWrapper apiTypeWrapper
+     * @param oldAPIProductVersions oldAPIProductVersions
+     * @return List<SubscribedAPI> list of Subscribed APIProducts
+     * @throws APIManagementException APIManagementException
+     */
+    public List<SubscribedAPI> makeKeysForwardCompatibleForNewAPIProductVersion
+    (ApiTypeWrapper apiTypeWrapper, List<APIProduct> oldAPIProductVersions)
+            throws APIManagementException {
+        int versionCount = 0;
+        List<SubscribedAPI> subscribedAPISet = new ArrayList<>();
+
+        //if there are no previous versions, there is no need to copy subscriptions
+        versionCount = getNoOfVersionsToCopySubscription(apiTypeWrapper, null, oldAPIProductVersions);
+        if (versionCount == 0) {
+            return subscribedAPISet;
+        }
+
+        String getSubscriptionDataQuery = SQLConstants.GET_SUBSCRIPTION_DATA_SQL.replaceAll("_API_VERSION_LIST_",
+                String.join(",", Collections.nCopies(versionCount, "?")));
+
+        try {
+            // Retrieve all the existing subscription for the old version
+            try (Connection connection = APIMgtDBUtil.getConnection()) {
+                connection.setAutoCommit(false);
+                try (PreparedStatement prepStmt = connection.prepareStatement(getSubscriptionDataQuery)) {
+                    prepStmt.setString(1,
+                            APIUtil.replaceEmailDomainBack(apiTypeWrapper.getId().getProviderName()));
+                    prepStmt.setString(2, apiTypeWrapper.getId().getName());
+                    int index = 3;
+                    for (APIProduct oldAPIProduct : oldAPIProductVersions) {
+                            prepStmt.setString(index++, oldAPIProduct.getId().getVersion());
+                    }
+                    retrieveSubscriptionDataOfAPIProducts(apiTypeWrapper, oldAPIProductVersions, versionCount,
+                            subscribedAPISet, connection, prepStmt);
+                    connection.commit();
+                } catch (SQLException e) {
+                    connection.rollback();
+                    throw e;
+                }
+            }
+        } catch (SQLException e) {
+            handleException("Error when executing the SQL queries", e);
+        }
+        return subscribedAPISet;
+    }
+
+    private void retrieveSubscriptionDataOfAPIs(ApiTypeWrapper apiTypeWrapper, List<API> oldAPIVersions,
+            int versionCount, List<SubscribedAPI> subscribedAPISet,
+            Connection connection, PreparedStatement prepStmt) throws SQLException, APIManagementException {
+        ApiTypeWrapper oldApiTypeWrapperCopy;
+        try (ResultSet rs = prepStmt.executeQuery()) {
+            List<SubscriptionInfo> subscriptionData = new ArrayList<SubscriptionInfo>();
+            while (rs.next() && !(APIConstants.SubscriptionStatus.ON_HOLD.equals(
+                    rs.getString("SUB_STATUS")))) {
+                int subscriptionId = rs.getInt("SUBSCRIPTION_ID");
+                String tierId = rs.getString("TIER_ID");
+                int applicationId = rs.getInt("APPLICATION_ID");
+                String apiVersion = rs.getString("VERSION");
+                String subscriptionStatus = rs.getString("SUB_STATUS");
+                SubscriptionInfo info = new SubscriptionInfo(subscriptionId, tierId, applicationId,
+                        apiVersion, subscriptionStatus);
+                subscriptionData.add(info);
+            }
+            // To keep track of already added subscriptions (apps)
+            List<Integer> addedApplications = new ArrayList<>();
+            for (int i = versionCount - 1; i >= 0; i--) {
+                oldApiTypeWrapperCopy = new ApiTypeWrapper(oldAPIVersions.get(i));
+                addSubscriptionData(apiTypeWrapper, subscribedAPISet, connection, oldApiTypeWrapperCopy,
+                        subscriptionData, addedApplications);
+            }
+        }
+    }
+
+    private void retrieveSubscriptionDataOfAPIProducts(ApiTypeWrapper apiTypeWrapper,
+            List<APIProduct> oldAPIProductVersions, int versionCount, List<SubscribedAPI> subscribedAPISet,
+            Connection connection, PreparedStatement prepStmt) throws SQLException, APIManagementException {
+        ApiTypeWrapper oldApiTypeWrapperCopy;
+        try (ResultSet rs = prepStmt.executeQuery()) {
+            List<SubscriptionInfo> subscriptionData = new ArrayList<SubscriptionInfo>();
+            while (rs.next() && !(APIConstants.SubscriptionStatus.ON_HOLD.equals(
+                    rs.getString("SUB_STATUS")))) {
+                int subscriptionId = rs.getInt("SUBSCRIPTION_ID");
+                String tierId = rs.getString("TIER_ID");
+                int applicationId = rs.getInt("APPLICATION_ID");
+                String apiVersion = rs.getString("VERSION");
+                String subscriptionStatus = rs.getString("SUB_STATUS");
+                SubscriptionInfo info = new SubscriptionInfo(subscriptionId, tierId, applicationId,
+                        apiVersion, subscriptionStatus);
+                subscriptionData.add(info);
+            }
+            // To keep track of already added subscriptions (apps)
+            List<Integer> addedApplications = new ArrayList<>();
+            for (int i = versionCount - 1; i >= 0; i--) {
+                oldApiTypeWrapperCopy = new ApiTypeWrapper(oldAPIProductVersions.get(i));
+                addSubscriptionData(apiTypeWrapper, subscribedAPISet, connection, oldApiTypeWrapperCopy,
+                        subscriptionData, addedApplications);
+            }
+        }
+    }
+
+    private void addSubscriptionData(ApiTypeWrapper apiTypeWrapper, List<SubscribedAPI> subscribedAPISet,
+            Connection connection, ApiTypeWrapper oldApiTypeWrapperCopy, List<SubscriptionInfo> subscriptionData,
+            List<Integer> addedApplications) throws SQLException, APIManagementException {
+        for (SubscriptionInfo info : subscriptionData) {
+            try {
+                if (info.getApiVersion().equals(oldApiTypeWrapperCopy.getId()
+                        .getVersion()) && !addedApplications.contains(info.getApplicationId())) {
+                    String subscriptionStatus;
+                    if (APIConstants.SubscriptionStatus.BLOCKED.equalsIgnoreCase(
+                            info.getSubscriptionStatus())) {
+                        subscriptionStatus = APIConstants.SubscriptionStatus.BLOCKED;
+                    } else if (APIConstants.SubscriptionStatus.UNBLOCKED.equalsIgnoreCase(
+                            info.getSubscriptionStatus())) {
+                        subscriptionStatus = APIConstants.SubscriptionStatus.UNBLOCKED;
+                    } else if (APIConstants.SubscriptionStatus.PROD_ONLY_BLOCKED.equalsIgnoreCase(
+                            info.getSubscriptionStatus())) {
+                        subscriptionStatus = APIConstants.SubscriptionStatus.PROD_ONLY_BLOCKED;
+                    } else if (APIConstants.SubscriptionStatus.REJECTED.equalsIgnoreCase(
+                            info.getSubscriptionStatus())) {
+                        subscriptionStatus = APIConstants.SubscriptionStatus.REJECTED;
+                    } else {
+                        subscriptionStatus = APIConstants.SubscriptionStatus.ON_HOLD;
+                    }
+                    apiTypeWrapper.setTier(info.getTierId());
+                    Application application = getLightweightApplicationById(connection,
+                            info.getApplicationId());
+                    String subscriptionUUID = UUID.randomUUID().toString();
+                    int subscriptionId = addSubscription(connection, apiTypeWrapper, application,
+                            subscriptionStatus, oldApiTypeWrapperCopy.getId().getProviderName(),
+                            subscriptionUUID);
+                    if (subscriptionId == -1) {
+                        String msg = "Unable to add a new subscription for the API: "
+                                + oldApiTypeWrapperCopy.getName() + ":v" + oldApiTypeWrapperCopy.getId()
+                                .getVersion();
+                        log.error(msg);
+                        throw new APIManagementException(msg);
+                    }
+                    SubscribedAPI subscribedAPI = new SubscribedAPI(subscriptionUUID);
+                    subscribedAPI.setApplication(application);
+                    subscribedAPI.setTier(new Tier(info.getTierId()));
+                    subscribedAPI.setOrganization(apiTypeWrapper.getOrganization());
+                    subscribedAPI.setIdentifier(apiTypeWrapper);
+                    subscribedAPI.setSubStatus(subscriptionStatus);
+                    subscribedAPI.setSubscriptionId(subscriptionId);
+                    addedApplications.add(info.getApplicationId());
+                    subscribedAPISet.add(subscribedAPI);
+                }
+                // catching the exception because when copy the api without the option "require
+                // re-subscription"
+                // need to go forward rather throwing the exception
+            } catch (SubscriptionAlreadyExistingException e) {
+                log.error("Error while adding subscription " + e.getMessage(), e);
+            } catch (SubscriptionBlockedException e) {
+                log.info("Subscription is blocked: " + e.getMessage());
+            }
+        }
+    }
+
+    private int getNoOfVersionsToCopySubscription(ApiTypeWrapper apiTypeWrapper, List<API> oldAPIVersions,
+            List<APIProduct> oldAPIProductVersions) {
+        int count = 0;
+        if (!apiTypeWrapper.isAPIProduct()) {
+            if (oldAPIVersions != null && !oldAPIVersions.isEmpty())
+                count = oldAPIVersions.size();
+        } else {
+            if (oldAPIProductVersions != null && !oldAPIProductVersions.isEmpty()) {
+                count = oldAPIProductVersions.size();
+            }
+        }
+        return count;
     }
 
     private int addSubscription(Connection connection, ApiTypeWrapper apiTypeWrapper, Application application,
@@ -5401,8 +5525,10 @@ public class ApiMgtDAO {
             recordAPILifeCycleEvent(apiId, null, APIStatus.CREATED.toString(), tenantUserName, tenantId,
                     connection);
             //If the api is selected as default version, it is added/replaced into AM_API_DEFAULT_VERSION table
+
+            ApiTypeWrapper apiTypeWrapper = new ApiTypeWrapper(api);
             if (api.isDefaultVersion()) {
-                addUpdateAPIAsDefaultVersion(api, connection);
+                addUpdateAPIAsDefaultVersion(apiTypeWrapper, connection);
             }
             String serviceKey = api.getServiceInfo("key");
             if (StringUtils.isNotEmpty(serviceKey)) {
@@ -5425,23 +5551,23 @@ public class ApiMgtDAO {
         return apiId;
     }
 
-    public String getDefaultVersion(APIIdentifier apiId) throws APIManagementException {
+    public String getDefaultVersion(Identifier apiId) throws APIManagementException {
 
         try (Connection connection = APIMgtDBUtil.getConnection()) {
             return getDefaultVersion(connection, apiId);
         } catch (SQLException e) {
-            handleException("Error while getting default version for " + apiId.getApiName(), e);
+            handleException("Error while getting default version for " + apiId.getName(), e);
         }
         return null;
     }
 
-    private String getDefaultVersion(Connection connection, APIIdentifier apiId) throws SQLException {
+    private String getDefaultVersion(Connection connection, Identifier apiId) throws SQLException {
 
         String oldDefaultVersion = null;
 
         String query = SQLConstants.GET_DEFAULT_VERSION_SQL;
         try (PreparedStatement prepStmt = connection.prepareStatement(query)) {
-            prepStmt.setString(1, apiId.getApiName());
+            prepStmt.setString(1, apiId.getName());
             prepStmt.setString(2, APIUtil.replaceEmailDomainBack(apiId.getProviderName()));
             try (ResultSet rs = prepStmt.executeQuery()) {
                 if (rs.next()) {
@@ -5623,7 +5749,7 @@ public class ApiMgtDAO {
         return workflowDTO;
     }
 
-    private void setPublishedDefVersion(APIIdentifier apiId, Connection connection, String value)
+    private void setPublishedDefVersion(Identifier apiId, Connection connection, String value)
             throws APIManagementException {
 
         String queryDefaultVersionUpdate = SQLConstants.UPDATE_PUBLISHED_DEFAULT_VERSION_SQL;
@@ -5632,11 +5758,11 @@ public class ApiMgtDAO {
         try {
             prepStmtDefVersionUpdate = connection.prepareStatement(queryDefaultVersionUpdate);
             prepStmtDefVersionUpdate.setString(1, value);
-            prepStmtDefVersionUpdate.setString(2, apiId.getApiName());
+            prepStmtDefVersionUpdate.setString(2, apiId.getName());
             prepStmtDefVersionUpdate.setString(3, APIUtil.replaceEmailDomainBack(apiId.getProviderName()));
             prepStmtDefVersionUpdate.execute();
         } catch (SQLException e) {
-            handleException("Error while deleting the API default version entry: " + apiId.getApiName() + " from the " +
+            handleException("Error while deleting the API default version entry: " + apiId.getName() + " from the " +
                     "database", e);
         } finally {
             APIMgtDBUtil.closeAllConnections(prepStmtDefVersionUpdate, null, null);
@@ -5653,14 +5779,14 @@ public class ApiMgtDAO {
      * @return
      * @throws APIManagementException
      */
-    private void removeAPIFromDefaultVersion(List<APIIdentifier> apiIdList, Connection connection) throws
+    private void removeAPIFromDefaultVersion(List<Identifier> apiIdList, Connection connection) throws
             APIManagementException {
         // TODO: check list empty
         try (PreparedStatement prepStmtDefVersionDelete =
                      connection.prepareStatement(SQLConstants.REMOVE_API_DEFAULT_VERSION_SQL)) {
 
-            for (APIIdentifier apiId : apiIdList) {
-                prepStmtDefVersionDelete.setString(1, apiId.getApiName());
+            for (Identifier apiId : apiIdList) {
+                prepStmtDefVersionDelete.setString(1, apiId.getName());
                 prepStmtDefVersionDelete.setString(2, APIUtil.
                         replaceEmailDomainBack(apiId.getProviderName()));
                 prepStmtDefVersionDelete.addBatch();
@@ -5673,12 +5799,12 @@ public class ApiMgtDAO {
                     log.error("Error while rolling back the failed operation", e1);
                 }
             handleException("Error while deleting the API default version entry: " + apiIdList.stream().
-                    map(APIIdentifier::getApiName).collect(Collectors.joining(",")) + " from the " +
+                    map(Identifier::getName).collect(Collectors.joining(",")) + " from the " +
                     "database", e);
         }
     }
 
-    public String getPublishedDefaultVersion(APIIdentifier apiId) throws APIManagementException {
+    public String getPublishedDefaultVersion(Identifier apiId) throws APIManagementException {
 
         Connection connection = null;
         PreparedStatement prepStmt = null;
@@ -5689,7 +5815,7 @@ public class ApiMgtDAO {
         try {
             connection = APIMgtDBUtil.getConnection();
             prepStmt = connection.prepareStatement(query);
-            prepStmt.setString(1, apiId.getApiName());
+            prepStmt.setString(1, apiId.getName());
             prepStmt.setString(2, APIUtil.replaceEmailDomainBack(apiId.getProviderName()));
 
             rs = prepStmt.executeQuery();
@@ -5698,19 +5824,20 @@ public class ApiMgtDAO {
                 publishedDefaultVersion = rs.getString("PUBLISHED_DEFAULT_API_VERSION");
             }
         } catch (SQLException e) {
-            handleException("Error while getting default version for " + apiId.getApiName(), e);
+            handleException("Error while getting default version for " + apiId.getName(), e);
         } finally {
             APIMgtDBUtil.closeAllConnections(prepStmt, connection, rs);
         }
         return publishedDefaultVersion;
     }
 
-    public void addUpdateAPIAsDefaultVersion(API api, Connection connection) throws APIManagementException {
+    public void addUpdateAPIAsDefaultVersion(ApiTypeWrapper apiTypeWrapper, Connection connection)
+            throws APIManagementException {
 
-        String publishedDefaultVersion = getPublishedDefaultVersion(api.getId());
-        boolean deploymentAvailable = isDeploymentAvailableByAPIUUID(connection, api.getUuid());
-        ArrayList<APIIdentifier> apiIdList = new ArrayList<APIIdentifier>() {{
-            add(api.getId());
+        String publishedDefaultVersion = getPublishedDefaultVersion(apiTypeWrapper.getId());
+        boolean deploymentAvailable = isDeploymentAvailableByAPIUUID(connection, apiTypeWrapper.getUuid());
+        ArrayList<Identifier> apiIdList = new ArrayList<Identifier>() {{
+            add(apiTypeWrapper.getId());
         }};
         removeAPIFromDefaultVersion(apiIdList, connection);
 
@@ -5718,21 +5845,22 @@ public class ApiMgtDAO {
         String queryDefaultVersionAdd = SQLConstants.ADD_API_DEFAULT_VERSION_SQL;
         try {
             prepStmtDefVersionAdd = connection.prepareStatement(queryDefaultVersionAdd);
-            prepStmtDefVersionAdd.setString(1, api.getId().getApiName());
-            prepStmtDefVersionAdd.setString(2, APIUtil.replaceEmailDomainBack(api.getId().getProviderName()));
-            prepStmtDefVersionAdd.setString(3, api.getId().getVersion());
+            prepStmtDefVersionAdd.setString(1, apiTypeWrapper.getId().getName());
+            prepStmtDefVersionAdd.setString(2, APIUtil.replaceEmailDomainBack(apiTypeWrapper.getId().getProviderName()));
+            prepStmtDefVersionAdd.setString(3, apiTypeWrapper.getId().getVersion());
 
             if (deploymentAvailable) {
-                prepStmtDefVersionAdd.setString(4, api.getId().getVersion());
-                api.setAsPublishedDefaultVersion(true);
+                prepStmtDefVersionAdd.setString(4, apiTypeWrapper.getId().getVersion());
+                apiTypeWrapper.setAsPublishedDefaultVersion(true);
             } else {
                 prepStmtDefVersionAdd.setString(4, publishedDefaultVersion);
             }
-            prepStmtDefVersionAdd.setString(5, api.getOrganization());
+            prepStmtDefVersionAdd.setString(5, apiTypeWrapper.getOrganization());
             prepStmtDefVersionAdd.execute();
         } catch (SQLException e) {
-            handleException("Error while adding the API default version entry: " + api.getId().getApiName() + " to " +
-                    "the database", e);
+
+            handleException("Error while adding the default version entry for " + (apiTypeWrapper.isAPIProduct() ?
+                    "API product :" : "API :") + apiTypeWrapper.getId().getName() + " to " + "the database", e);
         } finally {
             APIMgtDBUtil.closeAllConnections(prepStmtDefVersionAdd, null, null);
         }
@@ -6784,12 +6912,12 @@ public class ApiMgtDAO {
                 // happen
                 //If the api is selected as default version, it is added/replaced into AM_API_DEFAULT_VERSION table
                 if (api.isDefaultVersion()) {
-                    addUpdateAPIAsDefaultVersion(api, connection);
+                    ApiTypeWrapper apiTypeWrapper = new ApiTypeWrapper(api);
+                    addUpdateAPIAsDefaultVersion(apiTypeWrapper, connection);
                 } else { //tick is removed
-                    ArrayList<APIIdentifier> apiIdList = new ArrayList<APIIdentifier>() {{
+                    ArrayList<Identifier> apiIdList = new ArrayList<Identifier>() {{
                         add(api.getId());
                     }};
-
                     removeAPIFromDefaultVersion(apiIdList, connection);
                 }
             }
@@ -6986,7 +7114,7 @@ public class ApiMgtDAO {
             String curDefaultVersion = getDefaultVersion(identifier);
             String pubDefaultVersion = getPublishedDefaultVersion(identifier);
             if (identifier.getVersion().equals(curDefaultVersion)) {
-                ArrayList<APIIdentifier> apiIdList = new ArrayList<APIIdentifier>() {{
+                ArrayList<Identifier> apiIdList = new ArrayList<Identifier>() {{
                     add(identifier);
                 }};
                 removeAPIFromDefaultVersion(apiIdList, connection);
@@ -9640,23 +9768,25 @@ public class ApiMgtDAO {
         return null;
     }
 
-    public void setDefaultVersion(API api) throws APIManagementException {
+    public void setDefaultVersion(ApiTypeWrapper apiTypeWrapper) throws APIManagementException {
 
-        APIIdentifier apiId = api.getId();
         try (Connection connection = APIMgtDBUtil.getConnection()) {
-            try (PreparedStatement preparedStatement =
-                         connection.prepareStatement(SQLConstants.RETRIEVE_DEFAULT_VERSION)) {
-                preparedStatement.setString(1, apiId.getApiName());
-                preparedStatement.setString(2, APIUtil.replaceEmailDomainBack(apiId.getProviderName()));
+            try (PreparedStatement preparedStatement = connection.prepareStatement(
+                    SQLConstants.RETRIEVE_DEFAULT_VERSION)) {
+                preparedStatement.setString(1, apiTypeWrapper.getId().getName());
+                preparedStatement.setString(2,
+                        APIUtil.replaceEmailDomainBack(apiTypeWrapper.getId().getProviderName()));
+
                 try (ResultSet resultSet = preparedStatement.executeQuery()) {
                     if (resultSet.next()) {
-                        api.setDefaultVersion(apiId.getVersion().equals(resultSet.getString("DEFAULT_API_VERSION")));
-                        api.setAsPublishedDefaultVersion(apiId.getVersion().equals(resultSet.getString(
-                                "PUBLISHED_DEFAULT_API_VERSION")));
+                        apiTypeWrapper.setAsDefaultVersion(
+                                apiTypeWrapper.getId().getVersion()
+                                        .equals(resultSet.getString("DEFAULT_API_VERSION")));
+                        apiTypeWrapper.setAsPublishedDefaultVersion(apiTypeWrapper.getId().getVersion()
+                                .equals(resultSet.getString("PUBLISHED_DEFAULT_API_VERSION")));
                     }
                 }
             }
-
         } catch (SQLException e) {
             throw new APIManagementException("Error while retrieving apimgt connection", e,
                     ExceptionCodes.INTERNAL_ERROR);
@@ -14403,15 +14533,28 @@ public class ApiMgtDAO {
             prepStmtAddAPIProduct.setString(2, identifier.getName());
             prepStmtAddAPIProduct.setString(3, identifier.getVersion());
             prepStmtAddAPIProduct.setString(4, apiProduct.getContext());
-            prepStmtAddAPIProduct.setString(5, apiProduct.getProductLevelPolicy());
-            prepStmtAddAPIProduct.setString(6, APIUtil.replaceEmailDomainBack(identifier.getProviderName()));
-            prepStmtAddAPIProduct.setTimestamp(7, new Timestamp(System.currentTimeMillis()));
-            prepStmtAddAPIProduct.setString(8, APIConstants.API_PRODUCT);
-            prepStmtAddAPIProduct.setString(9, apiProduct.getUuid());
-            prepStmtAddAPIProduct.setString(10, apiProduct.getState());
-            prepStmtAddAPIProduct.setString(11, organization);
-            prepStmtAddAPIProduct.setString(12, apiProduct.getGatewayVendor());
-            prepStmtAddAPIProduct.setString(13, apiProduct.getVersionTimestamp());
+            String contextTemplate = apiProduct.getContextTemplate();
+            //Validate if the API Product has an unsupported context before executing the query
+            String invalidContext = "/" + APIConstants.VERSION_PLACEHOLDER;
+            if (invalidContext.equals(contextTemplate)) {
+                throw new APIManagementException("Cannot add API : " + apiProduct.getId()
+                        + " with unsupported context : " + contextTemplate);
+            }
+            //If the context template ends with {version} this means that the version will be at the end of the context.
+            if (contextTemplate.endsWith("/" + APIConstants.VERSION_PLACEHOLDER)) {
+                //Remove the {version} part from the context template.
+                contextTemplate = contextTemplate.split(Pattern.quote("/" + APIConstants.VERSION_PLACEHOLDER))[0];
+            }
+            prepStmtAddAPIProduct.setString(5, contextTemplate);
+            prepStmtAddAPIProduct.setString(6, apiProduct.getProductLevelPolicy());
+            prepStmtAddAPIProduct.setString(7, APIUtil.replaceEmailDomainBack(identifier.getProviderName()));
+            prepStmtAddAPIProduct.setTimestamp(8, new Timestamp(System.currentTimeMillis()));
+            prepStmtAddAPIProduct.setString(9, APIConstants.API_PRODUCT);
+            prepStmtAddAPIProduct.setString(10, apiProduct.getUuid());
+            prepStmtAddAPIProduct.setString(11, apiProduct.getState());
+            prepStmtAddAPIProduct.setString(12, organization);
+            prepStmtAddAPIProduct.setString(13, apiProduct.getGatewayVendor());
+            prepStmtAddAPIProduct.setString(14, apiProduct.getVersionTimestamp());
             prepStmtAddAPIProduct.execute();
 
             rs = prepStmtAddAPIProduct.getGeneratedKeys();
@@ -14425,6 +14568,13 @@ public class ApiMgtDAO {
             }
 
             addAPIProductResourceMappings(apiProduct.getProductResources(), apiProduct.getOrganization(), connection);
+
+            //If the apiproduct is selected as default version, it is added/replaced into AM_API_DEFAULT_VERSION table
+            if (apiProduct.isDefaultVersion()) {
+                ApiTypeWrapper apiTypeWrapper = new ApiTypeWrapper(apiProduct);
+                addUpdateAPIAsDefaultVersion(apiTypeWrapper, connection);
+            }
+
             String tenantUserName = MultitenantUtils
                     .getTenantAwareUsername(APIUtil.replaceEmailDomainBack(identifier.getProviderName()));
             int tenantId = APIUtil.getTenantId(APIUtil.replaceEmailDomainBack(identifier.getProviderName()));
@@ -14759,7 +14909,7 @@ public class ApiMgtDAO {
             preparedStatement = conn.prepareStatement(queryGetProductId);
             preparedStatement.setString(1, identifier.getName());
             preparedStatement.setString(2, APIUtil.replaceEmailDomainBack(identifier.getProviderName()));
-            preparedStatement.setString(3, APIConstants.API_PRODUCT_VERSION); //versioning is not supported atm
+            preparedStatement.setString(3, identifier.getVersion()); //versioning is not supported atm
 
             rs = preparedStatement.executeQuery();
 
@@ -14808,6 +14958,25 @@ public class ApiMgtDAO {
 
             int productId = getAPIID(product.getUuid(), conn);
             updateAPIProductResourceMappings(product, productId, conn);
+
+            String previousDefaultVersion = getDefaultVersion(product.getId());
+
+            if (product.isDefaultVersion() == null) {
+                product.setDefaultVersion(true);
+            }
+            if (product.isDefaultVersion() ^ product.getId().getVersion().equals(previousDefaultVersion)) {
+                //If the api product is selected as default version, it is added/replaced into AM_API_DEFAULT_VERSION table
+                if (product.isDefaultVersion()) {
+                    ApiTypeWrapper apiTypeWrapper = new ApiTypeWrapper(product);
+                    addUpdateAPIAsDefaultVersion(apiTypeWrapper, conn);
+                } else { //tick is removed
+                    ArrayList<Identifier> apiIdList = new ArrayList<Identifier>() {{
+                        add(product.getId());
+                    }};
+                    removeAPIFromDefaultVersion(apiIdList, conn);
+                }
+            }
+
             conn.commit();
         } catch (SQLException e) {
             if (conn != null) {
@@ -16176,6 +16345,54 @@ public class ApiMgtDAO {
                     e);
         }
         return apiVersions;
+    }
+
+
+    /**
+     * Return ids of the versions for the given name for the given provider
+     *
+     * @param apiProductName     apiProduct name
+     * @param apiProvider provider
+     * @return set ids
+     * @throws APIManagementException
+     */
+    public List<APIProduct> getAllAPIProductVersions(String apiProductName, String apiProvider)
+            throws APIManagementException {
+
+        List<APIProduct> apiProductVersions = new ArrayList<APIProduct>();
+
+        try (Connection connection = APIMgtDBUtil.getConnection();
+                PreparedStatement statement = connection.prepareStatement(SQLConstants.GET_API_VERSIONS_UUID)) {
+            statement.setString(1, APIUtil.replaceEmailDomainBack(apiProvider));
+            statement.setString(2, apiProductName);
+            ResultSet resultSet = statement.executeQuery();
+
+            while (resultSet.next()) {
+                String version = resultSet.getString("API_VERSION");
+                String status = resultSet.getString("STATUS");
+                String versionTimestamp = resultSet.getString("VERSION_COMPARABLE");
+                String context = resultSet.getString("CONTEXT");
+                String contextTemplate = resultSet.getString("CONTEXT_TEMPLATE");
+
+                String uuid = resultSet.getString("API_UUID");
+                if (!APIConstants.API_PRODUCT.equals(resultSet.getString("API_TYPE"))) {
+                    // skip api products
+                    continue;
+                }
+                APIProduct apiProduct = new APIProduct(new APIProductIdentifier(apiProvider, apiProductName,
+                        version, uuid));
+                apiProduct.setUuid(uuid);
+                apiProduct.setState(status);
+                apiProduct.setVersionTimestamp(versionTimestamp);
+                apiProduct.setContext(context);
+                apiProduct.setContextTemplate(contextTemplate);
+                apiProductVersions.add(apiProduct);
+            }
+        } catch (SQLException e) {
+            handleException("Error while retrieving versions for apiProduct " + apiProductName +
+                            " for the provider " + apiProvider, e);
+        }
+        return apiProductVersions;
     }
 
     /**

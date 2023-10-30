@@ -27,6 +27,7 @@ public class APIProductInfoDTO   {
     private String context = null;
     private String description = null;
     private String provider = null;
+    private String version = null;
     private Boolean hasThumbnail = null;
     private String state = null;
     private List<String> securityScheme = new ArrayList<String>();
@@ -123,6 +124,23 @@ public class APIProductInfoDTO   {
 
   /**
    **/
+  public APIProductInfoDTO version(String version) {
+    this.version = version;
+    return this;
+  }
+
+  
+  @ApiModelProperty(example = "1.0.0", value = "")
+  @JsonProperty("version")
+  public String getVersion() {
+    return version;
+  }
+  public void setVersion(String version) {
+    this.version = version;
+  }
+
+  /**
+   **/
   public APIProductInfoDTO hasThumbnail(Boolean hasThumbnail) {
     this.hasThumbnail = hasThumbnail;
     return this;
@@ -206,6 +224,7 @@ public class APIProductInfoDTO   {
         Objects.equals(context, apIProductInfo.context) &&
         Objects.equals(description, apIProductInfo.description) &&
         Objects.equals(provider, apIProductInfo.provider) &&
+        Objects.equals(version, apIProductInfo.version) &&
         Objects.equals(hasThumbnail, apIProductInfo.hasThumbnail) &&
         Objects.equals(state, apIProductInfo.state) &&
         Objects.equals(securityScheme, apIProductInfo.securityScheme) &&
@@ -214,7 +233,7 @@ public class APIProductInfoDTO   {
 
   @Override
   public int hashCode() {
-    return Objects.hash(id, name, context, description, provider, hasThumbnail, state, securityScheme, gatewayVendor);
+    return Objects.hash(id, name, context, description, provider, version, hasThumbnail, state, securityScheme, gatewayVendor);
   }
 
   @Override
@@ -227,6 +246,7 @@ public class APIProductInfoDTO   {
     sb.append("    context: ").append(toIndentedString(context)).append("\n");
     sb.append("    description: ").append(toIndentedString(description)).append("\n");
     sb.append("    provider: ").append(toIndentedString(provider)).append("\n");
+    sb.append("    version: ").append(toIndentedString(version)).append("\n");
     sb.append("    hasThumbnail: ").append(toIndentedString(hasThumbnail)).append("\n");
     sb.append("    state: ").append(toIndentedString(state)).append("\n");
     sb.append("    securityScheme: ").append(toIndentedString(securityScheme)).append("\n");

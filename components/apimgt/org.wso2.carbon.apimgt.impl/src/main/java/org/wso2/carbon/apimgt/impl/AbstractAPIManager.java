@@ -172,8 +172,10 @@ public abstract class AbstractAPIManager implements APIManager {
     }
 
     protected void populateDefaultVersion(API api) throws APIManagementException {
-
-        apiMgtDAO.setDefaultVersion(api);
+        ApiTypeWrapper apiTypeWrapper = new ApiTypeWrapper(api);
+        apiMgtDAO.setDefaultVersion(apiTypeWrapper);
+        api.setDefaultVersion(apiTypeWrapper.getDefaultVersion());
+        api.setAsPublishedDefaultVersion(apiTypeWrapper.getPublishedDefaultVersion());
     }
 
 
