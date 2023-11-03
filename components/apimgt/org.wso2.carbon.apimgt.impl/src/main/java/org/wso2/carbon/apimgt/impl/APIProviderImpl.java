@@ -5241,9 +5241,10 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
                         api.setStatus(publiserAPI.getStatus());
                         api.setThumbnailUrl(publiserAPI.getThumbnailUri());
                         api.setAdvertiseOnly(publiserAPI.getAdvertiseOnly());
+                        api.setDescription(publiserAPI.getDescription());
+                        api.setType(publiserAPI.getTransportType());
                         apiSet.add(api);
                     } else if ("APIProduct".equals(item.getType())) {
-
                         PublisherSearchContent publiserAPI = (PublisherSearchContent) item;
                         APIProduct api = new APIProduct(new APIProductIdentifier(publiserAPI.getProvider(),
                                 publiserAPI.getName(), publiserAPI.getVersion()));
@@ -5251,6 +5252,7 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
                         api.setContextTemplate(publiserAPI.getContext());
                         api.setState(publiserAPI.getStatus());
                         api.setThumbnailUrl(publiserAPI.getThumbnailUri());
+                        api.setDescription(publiserAPI.getDescription());
                         apiProductSet.add(api);
                     } else if (item instanceof DocumentSearchContent) {
                         // doc item
