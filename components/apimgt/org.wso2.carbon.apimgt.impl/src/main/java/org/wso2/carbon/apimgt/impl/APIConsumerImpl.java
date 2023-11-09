@@ -3692,6 +3692,7 @@ public class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
                     apiProduct.setID(new APIProductIdentifier(devPortalApi.getProviderName(),
                             devPortalApi.getApiName(), devPortalApi.getVersion()));
                     populateAPIProductInformation(uuid, organization, apiProduct);
+                    populateDefaultVersion(apiProduct);
                     populateAPIStatus(apiProduct);
                     apiProduct = addTiersToAPI(apiProduct, organization);
                     return new ApiTypeWrapper(apiProduct);
@@ -3719,6 +3720,13 @@ public class APIConsumerImpl extends AbstractAPIManager implements APIConsumer {
 
     private void populateAPIStatus(APIProduct apiProduct) throws APIManagementException {
         apiProduct.setState(apiMgtDAO.getAPIStatusFromAPIUUID(apiProduct.getUuid()));
+    }
+
+    private void populateDefaultVersion(APIProduct apiProduct) throws APIManagementException {
+        ApiTypeWrapper apiTypeWrapper = new ApiTypeWrapper(apiProduct);
+        apiMgtDAO.setDefaultVersion(apiTypeWrapper);
+        apiProduct.setDefaultVersion(apiTypeWrapper.getDefaultVersion());
+        apiProduct.setAsPublishedDefaultVersion(apiTypeWrapper.getPublishedDefaultVersion());
     }
 
     protected void checkVisibilityPermission(String userNameWithTenantDomain, String visibility, String visibilityRoles)

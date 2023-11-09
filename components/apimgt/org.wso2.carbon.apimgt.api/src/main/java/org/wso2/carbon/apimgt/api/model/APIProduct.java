@@ -131,7 +131,7 @@ public class APIProduct implements Serializable {
      * Used to set the workflow status in lifecycle state change workflow
      */
     private String workflowStatus = null;
-    private boolean isDefaultVersion = false;
+    private boolean isDefaultVersion = true;
     private boolean isPublishedDefaultVersion = false;
     public APIProduct(){}
 

@@ -1901,7 +1901,7 @@ public final class APIConstants {
     public static final String ENABLE_STORE = "enableStore";
 
     //api-product related constants
-    public static final String API_PRODUCT_VERSION = "1.0.0";
+    public static final String API_PRODUCT_VERSION_1_0_0 = "1.0.0";
     public static final String API_IDENTIFIER_TYPE = "API";
     public static final String API_PRODUCT_IDENTIFIER_TYPE = "API Product";
     public static final String[] API_SUPPORTED_TYPE_LIST = {"HTTP", "WS", "SOAPTOREST", "GRAPHQL", "SOAP", "WEBSUB",
