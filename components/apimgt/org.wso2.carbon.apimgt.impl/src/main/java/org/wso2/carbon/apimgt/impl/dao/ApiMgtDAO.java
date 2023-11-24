@@ -9695,15 +9695,24 @@ public class ApiMgtDAO {
                 }
                 try (ResultSet resultSet = preparedStatement.executeQuery()) {
                     if (resultSet.next()) {
+                        String contextTemplate = resultSet.getString("CONTEXT_TEMPLATE");
+                        String context = resultSet.getString("CONTEXT");
+                        String apiType = resultSet.getString("API_TYPE");
+                        String version = resultSet.getString("API_VERSION");
+                        if (APIConstants.API_PRODUCT.equals(apiType)
+                                && APIConstants.API_PRODUCT_VERSION_1_0_0.equals(version)
+                                && StringUtils.isBlank(contextTemplate)) {
+                            context = context + "/" + APIConstants.API_PRODUCT_VERSION_1_0_0;
+                        }
                         APIInfo.Builder apiInfoBuilder = new APIInfo.Builder();
                         apiInfoBuilder = apiInfoBuilder.id(resultSet.getString("API_UUID"))
                                 .name(resultSet.getString("API_NAME"))
-                                .version(resultSet.getString("API_VERSION"))
+                                .version(version)
                                 .provider(resultSet.getString("API_PROVIDER"))
-                                .context(resultSet.getString("CONTEXT"))
-                                .contextTemplate(resultSet.getString("CONTEXT_TEMPLATE"))
+                                .context(context)
+                                .contextTemplate(contextTemplate)
                                 .status(APIUtil.getApiStatus(resultSet.getString("STATUS")))
-                                .apiType(resultSet.getString("API_TYPE"))
+                                .apiType(apiType)
                                 .createdBy(resultSet.getString("CREATED_BY"))
                                 .createdTime(resultSet.getString("CREATED_TIME"))
                                 .updatedBy(resultSet.getString("UPDATED_BY"))
