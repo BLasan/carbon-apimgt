@@ -96,6 +96,12 @@ public class RestApiPublisherUtils {
                         "Couldn't find the name of the uploaded file for the document " + documentId + ". Using name '"
                                 + filename + "'");
             }
+
+            if (filename.contains(File.separator)) {
+                throw new APIManagementException("Invalid file name provided. The use of "+ File.separator +
+                        " in file names is not allowed. File name: " + filename);
+            }
+
             //APIIdentifier apiIdentifier = APIMappingUtil
             //        .getAPIIdentifierFromUUID(apiId, tenantDomain);
 
@@ -183,6 +189,12 @@ public class RestApiPublisherUtils {
                         "Couldn't find the name of the uploaded file for the document " + documentId + ". Using name '"
                                 + filename + "'");
             }
+
+            if (filename.contains(File.separator)) {
+                throw new APIManagementException("Invalid file name provided. The use of "+ File.separator +
+                        " in file names is not allowed. File name: " + filename);
+            }
+
             //APIProductIdentifier productIdentifier = APIMappingUtil
             //        .getAPIProductIdentifierFromUUID(productId, tenantDomain);
 
