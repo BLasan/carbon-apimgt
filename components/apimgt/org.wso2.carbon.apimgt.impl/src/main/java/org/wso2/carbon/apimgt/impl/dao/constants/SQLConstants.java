@@ -1947,6 +1947,9 @@ public class SQLConstants {
     public static final String GET_API_CONTEXT_SQL =
             "SELECT CONTEXT FROM AM_API WHERE CONTEXT= ? AND ORGANIZATION = ?";
 
+    public static final String GET_API_CONTEXT_SQL_FOR_API_PRODUCTS =
+            "SELECT CONTEXT FROM AM_API WHERE (CONTEXT= ? OR CONTEXT= ? OR CONTEXT_TEMPLATE= ?) AND ORGANIZATION = ?";
+
     public static final String GET_API_IDENTIFIER_BY_UUID_SQL =
             "SELECT API_PROVIDER, API_NAME, API_VERSION FROM AM_API WHERE API_UUID = ?";
     public static final String GET_API_OR_API_PRODUCT_IDENTIFIER_BY_UUID_SQL =

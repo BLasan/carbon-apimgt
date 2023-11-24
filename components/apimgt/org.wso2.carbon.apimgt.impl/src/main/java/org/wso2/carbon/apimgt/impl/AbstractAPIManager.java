@@ -395,6 +395,12 @@ public abstract class AbstractAPIManager implements APIManager {
         return apiMgtDAO.isContextExist(context, organization);
     }
 
+    public boolean isContextExistForAPIProducts(String context, String contextWithVersion, String organization)
+            throws APIManagementException {
+
+        return apiMgtDAO.isContextExistForAPIProducts(context, contextWithVersion, organization);
+    }
+
     protected String getTenantDomainFromUrl(String url) {
 
         return MultitenantUtils.getTenantDomainFromUrl(url);

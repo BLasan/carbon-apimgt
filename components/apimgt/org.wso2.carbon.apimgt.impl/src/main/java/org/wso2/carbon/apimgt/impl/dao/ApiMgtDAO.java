@@ -8123,6 +8123,35 @@ public class ApiMgtDAO {
         return false;
     }
 
+    public boolean isContextExistForAPIProducts(String context, String contextWithVersion, String organization) {
+
+        Connection connection = null;
+        ResultSet resultSet = null;
+        PreparedStatement prepStmt = null;
+
+        String sql = SQLConstants.GET_API_CONTEXT_SQL_FOR_API_PRODUCTS;
+        try {
+            connection = APIMgtDBUtil.getConnection();
+            prepStmt = connection.prepareStatement(sql);
+            prepStmt.setString(1, context);
+            prepStmt.setString(2, contextWithVersion);
+            prepStmt.setString(3, context);
+            prepStmt.setString(4, organization);
+            resultSet = prepStmt.executeQuery();
+
+            while (resultSet.next()) {
+                if (resultSet.getString(1) != null) {
+                    return true;
+                }
+            }
+        } catch (SQLException e) {
+            log.error("Failed to retrieve the API Context ", e);
+        } finally {
+            APIMgtDBUtil.closeAllConnections(prepStmt, connection, resultSet);
+        }
+        return false;
+    }
+
     /**
      * Get API Context using a new DB connection.
      *
