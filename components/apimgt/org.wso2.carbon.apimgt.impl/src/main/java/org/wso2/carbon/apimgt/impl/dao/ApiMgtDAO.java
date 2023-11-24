@@ -14884,6 +14884,17 @@ public class ApiMgtDAO {
 
             deleteAllAPISpecificOperationPoliciesByAPIUUID(connection, productIdentifier.getUUID(), null);
 
+            String curDefaultVersion = getDefaultVersion(productIdentifier);
+            String pubDefaultVersion = getPublishedDefaultVersion(productIdentifier);
+            if (productIdentifier.getVersion().equals(curDefaultVersion)) {
+                ArrayList<Identifier> apiIdList = new ArrayList<Identifier>() {{
+                    add(productIdentifier);
+                }};
+                removeAPIFromDefaultVersion(apiIdList, connection);
+            } else if (productIdentifier.getVersion().equals(pubDefaultVersion)) {
+                setPublishedDefVersion(productIdentifier, connection, null);
+            }
+
             connection.commit();
         } catch (SQLException e) {
             handleException("Error while deleting api product " + productIdentifier, e);
