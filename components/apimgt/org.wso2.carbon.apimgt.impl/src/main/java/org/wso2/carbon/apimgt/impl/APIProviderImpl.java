@@ -756,13 +756,17 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
     }
 
 
-    public String getPublishedDefaultVersion(Identifier apiid) throws APIManagementException {
+    public String getPublishedDefaultVersion(Identifier apiId) throws APIManagementException {
 
         String defaultVersion = null;
         try {
-            defaultVersion = apiMgtDAO.getPublishedDefaultVersion(apiid);
+            if (apiId instanceof APIIdentifier) {
+                defaultVersion = apiMgtDAO.getPublishedDefaultVersion((APIIdentifier) apiId);
+            } else if (apiId instanceof APIProductIdentifier) {
+                defaultVersion = apiMgtDAO.getPublishedDefaultVersion((APIProductIdentifier) apiId);
+            }
         } catch (APIManagementException e) {
-            handleException("Error while getting published default version :" + apiid.getName(), e);
+            handleException("Error while getting published default version :" + apiId.getName(), e);
         }
         return defaultVersion;
     }
@@ -4336,6 +4340,7 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
         //validate resources and set api identifiers and resource ids to product
         List<APIProductResource> resources = product.getProductResources();
         String prevDefaultVersion = getDefaultVersion(product.getId());
+        String publishedDefaultVersion = getPublishedDefaultVersion(product.getId());
         for (APIProductResource apiProductResource : resources) {
             API api;
             APIProductIdentifier productIdentifier = apiProductResource.getProductIdentifier();
@@ -4422,7 +4427,6 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
         updateApiProductArtifact(product, true, true);
         apiMgtDAO.updateAPIProduct(product, userNameWithoutChange);
 
-        String publishedDefaultVersion = getPublishedDefaultVersion(product.getId());
         if (publishedDefaultVersion != null && product.isPublishedDefaultVersion() && !product.getId().getVersion()
                 .equals(publishedDefaultVersion)) {
             sendUpdateEventToPreviousDefaultVersion(product.getId().getProviderName(), product.getId().getName(),

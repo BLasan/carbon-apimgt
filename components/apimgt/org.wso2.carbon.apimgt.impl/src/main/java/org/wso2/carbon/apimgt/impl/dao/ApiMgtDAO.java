@@ -4992,7 +4992,12 @@ public class ApiMgtDAO {
         try (Connection conn = APIMgtDBUtil.getConnection()) {
             try {
                 conn.setAutoCommit(false);
-                String defaultVersion = getDefaultVersion(conn, identifier);
+                String defaultVersion = null;
+                if (identifier instanceof APIIdentifier) {
+                    defaultVersion = getDefaultVersion(conn, (APIIdentifier) identifier);
+                } else if (identifier instanceof APIProductIdentifier) {
+                    defaultVersion = getDefaultVersion(conn, (APIProductIdentifier) identifier);
+                }
                 if (identifier.getVersion().equals(defaultVersion)) {
                     setPublishedDefVersion(identifier, conn, identifier.getVersion());
                 }
@@ -5554,14 +5559,18 @@ public class ApiMgtDAO {
     public String getDefaultVersion(Identifier apiId) throws APIManagementException {
 
         try (Connection connection = APIMgtDBUtil.getConnection()) {
-            return getDefaultVersion(connection, apiId);
+            if (apiId instanceof APIIdentifier) {
+                return getDefaultVersion(connection, (APIIdentifier) apiId);
+            } else if (apiId instanceof APIProductIdentifier) {
+                return getDefaultVersion(connection, (APIProductIdentifier) apiId);
+            }
         } catch (SQLException e) {
             handleException("Error while getting default version for " + apiId.getName(), e);
         }
         return null;
     }
 
-    private String getDefaultVersion(Connection connection, Identifier apiId) throws SQLException {
+    private String getDefaultVersion(Connection connection, APIIdentifier apiId) throws SQLException {
 
         String oldDefaultVersion = null;
 
@@ -5572,6 +5581,39 @@ public class ApiMgtDAO {
             try (ResultSet rs = prepStmt.executeQuery()) {
                 if (rs.next()) {
                     return rs.getString("DEFAULT_API_VERSION");
+                }
+            }
+        }
+        return null;
+    }
+
+    private String getDefaultVersion(Connection connection, APIProductIdentifier apiId) throws SQLException {
+
+        String query = SQLConstants.GET_DEFAULT_VERSION_SQL;
+        try (PreparedStatement prepStmt = connection.prepareStatement(query)) {
+            prepStmt.setString(1, apiId.getName());
+            prepStmt.setString(2, APIUtil.replaceEmailDomainBack(apiId.getProviderName()));
+            try (ResultSet rs = prepStmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("DEFAULT_API_VERSION");
+                } else {
+                    return getMigratedAPIProductDefaultVersion(connection, apiId);
+                }
+            }
+        }
+    }
+
+    private String getMigratedAPIProductDefaultVersion(Connection connection, APIProductIdentifier apiId)
+            throws SQLException {
+
+        String query = SQLConstants.GET_MIGRATED_API_PRODUCT_DEFAULT_VERSION_SQL;
+        try (PreparedStatement prepStmt = connection.prepareStatement(query)) {
+            prepStmt.setString(1, apiId.getName());
+            prepStmt.setString(2, APIUtil.replaceEmailDomainBack(apiId.getProviderName()));
+            prepStmt.setString(3, APIConstants.API_PRODUCT_VERSION_1_0_0);
+            try (ResultSet rs = prepStmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("API_VERSION");
                 }
             }
         }
@@ -5804,7 +5846,7 @@ public class ApiMgtDAO {
         }
     }
 
-    public String getPublishedDefaultVersion(Identifier apiId) throws APIManagementException {
+    public String getPublishedDefaultVersion(APIIdentifier apiId) throws APIManagementException {
 
         Connection connection = null;
         PreparedStatement prepStmt = null;
@@ -5831,10 +5873,60 @@ public class ApiMgtDAO {
         return publishedDefaultVersion;
     }
 
+    public String getPublishedDefaultVersion(APIProductIdentifier apiId) throws APIManagementException {
+
+        Connection connection = null;
+        PreparedStatement prepStmt = null;
+        ResultSet rs = null;
+        String publishedDefaultVersion = null;
+
+        String query = SQLConstants.GET_PUBLISHED_DEFAULT_VERSION_SQL;
+        try {
+            connection = APIMgtDBUtil.getConnection();
+            prepStmt = connection.prepareStatement(query);
+            prepStmt.setString(1, apiId.getName());
+            prepStmt.setString(2, APIUtil.replaceEmailDomainBack(apiId.getProviderName()));
+            rs = prepStmt.executeQuery();
+            if (rs.next()) {
+                publishedDefaultVersion = rs.getString("PUBLISHED_DEFAULT_API_VERSION");
+            } else {
+                publishedDefaultVersion = getMigratedAPIProductPublishedDefaultVersion(connection, apiId);
+            }
+        } catch (SQLException e) {
+            handleException("Error while getting default version for " + apiId.getName(), e);
+        } finally {
+            APIMgtDBUtil.closeAllConnections(prepStmt, connection, rs);
+        }
+        return publishedDefaultVersion;
+    }
+
+    private String getMigratedAPIProductPublishedDefaultVersion(Connection connection, APIProductIdentifier apiId)
+            throws SQLException {
+
+        String query = SQLConstants.GET_MIGRATED_API_PRODUCT_PUBLISHED_DEFAULT_VERSION_SQL;
+        try (PreparedStatement prepStmt = connection.prepareStatement(query)) {
+            prepStmt.setString(1, apiId.getName());
+            prepStmt.setString(2, APIUtil.replaceEmailDomainBack(apiId.getProviderName()));
+            prepStmt.setString(3, APIConstants.API_PRODUCT_VERSION_1_0_0);
+            try (ResultSet rs = prepStmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("API_VERSION");
+                }
+            }
+        }
+        return null;
+    }
+
+
     public void addUpdateAPIAsDefaultVersion(ApiTypeWrapper apiTypeWrapper, Connection connection)
             throws APIManagementException {
 
-        String publishedDefaultVersion = getPublishedDefaultVersion(apiTypeWrapper.getId());
+        String publishedDefaultVersion;
+        if (apiTypeWrapper.isAPIProduct()) {
+            publishedDefaultVersion = getPublishedDefaultVersion((APIProductIdentifier) apiTypeWrapper.getId());
+        } else {
+            publishedDefaultVersion = getPublishedDefaultVersion((APIIdentifier) apiTypeWrapper.getId());
+        }
         boolean deploymentAvailable = isDeploymentAvailableByAPIUUID(connection, apiTypeWrapper.getUuid());
         ArrayList<Identifier> apiIdList = new ArrayList<Identifier>() {{
             add(apiTypeWrapper.getId());
@@ -9825,9 +9917,16 @@ public class ApiMgtDAO {
                         apiIdentifier.setId(resultSet.getInt("API_ID"));
                         API api = new API(apiIdentifier);
                         api.setUuid(resultSet.getString("API_UUID"));
-                        api.setContext(resultSet.getString("CONTEXT"));
                         api.setType(resultSet.getString("API_TYPE"));
                         api.setStatus(resultSet.getString("STATUS"));
+                        String context = resultSet.getString("CONTEXT");
+                        String contextTemplate = resultSet.getString("CONTEXT_TEMPLATE");
+                        if (APIConstants.API_PRODUCT_VERSION_1_0_0.equals(apiIdentifier.getVersion())
+                                && StringUtils.isBlank(contextTemplate)) {
+                            context = context + "/" + APIConstants.API_PRODUCT_VERSION_1_0_0;
+
+                        }
+                        api.setContext(context);
                         return api;
                     }
                 }
