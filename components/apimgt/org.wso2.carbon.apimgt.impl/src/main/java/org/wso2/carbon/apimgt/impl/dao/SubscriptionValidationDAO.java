@@ -1174,10 +1174,18 @@ public class SubscriptionValidationDAO {
     public API getAPIByContextAndVersion(String context, String version, String deployment, boolean isExpand) {
 
         String sql = SubscriptionValidationSQLConstants.GET_API_BY_CONTEXT_AND_VERSION_SQL;
-        try (Connection connection = APIMgtDBUtil.getConnection()) {
+        String contextForOldProducts = context;
+        String versionInContext = "/" + version;
+        int lastIndex = context.lastIndexOf(versionInContext);
+        if (lastIndex >= 0) {
+            contextForOldProducts = context.substring(0, lastIndex) +
+                    context.substring(lastIndex + versionInContext.length());
+        }
+            try (Connection connection = APIMgtDBUtil.getConnection()) {
             try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-                preparedStatement.setString(1, context);
-                preparedStatement.setString(2, version);
+                preparedStatement.setString(1, contextForOldProducts);
+                preparedStatement.setString(2, context);
+                preparedStatement.setString(3, version);
                 try (ResultSet resultSet = preparedStatement.executeQuery()) {
                     while (resultSet.next()) {
                         String deploymentName = resultSet.getString("DEPLOYMENT_NAME");
