@@ -105,7 +105,7 @@ public class RestApiPublisherUtils {
             Path resolvedPath = resolveFilePath(docFile.getAbsolutePath(), filename);
 
             RestApiUtil.transferFile(inputStream, resolvedPath.getFileName().toString(), resolvedPath.getParent().toString());
-            docInputStream = new FileInputStream(docFile.getAbsolutePath() + File.separator + filename);
+            docInputStream = new FileInputStream(resolvedPath.toString());
             String mediaType = fileDetails.getHeader(RestApiConstants.HEADER_CONTENT_TYPE);
             mediaType = mediaType == null ? RestApiConstants.APPLICATION_OCTET_STREAM : mediaType;
             PublisherCommonUtils
@@ -195,7 +195,7 @@ public class RestApiPublisherUtils {
             Path resolvedPath = resolveFilePath(docFile.getAbsolutePath(), filename);
 
             RestApiUtil.transferFile(inputStream, resolvedPath.getFileName().toString(), resolvedPath.getParent().toString());
-            docInputStream = new FileInputStream(docFile.getAbsolutePath() + File.separator + filename);
+            docInputStream = new FileInputStream(resolvedPath.toString());
             String mediaType = fileDetails.getHeader(RestApiConstants.HEADER_CONTENT_TYPE);
             mediaType = mediaType == null ? RestApiConstants.APPLICATION_OCTET_STREAM : mediaType;
             PublisherCommonUtils
