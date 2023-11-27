@@ -195,12 +195,15 @@ public class APIProduct implements Serializable {
     public void setTechnicalOwnerEmail(String technicalOwnerEmail) {
         this.technicalOwnerEmail = technicalOwnerEmail;
     }
+
     public void setDefaultVersion(boolean isDefaultVersion) {
         this.isDefaultVersion = isDefaultVersion;
     }
+
     public void setAsPublishedDefaultVersion(boolean value) {
         isPublishedDefaultVersion = value;
     }
+
     public boolean isDefaultVersion() {
         return isDefaultVersion;
     }
