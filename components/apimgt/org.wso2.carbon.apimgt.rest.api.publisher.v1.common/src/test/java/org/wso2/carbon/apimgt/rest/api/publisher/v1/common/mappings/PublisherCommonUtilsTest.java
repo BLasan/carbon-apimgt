@@ -406,16 +406,8 @@ public class PublisherCommonUtilsTest {
     @Test
     public void testCheckDuplicateContextForExistingVersions() throws APIManagementException {
 
-        APIProductDTO apiProductDTO = Mockito.mock(APIProductDTO.class);
+        APIProductDTO apiProductDTO = getAPIProductDTOForDuplicateContextTest();
         APIProvider apiProvider = Mockito.mock(APIProvider.class);
-        Mockito.when(apiProductDTO.getContext()).thenReturn(API_PRODUCT_CONTEXT);
-        Mockito.when(apiProductDTO.getVersion()).thenReturn(API_PRODUCT_VERSION);
-        Mockito.when(apiProductDTO.getName()).thenReturn(API_PRODUCT_NAME);
-        Mockito.when(apiProductDTO.getProvider()).thenReturn(PROVIDER);
-        Mockito.when(apiProductDTO.getPolicies()).thenReturn(new ArrayList<>());
-        Mockito.when(apiProductDTO.getAdditionalProperties()).thenReturn(null);
-        Mockito.when(apiProductDTO.getVisibility()).thenReturn(APIProductDTO.VisibilityEnum.PUBLIC);
-        Mockito.when(apiProductDTO.getAuthorizationHeader()).thenReturn(APIConstants.AUTHORIZATION_HEADER_DEFAULT);
 
         List<String> apiVersions = new ArrayList<>(Arrays.asList("1.0.0", "2.0.0", "3.0.0"));
         Set<Tier> tiers = new TreeSet<Tier>(new TierNameComparator());
@@ -433,26 +425,12 @@ public class PublisherCommonUtilsTest {
                 "Error occurred while adding the API Product. A duplicate API context already exists for "
                         + API_PRODUCT_CONTEXT + " in the organization : " + ORGANIZATION;
 
-        try {
-            PublisherCommonUtils.addAPIProductWithGeneratedSwaggerDefinition(apiProductDTO, PROVIDER, ORGANIZATION);
-            Assert.fail("Duplicate context did not get identified");
-        } catch (APIManagementException e) {
-            Assert.assertTrue("Received an incorrect error message", e.getMessage().contains(expectedMessage));
-        } catch (FaultGatewaysException e) {
-            Assert.fail("Received an incorrect exception");
-        }
+        testDuplicateContextValidation(apiProductDTO, PROVIDER, ORGANIZATION, expectedMessage);
 
         // Test for context with "/{version}"
         Mockito.when(apiProductDTO.getContext()).thenReturn(API_PRODUCT_CONTEXT_TEMPLATE);
 
-        try {
-            PublisherCommonUtils.addAPIProductWithGeneratedSwaggerDefinition(apiProductDTO, PROVIDER, ORGANIZATION);
-            Assert.fail("Duplicate context did not get identified");
-        } catch (APIManagementException e) {
-            Assert.assertTrue("Received an incorrect error message", e.getMessage().contains(expectedMessage));
-        } catch (FaultGatewaysException e) {
-            Assert.fail("Received an incorrect exception");
-        }
+        testDuplicateContextValidation(apiProductDTO, PROVIDER, ORGANIZATION, expectedMessage);
 
         // Test for tenant context
         Mockito.when(apiProductDTO.getContext()).thenReturn(API_PRODUCT_CONTEXT_FOR_TENANT);
@@ -463,30 +441,14 @@ public class PublisherCommonUtilsTest {
         expectedMessage = "Error occurred while adding the API Product. A duplicate API context already exists for "
                 + API_PRODUCT_CONTEXT_FOR_TENANT + " in the organization : " + TENANT_ORGANIZATION;
 
-        try {
-            PublisherCommonUtils.addAPIProductWithGeneratedSwaggerDefinition(apiProductDTO, PROVIDER,
-                    TENANT_ORGANIZATION);
-            Assert.fail("Duplicate context did not get identified");
-        } catch (APIManagementException e) {
-            Assert.assertTrue("Received an incorrect error message", e.getMessage().contains(expectedMessage));
-        } catch (FaultGatewaysException e) {
-            Assert.fail("Received an incorrect exception");
-        }
+        testDuplicateContextValidation(apiProductDTO, PROVIDER, TENANT_ORGANIZATION, expectedMessage);
     }
 
     @Test
     public void testCheckDuplicateContextForSimilarAPINameWithDifferentContext() throws APIManagementException {
 
-        APIProductDTO apiProductDTO = Mockito.mock(APIProductDTO.class);
+        APIProductDTO apiProductDTO = getAPIProductDTOForDuplicateContextTest();
         APIProvider apiProvider = Mockito.mock(APIProvider.class);
-        Mockito.when(apiProductDTO.getContext()).thenReturn(API_PRODUCT_CONTEXT);
-        Mockito.when(apiProductDTO.getVersion()).thenReturn(API_PRODUCT_VERSION);
-        Mockito.when(apiProductDTO.getName()).thenReturn(API_PRODUCT_NAME);
-        Mockito.when(apiProductDTO.getProvider()).thenReturn(PROVIDER);
-        Mockito.when(apiProductDTO.getPolicies()).thenReturn(new ArrayList<>());
-        Mockito.when(apiProductDTO.getAdditionalProperties()).thenReturn(null);
-        Mockito.when(apiProductDTO.getVisibility()).thenReturn(APIProductDTO.VisibilityEnum.PUBLIC);
-        Mockito.when(apiProductDTO.getAuthorizationHeader()).thenReturn(APIConstants.AUTHORIZATION_HEADER_DEFAULT);
 
         List<String> apiVersions = new ArrayList<>(Arrays.asList("1.0.0", "2.0.0", "3.0.0"));
         Set<Tier> tiers = new TreeSet<Tier>(new TierNameComparator());
@@ -504,26 +466,12 @@ public class PublisherCommonUtilsTest {
                 + " already exists with different context " + API_PRODUCT_CONTEXT + " in the organization : "
                 + ORGANIZATION;
 
-        try {
-            PublisherCommonUtils.addAPIProductWithGeneratedSwaggerDefinition(apiProductDTO, PROVIDER, ORGANIZATION);
-            Assert.fail("Duplicate context did not get identified");
-        } catch (APIManagementException e) {
-            Assert.assertTrue("Received a wrong error message", e.getMessage().contains(expectedMessage));
-        } catch (FaultGatewaysException e) {
-            Assert.fail("Received an incorrect exception");
-        }
+        testDuplicateContextValidation(apiProductDTO, PROVIDER, ORGANIZATION, expectedMessage);
 
         // Test for context with "/{version}"
         Mockito.when(apiProductDTO.getContext()).thenReturn(API_PRODUCT_CONTEXT_TEMPLATE);
 
-        try {
-            PublisherCommonUtils.addAPIProductWithGeneratedSwaggerDefinition(apiProductDTO, PROVIDER, ORGANIZATION);
-            Assert.fail("Duplicate context did not get identified");
-        } catch (APIManagementException e) {
-            Assert.assertTrue("Received an incorrect error message", e.getMessage().contains(expectedMessage));
-        } catch (FaultGatewaysException e) {
-            Assert.fail("Received an incorrect exception");
-        }
+        testDuplicateContextValidation(apiProductDTO, PROVIDER, ORGANIZATION, expectedMessage);
 
         // Test for tenant context
         Mockito.when(apiProductDTO.getContext()).thenReturn(API_PRODUCT_CONTEXT_FOR_TENANT);
@@ -535,30 +483,14 @@ public class PublisherCommonUtilsTest {
                 + " already exists with different context " + API_PRODUCT_CONTEXT_FOR_TENANT + " in the organization : "
                 + TENANT_ORGANIZATION;
 
-        try {
-            PublisherCommonUtils.addAPIProductWithGeneratedSwaggerDefinition(apiProductDTO, PROVIDER,
-                    TENANT_ORGANIZATION);
-            Assert.fail("Duplicate context did not get identified");
-        } catch (APIManagementException e) {
-            Assert.assertTrue("Received an incorrect error message", e.getMessage().contains(expectedMessage));
-        } catch (FaultGatewaysException e) {
-            Assert.fail("Received an incorrect exception");
-        }
+        testDuplicateContextValidation(apiProductDTO, PROVIDER, TENANT_ORGANIZATION, expectedMessage);
     }
 
     @Test
     public void testCheckDuplicateContextForNoPreviousVersions() throws APIManagementException {
 
-        APIProductDTO apiProductDTO = Mockito.mock(APIProductDTO.class);
+        APIProductDTO apiProductDTO = getAPIProductDTOForDuplicateContextTest();
         APIProvider apiProvider = Mockito.mock(APIProvider.class);
-        Mockito.when(apiProductDTO.getContext()).thenReturn(API_PRODUCT_CONTEXT);
-        Mockito.when(apiProductDTO.getVersion()).thenReturn(API_PRODUCT_VERSION);
-        Mockito.when(apiProductDTO.getName()).thenReturn(API_PRODUCT_NAME);
-        Mockito.when(apiProductDTO.getProvider()).thenReturn(PROVIDER);
-        Mockito.when(apiProductDTO.getPolicies()).thenReturn(new ArrayList<>());
-        Mockito.when(apiProductDTO.getAdditionalProperties()).thenReturn(null);
-        Mockito.when(apiProductDTO.getVisibility()).thenReturn(APIProductDTO.VisibilityEnum.PUBLIC);
-        Mockito.when(apiProductDTO.getAuthorizationHeader()).thenReturn(APIConstants.AUTHORIZATION_HEADER_DEFAULT);
 
         List<String> apiVersions = new ArrayList<>();
         Set<Tier> tiers = new TreeSet<Tier>(new TierNameComparator());
@@ -579,26 +511,12 @@ public class PublisherCommonUtilsTest {
                 "Error occurred while adding the API Product. A duplicate API context already " + "exists for "
                         + API_PRODUCT_CONTEXT + " in the organization : " + ORGANIZATION;
 
-        try {
-            PublisherCommonUtils.addAPIProductWithGeneratedSwaggerDefinition(apiProductDTO, PROVIDER, ORGANIZATION);
-            Assert.fail("Duplicate context did not get identified");
-        } catch (APIManagementException e) {
-            Assert.assertTrue("Received a wrong error message", e.getMessage().contains(expectedMessage));
-        } catch (FaultGatewaysException e) {
-            Assert.fail("Received an incorrect exception");
-        }
+        testDuplicateContextValidation(apiProductDTO, PROVIDER, ORGANIZATION, expectedMessage);
 
         // Test for context with "/{version}"
         Mockito.when(apiProductDTO.getContext()).thenReturn(API_PRODUCT_CONTEXT_TEMPLATE);
 
-        try {
-            PublisherCommonUtils.addAPIProductWithGeneratedSwaggerDefinition(apiProductDTO, PROVIDER, ORGANIZATION);
-            Assert.fail("Duplicate context did not get identified");
-        } catch (APIManagementException e) {
-            Assert.assertTrue("Received an incorrect error message", e.getMessage().contains(expectedMessage));
-        } catch (FaultGatewaysException e) {
-            Assert.fail("Received an incorrect exception");
-        }
+        testDuplicateContextValidation(apiProductDTO, PROVIDER, ORGANIZATION, expectedMessage);
 
         // Test for tenant context
         contextWithVersion = API_PRODUCT_CONTEXT_FOR_TENANT + "/" + API_PRODUCT_VERSION;
@@ -610,9 +528,28 @@ public class PublisherCommonUtilsTest {
         expectedMessage = "Error occurred while adding the API Product. A duplicate API context already exists for "
                 + API_PRODUCT_CONTEXT_FOR_TENANT + " in the organization : " + TENANT_ORGANIZATION;
 
+        testDuplicateContextValidation(apiProductDTO, PROVIDER, TENANT_ORGANIZATION, expectedMessage);
+    }
+
+    private APIProductDTO getAPIProductDTOForDuplicateContextTest() {
+
+        APIProductDTO apiProductDTO = Mockito.mock(APIProductDTO.class);
+        Mockito.when(apiProductDTO.getContext()).thenReturn(API_PRODUCT_CONTEXT);
+        Mockito.when(apiProductDTO.getVersion()).thenReturn(API_PRODUCT_VERSION);
+        Mockito.when(apiProductDTO.getName()).thenReturn(API_PRODUCT_NAME);
+        Mockito.when(apiProductDTO.getProvider()).thenReturn(PROVIDER);
+        Mockito.when(apiProductDTO.getPolicies()).thenReturn(new ArrayList<>());
+        Mockito.when(apiProductDTO.getAdditionalProperties()).thenReturn(null);
+        Mockito.when(apiProductDTO.getVisibility()).thenReturn(APIProductDTO.VisibilityEnum.PUBLIC);
+        Mockito.when(apiProductDTO.getAuthorizationHeader()).thenReturn(APIConstants.AUTHORIZATION_HEADER_DEFAULT);
+        return apiProductDTO;
+    }
+
+    private void testDuplicateContextValidation(APIProductDTO apiProductDTO, String provider, String organization,
+            String expectedMessage) {
+
         try {
-            PublisherCommonUtils.addAPIProductWithGeneratedSwaggerDefinition(apiProductDTO, PROVIDER,
-                    TENANT_ORGANIZATION);
+            PublisherCommonUtils.addAPIProductWithGeneratedSwaggerDefinition(apiProductDTO, provider, organization);
             Assert.fail("Duplicate context did not get identified");
         } catch (APIManagementException e) {
             Assert.assertTrue("Received an incorrect error message", e.getMessage().contains(expectedMessage));
