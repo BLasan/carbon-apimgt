@@ -1865,7 +1865,7 @@ public class PublisherCommonUtils {
                     } else {
                         throw new APIManagementException(
                                 "Error occurred while adding API Product. API Product with name "
-                                        + apiProductDTO.getName() + " already exists with different context" + context
+                                        + apiProductDTO.getName() + " already exists with different context " + context
                                         + " in the organization" + " : " + organization,
                                 ExceptionCodes.API_ALREADY_EXISTS);
                     }
