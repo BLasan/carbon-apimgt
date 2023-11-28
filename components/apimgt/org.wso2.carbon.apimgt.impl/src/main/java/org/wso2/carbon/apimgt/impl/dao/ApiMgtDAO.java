@@ -9898,15 +9898,38 @@ public class ApiMgtDAO {
         return null;
     }
 
-    public void setDefaultVersion(ApiTypeWrapper apiTypeWrapper) throws APIManagementException {
+    public void setDefaultVersion(API api) throws APIManagementException {
+
+        APIIdentifier apiId = api.getId();
+        try (Connection connection = APIMgtDBUtil.getConnection()) {
+            try (PreparedStatement preparedStatement =
+                    connection.prepareStatement(SQLConstants.RETRIEVE_DEFAULT_VERSION)) {
+                preparedStatement.setString(1, apiId.getApiName());
+                preparedStatement.setString(2, APIUtil.replaceEmailDomainBack(apiId.getProviderName()));
+                try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                    if (resultSet.next()) {
+                        api.setDefaultVersion(apiId.getVersion().equals(resultSet.getString("DEFAULT_API_VERSION")));
+                        api.setAsPublishedDefaultVersion(apiId.getVersion().equals(resultSet.getString(
+                                "PUBLISHED_DEFAULT_API_VERSION")));
+                    }
+                }
+            }
+
+        } catch (SQLException e) {
+            throw new APIManagementException("Error while retrieving apimgt connection", e,
+                    ExceptionCodes.INTERNAL_ERROR);
+        }
+    }
+
+    public void setDefaultVersion(APIProduct apiProduct) throws APIManagementException {
 
         try (Connection connection = APIMgtDBUtil.getConnection()) {
             try (PreparedStatement preparedStatement = connection.prepareStatement(
                     SQLConstants.RETRIEVE_DEFAULT_VERSION_WITH_API_INFO)) {
-                preparedStatement.setString(1, apiTypeWrapper.getId().getName());
+                preparedStatement.setString(1, apiProduct.getId().getName());
                 preparedStatement.setString(2,
-                        APIUtil.replaceEmailDomainBack(apiTypeWrapper.getId().getProviderName()));
-                preparedStatement.setString(3, apiTypeWrapper.getId().getVersion());
+                        APIUtil.replaceEmailDomainBack(apiProduct.getId().getProviderName()));
+                preparedStatement.setString(3, apiProduct.getId().getVersion());
 
                 try (ResultSet resultSet = preparedStatement.executeQuery()) {
                     if (resultSet.next()) {
@@ -9914,13 +9937,13 @@ public class ApiMgtDAO {
                         String publishedDefaultAPIVersion = resultSet.getString("PUBLISHED_DEFAULT_API_VERSION");
                         String contextTemplate = resultSet.getString("CONTEXT_TEMPLATE");
                         if (StringUtils.isBlank(defaultAPIVersion) && StringUtils.isBlank(contextTemplate)) {
-                            defaultAPIVersion = apiTypeWrapper.getId().getVersion();
-                            publishedDefaultAPIVersion = apiTypeWrapper.getId().getVersion();
+                            defaultAPIVersion = apiProduct.getId().getVersion();
+                            publishedDefaultAPIVersion = apiProduct.getId().getVersion();
                         }
-                        apiTypeWrapper.setAsDefaultVersion(
-                                apiTypeWrapper.getId().getVersion()
+                        apiProduct.setDefaultVersion(
+                                apiProduct.getId().getVersion()
                                         .equals(defaultAPIVersion));
-                        apiTypeWrapper.setAsPublishedDefaultVersion(apiTypeWrapper.getId().getVersion()
+                        apiProduct.setAsPublishedDefaultVersion(apiProduct.getId().getVersion()
                                 .equals(publishedDefaultAPIVersion));
                     }
                 }

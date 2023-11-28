@@ -5110,14 +5110,6 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
         }
     }
 
-    private void populateDefaultVersion(APIProduct apiProduct) throws APIManagementException {
-        ApiTypeWrapper apiTypeWrapper = new ApiTypeWrapper(apiProduct);
-        apiMgtDAO.setDefaultVersion(apiTypeWrapper);
-        apiProduct.setDefaultVersion(apiTypeWrapper.getDefaultVersion());
-        apiProduct.setAsPublishedDefaultVersion(apiTypeWrapper.getPublishedDefaultVersion());
-    }
-
-
     private void populateAPIStatus(APIProduct apiProduct) throws APIManagementException {
         if (apiProduct.isRevision()) {
             apiProduct.setState(apiMgtDAO.getAPIStatusFromAPIUUID(apiProduct.getRevisionedApiProductId()));
