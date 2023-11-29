@@ -380,6 +380,22 @@ public class APIMgtDAOTest {
     }
 
     @Test
+    public void testKeyForwardCompatibilityWhenNewAPIProductVersion() throws Exception {
+        List<APIProduct> oldApiProductVersionList = new ArrayList<>();
+        APIProduct apiProductOld = new APIProduct(new APIProductIdentifier("SUMEDHA", "APIPRODUCT1", "V1.0.0"));
+        oldApiProductVersionList.add(apiProductOld);
+
+        APIProduct apiProduct = new APIProduct(new APIProductIdentifier("SUMEDHA", "APIPRODUCT1", "V2.0.0"));
+        apiProduct.setContext("/context1");
+        apiProduct.setContextTemplate("/context1/{version}");
+        apiProduct.setVersionTimestamp(String.valueOf(System.currentTimeMillis()));
+        apiProduct.setUuid(UUID.randomUUID().toString());
+        apiMgtDAO.addAPIProduct(apiProduct, "testOrg");
+        ApiTypeWrapper apiTypeWrapper = new ApiTypeWrapper(apiProduct);
+        apiMgtDAO.makeKeysForwardCompatibleForNewAPIProductVersion(apiTypeWrapper, oldApiProductVersionList);
+    }
+
+    @Test
     public void testForwardingBlockedAndProdOnlyBlockedSubscriptionsToNewAPIVersion() throws APIManagementException {
         List<API> oldApiVersionList = new ArrayList<>();
 
