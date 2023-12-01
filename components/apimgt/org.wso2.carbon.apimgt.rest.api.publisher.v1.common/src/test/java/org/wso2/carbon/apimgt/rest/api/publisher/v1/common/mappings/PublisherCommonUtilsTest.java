@@ -69,6 +69,7 @@ public class PublisherCommonUtilsTest {
     private static final String TENANT_ORGANIZATION = "wso2.com";
     private static final String UUID = "63e1e37e-a5b8-4be6-86a5-d6ae0749f131";
     private static final String API_PRODUCT_CONTEXT = "/test-context";
+    private static final String API_PRODUCT_VERSION_APPENDED_CONTEXT = "/test-context/1.0.0";
     private static final String API_PRODUCT_CONTEXT_FOR_TENANT = "/t/wso2.com/test-context";
     private static final String API_PRODUCT_CONTEXT_TEMPLATE = "/test-context/{version}";
 
@@ -432,6 +433,15 @@ public class PublisherCommonUtilsTest {
 
         testDuplicateContextValidation(apiProductDTO, PROVIDER, ORGANIZATION, expectedMessage);
 
+        // Test for context which has version already appended
+        Mockito.when(apiProductDTO.getContext()).thenReturn(API_PRODUCT_VERSION_APPENDED_CONTEXT);
+        Mockito.when(apiProvider.isDuplicateContextTemplateMatchingOrganization(API_PRODUCT_VERSION_APPENDED_CONTEXT,
+                ORGANIZATION)).thenReturn(true);
+        expectedMessage = "Error occurred while adding the API Product. A duplicate API context already exists for "
+                + API_PRODUCT_VERSION_APPENDED_CONTEXT + " in the organization : " + ORGANIZATION;
+
+        testDuplicateContextValidation(apiProductDTO, PROVIDER, ORGANIZATION, expectedMessage);
+
         // Test for tenant context
         Mockito.when(apiProductDTO.getContext()).thenReturn(API_PRODUCT_CONTEXT_FOR_TENANT);
         Mockito.when(apiProvider.getApiVersionsMatchingApiNameAndOrganization(API_PRODUCT_NAME, PROVIDER,
@@ -470,6 +480,16 @@ public class PublisherCommonUtilsTest {
 
         // Test for context with "/{version}"
         Mockito.when(apiProductDTO.getContext()).thenReturn(API_PRODUCT_CONTEXT_TEMPLATE);
+
+        testDuplicateContextValidation(apiProductDTO, PROVIDER, ORGANIZATION, expectedMessage);
+
+        // Test for context which has version already appended
+        Mockito.when(apiProductDTO.getContext()).thenReturn(API_PRODUCT_VERSION_APPENDED_CONTEXT);
+        Mockito.when(apiProvider.isDuplicateContextTemplateMatchingOrganization(API_PRODUCT_VERSION_APPENDED_CONTEXT,
+                ORGANIZATION)).thenReturn(false);
+        expectedMessage = "Error occurred while adding API Product. API Product with name " + API_PRODUCT_NAME
+                + " already exists with different context " + API_PRODUCT_VERSION_APPENDED_CONTEXT
+                + " in the organization : " + ORGANIZATION;
 
         testDuplicateContextValidation(apiProductDTO, PROVIDER, ORGANIZATION, expectedMessage);
 
@@ -515,6 +535,18 @@ public class PublisherCommonUtilsTest {
 
         // Test for context with "/{version}"
         Mockito.when(apiProductDTO.getContext()).thenReturn(API_PRODUCT_CONTEXT_TEMPLATE);
+
+        testDuplicateContextValidation(apiProductDTO, PROVIDER, ORGANIZATION, expectedMessage);
+
+        // Test for context which has version already appended
+        contextWithVersion = API_PRODUCT_VERSION_APPENDED_CONTEXT + "/" + API_PRODUCT_VERSION;
+        Mockito.when(apiProductDTO.getContext()).thenReturn(API_PRODUCT_VERSION_APPENDED_CONTEXT);
+        Mockito.when(apiProvider.isDuplicateContextTemplateMatchingOrganization(API_PRODUCT_VERSION_APPENDED_CONTEXT,
+                ORGANIZATION)).thenReturn(false);
+        Mockito.when(apiProvider.isContextExistForAPIProducts(API_PRODUCT_VERSION_APPENDED_CONTEXT, contextWithVersion,
+                ORGANIZATION)).thenReturn(true);
+        expectedMessage = "Error occurred while adding the API Product. A duplicate API context already exists for "
+                + API_PRODUCT_VERSION_APPENDED_CONTEXT + " in the organization : " + ORGANIZATION;
 
         testDuplicateContextValidation(apiProductDTO, PROVIDER, ORGANIZATION, expectedMessage);
 
