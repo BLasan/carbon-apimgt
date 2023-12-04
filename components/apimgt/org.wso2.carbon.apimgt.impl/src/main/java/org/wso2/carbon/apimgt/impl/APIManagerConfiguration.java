@@ -358,14 +358,16 @@ public class APIManagerConfiguration {
                 }
 
                 // Load all the mask properties
-                OMElement maskProperties = element.getFirstChildWithName(new QName("MaskProperties"));
-                Iterator maskPropertiesIterator = maskProperties.getChildrenWithLocalName("Property");
                 Map<String, String> maskProps = new HashMap<>();
-                while (maskPropertiesIterator.hasNext()) {
-                    OMElement propertyElem = (OMElement) maskPropertiesIterator.next();
-                    String name = propertyElem.getAttributeValue(new QName("name"));
-                    String value = propertyElem.getText();
-                    maskProps.put(name, value.toUpperCase());
+                OMElement maskProperties = element.getFirstChildWithName(new QName("MaskProperties"));
+                if(maskProperties != null){
+                    Iterator maskPropertiesIterator = maskProperties.getChildrenWithLocalName("Property");
+                    while (maskPropertiesIterator.hasNext()) {
+                        OMElement propertyElem = (OMElement) maskPropertiesIterator.next();
+                        String name = propertyElem.getAttributeValue(new QName("name"));
+                        String value = propertyElem.getText();
+                        maskProps.put(name, value.toUpperCase());
+                    }
                 }
                 analyticsMaskProps = maskProps;
 
