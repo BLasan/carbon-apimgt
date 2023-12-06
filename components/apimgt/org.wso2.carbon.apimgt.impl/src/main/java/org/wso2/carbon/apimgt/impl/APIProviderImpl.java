@@ -4511,7 +4511,33 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
             throw new APIManagementException("Character length exceeds the allowable limit",
                     ExceptionCodes.LENGTH_EXCEEDS);
         }
+
+        validateAPIProductContextTemplate(product);
     }
+
+    /**
+     * Validate API Product context template
+     * @param product API Product
+     * @throws APIManagementException If context template is not valid
+     */
+    private static void validateAPIProductContextTemplate(APIProduct product) throws APIManagementException {
+
+        String contextTemplate = product.getContextTemplate();
+        //Validate if the API Product has an unsupported context
+        String invalidContext = "/" + APIConstants.VERSION_PLACEHOLDER;
+        if (invalidContext.equals(contextTemplate)) {
+            throw new APIManagementException(
+                    "Cannot add API Product : " + product.getId() + " with unsupported context : "
+                            + contextTemplate);
+        }
+        //If the context template ends with {version} this means that the version will be at the end of the context.
+        if (contextTemplate.endsWith("/" + APIConstants.VERSION_PLACEHOLDER)) {
+            //Remove the {version} part from the context template.
+            contextTemplate = contextTemplate.split(Pattern.quote("/" + APIConstants.VERSION_PLACEHOLDER))[0];
+        }
+        product.setContextTemplate(contextTemplate);
+    }
+
     /**
      * Create an Api Product
      *

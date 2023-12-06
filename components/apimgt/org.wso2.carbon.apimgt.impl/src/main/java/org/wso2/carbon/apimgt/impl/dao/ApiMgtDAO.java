@@ -14701,19 +14701,7 @@ public class ApiMgtDAO {
             prepStmtAddAPIProduct.setString(2, identifier.getName());
             prepStmtAddAPIProduct.setString(3, identifier.getVersion());
             prepStmtAddAPIProduct.setString(4, apiProduct.getContext());
-            String contextTemplate = apiProduct.getContextTemplate();
-            //Validate if the API Product has an unsupported context before executing the query
-            String invalidContext = "/" + APIConstants.VERSION_PLACEHOLDER;
-            if (invalidContext.equals(contextTemplate)) {
-                throw new APIManagementException("Cannot add API : " + apiProduct.getId()
-                        + " with unsupported context : " + contextTemplate);
-            }
-            //If the context template ends with {version} this means that the version will be at the end of the context.
-            if (contextTemplate.endsWith("/" + APIConstants.VERSION_PLACEHOLDER)) {
-                //Remove the {version} part from the context template.
-                contextTemplate = contextTemplate.split(Pattern.quote("/" + APIConstants.VERSION_PLACEHOLDER))[0];
-            }
-            prepStmtAddAPIProduct.setString(5, contextTemplate);
+            prepStmtAddAPIProduct.setString(5, apiProduct.getContextTemplate());
             prepStmtAddAPIProduct.setString(6, apiProduct.getProductLevelPolicy());
             prepStmtAddAPIProduct.setString(7, APIUtil.replaceEmailDomainBack(identifier.getProviderName()));
             prepStmtAddAPIProduct.setTimestamp(8, new Timestamp(System.currentTimeMillis()));

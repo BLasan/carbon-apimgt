@@ -1849,7 +1849,7 @@ public class PublisherCommonUtils {
             contextWithVersion = contextWithVersion + "/" + apiProductDTO.getVersion();
         }
 
-        //Get all existing versions of  api been adding
+        //Get all existing versions of  API Product been adding
         List<String> apiVersions = apiProvider.getApiVersionsMatchingApiNameAndOrganization(apiProductDTO.getName(),
                 username, organization);
         if (apiVersions.size() > 0) {

@@ -121,7 +121,7 @@ public interface APIManager {
     boolean isContextExist(String context, String organization) throws APIManagementException;
 
     /**
-     * Checks whether the given API context is already registered in the system for API products
+     * Checks whether the given API Product context is already registered in the system
      *
      * @param context A String representing an API product context
      * @param contextWithVersion A String representing an API context appended with the version
