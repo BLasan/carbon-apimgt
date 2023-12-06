@@ -671,9 +671,14 @@ public class RegistryPersistenceUtil {
             api.setAvailableTiers(availableTiers );
 
             // This contains the resolved context
-            api.setContext(artifact.getAttribute(APIConstants.API_OVERVIEW_CONTEXT));
+            String context = artifact.getAttribute(APIConstants.API_OVERVIEW_CONTEXT);
+            String contextTemplate = artifact.getAttribute(APIConstants.API_OVERVIEW_CONTEXT_TEMPLATE);
+            if (contextTemplate.contains(APIConstants.VERSION_PLACEHOLDER)) {
+                context = contextTemplate.replace(APIConstants.VERSION_PLACEHOLDER, apiVersion);
+            }
+            api.setContext(context);
             // We set the context template here
-            api.setContextTemplate(artifact.getAttribute(APIConstants.API_OVERVIEW_CONTEXT_TEMPLATE));
+            api.setContextTemplate(contextTemplate);
             api.setLatest(Boolean.parseBoolean(artifact.getAttribute(APIConstants.API_OVERVIEW_IS_LATEST)));
             api.setEnableSchemaValidation(Boolean.parseBoolean(artifact.getAttribute(
                     APIConstants.API_OVERVIEW_ENABLE_JSON_SCHEMA)));
