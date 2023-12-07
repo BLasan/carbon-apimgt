@@ -59,8 +59,8 @@ public class JWTUtil {
      * @param signedJWTInfo : Signed token info
      * @param message       : inbound message context
      */
-    public static boolean handleScopeValidation(HashMap<String,Object> message, SignedJWTInfo signedJWTInfo, String accessToken)
-            throws APIManagementException, ParseException {
+    public static boolean handleScopeValidation(HashMap<String,Object> message, SignedJWTInfo signedJWTInfo,
+            String accessToken) throws APIManagementException, ParseException {
 
         String maskedToken = message.get(RestApiConstants.MASKED_TOKEN).toString();
         OAuthTokenInfo oauthTokenInfo = new OAuthTokenInfo();
