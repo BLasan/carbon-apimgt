@@ -64,7 +64,7 @@ public class LifeCycleUtils {
         targetStatus = LCManagerFactory.getInstance().getLCManager().getStateForTransition(action);
 
         // Update lifecycle state in the registry
-        UpdateLifeCycleState(apiProvider, orgId, apiTypeWrapper, checklist, targetStatus, currentStatus);
+        updateLifeCycleState(apiProvider, orgId, apiTypeWrapper, checklist, targetStatus, currentStatus);
 
         //Sending Notifications to existing subscribers
         if (APIConstants.PUBLISHED.equals(targetStatus)) {
@@ -99,7 +99,7 @@ public class LifeCycleUtils {
         }
     }
 
-    private static void UpdateLifeCycleState(APIProvider apiProvider, String orgId, ApiTypeWrapper apiTypeWrapper,
+    private static void updateLifeCycleState(APIProvider apiProvider, String orgId, ApiTypeWrapper apiTypeWrapper,
             Map<String, Boolean> checklist, String targetStatus, String currentStatus) throws APIManagementException {
         if (!apiTypeWrapper.isAPIProduct()) {
             API api = apiTypeWrapper.getApi();
