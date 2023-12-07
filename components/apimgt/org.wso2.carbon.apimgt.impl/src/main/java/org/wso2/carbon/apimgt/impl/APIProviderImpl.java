@@ -4220,6 +4220,15 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
         String apiProductUUID = createAPIProduct(product);
         product.setUuid(apiProductUUID);
 
+        // Formatting the context template before adding to the database to reserve the similar behaviour to APIs.
+        // If the context template ends with {version} this means that the version will be at the end of the context.
+        String contextTemplate = product.getContextTemplate();
+        if (contextTemplate.endsWith("/" + APIConstants.VERSION_PLACEHOLDER)) {
+            //Remove the {version} part from the context template.
+            contextTemplate = contextTemplate.split(Pattern.quote("/" + APIConstants.VERSION_PLACEHOLDER))[0];
+        }
+        product.setContextTemplate(contextTemplate);
+
         // Add to database
         apiMgtDAO.addAPIProduct(product, product.getOrganization());
 
@@ -4530,12 +4539,6 @@ class APIProviderImpl extends AbstractAPIManager implements APIProvider {
                     "Cannot add API Product : " + product.getId() + " with unsupported context : "
                             + contextTemplate);
         }
-        //If the context template ends with {version} this means that the version will be at the end of the context.
-        if (contextTemplate.endsWith("/" + APIConstants.VERSION_PLACEHOLDER)) {
-            //Remove the {version} part from the context template.
-            contextTemplate = contextTemplate.split(Pattern.quote("/" + APIConstants.VERSION_PLACEHOLDER))[0];
-        }
-        product.setContextTemplate(contextTemplate);
     }
 
     /**
