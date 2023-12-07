@@ -427,7 +427,7 @@ public class LifeCycleUtils {
         APIVersionComparator versionComparator = new APIVersionComparator();
         APIProductVersionComparator apiProductVersionComparator = new APIProductVersionComparator();
 
-        if (apiTypeWrapper.isAPIProduct()) {
+        if (!apiTypeWrapper.isAPIProduct()) {
             List<API> apiList;
             apiList = getAPIVersionsByProviderAndName(apiTypeWrapper.getId().getProviderName(),
                     apiTypeWrapper.getId().getName());
