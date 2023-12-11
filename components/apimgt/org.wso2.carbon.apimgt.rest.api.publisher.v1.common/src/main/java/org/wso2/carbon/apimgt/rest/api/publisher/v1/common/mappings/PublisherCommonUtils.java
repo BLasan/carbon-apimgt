@@ -1746,6 +1746,9 @@ public class PublisherCommonUtils {
         String provider = apiProductDTO.getProvider();
         String context = apiProductDTO.getContext();
 
+        // validate character length
+        APIUtil.validateCharacterLengthOfAPIParams(apiProductDTO.getName(), apiProductDTO.getContext(),
+                apiProductDTO.getProvider());
         // Validate the API context
         APIUtil.validateAPIContext(context, apiProductDTO.getName());
 

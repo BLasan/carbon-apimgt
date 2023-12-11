@@ -2757,6 +2757,66 @@ public final class APIUtil {
     }
 
     /**
+     * This method is used to validate character length of crucial api params.
+     *
+     * @param apiName    Name of the API
+     * @param apiVersion Version of the API
+     * @param context    API Context of the API
+     * @param provider   Provider of the API
+     * @throws APIManagementException If the params length exceeds the allowed length
+     */
+    public static void validateCharacterLengthOfAPIParams(String apiName, String apiVersion, String context,
+                                               String provider) throws APIManagementException {
+        if (!hasValidLength(apiName, APIConstants.MAX_LENGTH_API_NAME)) {
+            throw new APIManagementException("API name exceeds allowed character length",
+                    ExceptionCodes.LENGTH_EXCEEDS);
+        }
+        if (!hasValidLength(apiVersion, APIConstants.MAX_LENGTH_VERSION)) {
+            throw new APIManagementException("API version exceeds allowed character length",
+                    ExceptionCodes.LENGTH_EXCEEDS);
+        }
+        if (!hasValidLength(context, APIConstants.MAX_LENGTH_CONTEXT)) {
+            throw new APIManagementException("API context exceeds allowed character length",
+                    ExceptionCodes.LENGTH_EXCEEDS);
+        }
+        if (!hasValidLength(provider, APIConstants.MAX_LENGTH_PROVIDER)) {
+            throw new APIManagementException("API provider name exceeds allowed character length",
+                    ExceptionCodes.LENGTH_EXCEEDS);
+        }
+    }
+
+    /**
+     * This method is used to validate character length of crucial api product params.
+     *
+     * @param apiName  Name of the API
+     * @param context  API Context of the API
+     * @param provider Provider of the API
+     * @throws APIManagementException If the params length exceeds the allowed length
+     */
+    public static void validateCharacterLengthOfAPIParams(String apiName, String context, String provider)
+            throws APIManagementException {
+        if (!hasValidLength(apiName, APIConstants.MAX_LENGTH_API_NAME)) {
+            throw new APIManagementException("API name exceeds allowed character length",
+                    ExceptionCodes.LENGTH_EXCEEDS);
+        }
+        if (!hasValidLength(context, APIConstants.MAX_LENGTH_CONTEXT)) {
+            throw new APIManagementException("API context exceeds allowed character length",
+                    ExceptionCodes.LENGTH_EXCEEDS);
+        }
+        if (!hasValidLength(provider, APIConstants.MAX_LENGTH_PROVIDER)) {
+            throw new APIManagementException("API provider name exceeds allowed character length",
+                    ExceptionCodes.LENGTH_EXCEEDS);
+        }
+    }
+
+    /**
+     * This method is used to validate character length.
+     */
+    public static boolean hasValidLength(String field, int maxLength) {
+        return field.length() <= maxLength;
+    }
+
+    /**
      * This method is used to get the APIProvider instance for a given username
      *
      * @param context API Context of the API
