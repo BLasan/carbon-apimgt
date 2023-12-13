@@ -2767,22 +2767,13 @@ public final class APIUtil {
      */
     public static void validateCharacterLengthOfAPIParams(String apiName, String apiVersion, String context,
                                                String provider) throws APIManagementException {
-        if (!hasValidLength(apiName, APIConstants.MAX_LENGTH_API_NAME)) {
-            throw new APIManagementException("API name exceeds allowed character length",
-                    ExceptionCodes.LENGTH_EXCEEDS);
-        }
+
+        validateCharacterLengthOfAPIParams(apiName, context, provider);
         if (!hasValidLength(apiVersion, APIConstants.MAX_LENGTH_VERSION)) {
             throw new APIManagementException("API version exceeds allowed character length",
                     ExceptionCodes.LENGTH_EXCEEDS);
         }
-        if (!hasValidLength(context, APIConstants.MAX_LENGTH_CONTEXT)) {
-            throw new APIManagementException("API context exceeds allowed character length",
-                    ExceptionCodes.LENGTH_EXCEEDS);
-        }
-        if (!hasValidLength(provider, APIConstants.MAX_LENGTH_PROVIDER)) {
-            throw new APIManagementException("API provider name exceeds allowed character length",
-                    ExceptionCodes.LENGTH_EXCEEDS);
-        }
+
     }
 
     /**
@@ -2813,7 +2804,7 @@ public final class APIUtil {
      * This method is used to validate character length.
      */
     public static boolean hasValidLength(String field, int maxLength) {
-        return field.length() <= maxLength;
+        return field != null && field.length() <= maxLength;
     }
 
     /**
