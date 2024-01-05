@@ -1746,9 +1746,6 @@ public class PublisherCommonUtils {
         String provider = apiProductDTO.getProvider();
         String context = apiProductDTO.getContext();
 
-        // validate character length
-        APIUtil.validateCharacterLengthOfAPIParams(apiProductDTO.getName(), apiProductDTO.getContext(),
-                apiProductDTO.getProvider());
         // Validate the API context
         APIUtil.validateAPIContext(context, apiProductDTO.getName());
 
@@ -1765,6 +1762,10 @@ public class PublisherCommonUtils {
             // Set username in case provider is null or empty
             provider = username;
         }
+
+        // validate character length
+        APIUtil.validateCharacterLengthOfAPIParams(apiProductDTO.getName(), apiProductDTO.getContext(),
+                provider);
 
         List<String> tiersFromDTO = apiProductDTO.getPolicies();
         Set<Tier> definedTiers = apiProvider.getTiers();
