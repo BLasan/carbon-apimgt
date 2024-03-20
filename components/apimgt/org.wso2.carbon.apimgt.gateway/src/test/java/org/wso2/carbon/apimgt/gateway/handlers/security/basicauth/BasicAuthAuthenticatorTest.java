@@ -220,6 +220,6 @@ public class BasicAuthAuthenticatorTest {
         BasicAuthAuthenticator basicAuthAuthenticatorWithNullHeader = new BasicAuthAuthenticator(null, true,
                 UNLIMITED_THROTTLE_POLICY);
         String actualHeader = basicAuthAuthenticatorWithNullHeader.getSecurityHeader();
-        Assert.assertEquals(actualHeader, HttpHeaders.AUTHORIZATION);
+        Assert.assertEquals(HttpHeaders.AUTHORIZATION, actualHeader);
     }
 }
