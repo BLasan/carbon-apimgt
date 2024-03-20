@@ -217,7 +217,8 @@ public class BasicAuthAuthenticatorTest {
      */
     @Test public void testSetSecurityHeaderWithNullHeader() throws Exception {
         PowerMockito.when(APIUtil.getOAuthConfigurationFromAPIMConfig(Mockito.anyString())).thenReturn(null);
-        BasicAuthAuthenticator basicAuthAuthenticatorWithNullHeader = new BasicAuthAuthenticator(null,true, UNLIMITED_THROTTLE_POLICY);
+        BasicAuthAuthenticator basicAuthAuthenticatorWithNullHeader = new BasicAuthAuthenticator(null, true,
+                UNLIMITED_THROTTLE_POLICY);
         String actualHeader = basicAuthAuthenticatorWithNullHeader.getSecurityHeader();
         Assert.assertEquals(actualHeader, HttpHeaders.AUTHORIZATION);
     }
