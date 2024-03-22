@@ -102,8 +102,10 @@ public class SuccessRequestDataCollector extends CommonRequestDataCollector impl
         String userAgent = provider.getUserAgentHeader();
         String userName = provider.getUserName();
 
-        // Mask UserName if configured
-        if (userName != null) {
+        if (userName == null) {
+            userName = Constants.UNKNOWN_VALUE;
+        } else {
+            // Mask UserName if configured
             if (maskData.containsKey("api.ut.userName")) {
                 userName = maskAnalyticsData(maskData.get("api.ut.userName"), userName);
             } else if (maskData.containsKey("api.ut.userId")) {
