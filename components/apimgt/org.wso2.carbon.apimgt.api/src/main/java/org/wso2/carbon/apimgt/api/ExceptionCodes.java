@@ -544,7 +544,9 @@ public enum ExceptionCodes implements ErrorHandler {
     INVALID_API_ID(902006, "Invalid API ID", 404, "The provided API ID is not found %s", false),
     ARTIFACT_SYNC_HTTP_REQUEST_FAILED(903009, "Error while retrieving from remote endpoint", 500, "Error while executing HTTP request to retrieve from remote endpoint"),
     KEY_MANAGER_DELETE_FAILED(902013, "Key Manager Delete error", 412,"Key Manager Delete error. %s", false),
-    KEYS_DELETE_FAILED(902014, "Key Delete error", 412,"Keys delete error. %s", false);
+    KEYS_DELETE_FAILED(902014, "Key Delete error", 412,"Keys delete error. %s", false),
+    DOCUMENT_NAME_ILLEGAL_CHARACTERS(902015, "Document name cannot contain illegal characters", 400, "Document name contains one or more illegal characters");
+
 
     private final long errorCode;
     private final String errorMessage;
