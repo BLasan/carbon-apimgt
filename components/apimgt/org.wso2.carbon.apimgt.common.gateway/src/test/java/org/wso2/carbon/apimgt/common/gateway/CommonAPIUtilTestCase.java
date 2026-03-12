@@ -178,6 +178,47 @@ public class CommonAPIUtilTestCase {
         }
     }
 
+    @Test
+    public void testGetHttpClientWithTargetProxyHosts() {
+        String proxyHost = "127.0.0.1";
+        String proxyUsername = "user";
+        String proxyPassword = "pass";
+        String proxyProtocol = "http";
+
+        HttpClientConfigurationDTO.Builder builder = new HttpClientConfigurationDTO.Builder();
+
+        // targetProxyHosts should force only matching hosts through the proxy.
+        HttpClientConfigurationDTO targetProxyConfig = builder
+                .withConnectionParams(connectionLimit, maximumConnectionsPerRoute, connectionTimeout)
+                .withProxy(proxyHost, proxyServer.getPort(), proxyUsername, proxyPassword, proxyProtocol,
+                        new String[]{}, new String[]{"localhost"})
+                .build();
+
+        HttpClient clientForNonTargetHost = CommonAPIUtil.getHttpClient("http", targetProxyConfig, sslContext);
+        Assert.assertNotNull(clientForNonTargetHost);
+
+        proxyServer.reset();
+        HttpGet nonTargetHostRequest = new HttpGet("http://127.0.0.1:" + mockServer.getPort() + "/hello");
+        HttpResponse nonTargetHostResponse = getHttpResponseFromClient(clientForNonTargetHost, nonTargetHostRequest);
+        Assert.assertNotNull(nonTargetHostResponse);
+        Assert.assertEquals(200, nonTargetHostResponse.getStatusLine().getStatusCode());
+        proxyServer.verifyZeroInteractions();
+
+        HttpClientConfigurationDTO wrongCredsConfig = builder
+                .withConnectionParams(connectionLimit, maximumConnectionsPerRoute, connectionTimeout)
+                .withProxy(proxyHost, proxyServer.getPort(), proxyUsername, "random", proxyProtocol,
+                        new String[]{}, new String[]{"localhost"})
+                .build();
+
+        HttpClient clientForTargetHost = CommonAPIUtil.getHttpClient("http", wrongCredsConfig, sslContext);
+        Assert.assertNotNull(clientForTargetHost);
+
+        HttpGet targetHostRequest = new HttpGet("http://localhost:" + mockServer.getPort() + "/hello");
+        HttpResponse targetHostResponse = getHttpResponseFromClient(clientForTargetHost, targetHostRequest);
+        Assert.assertNotNull(targetHostResponse);
+        Assert.assertEquals(407, targetHostResponse.getStatusLine().getStatusCode());
+    }
+
     private HttpResponse getHttpResponseFromClient(HttpClient httpClient, HttpGet httpGet) {
         HttpResponse httpResponse = null;
         int retryCount = 0;
