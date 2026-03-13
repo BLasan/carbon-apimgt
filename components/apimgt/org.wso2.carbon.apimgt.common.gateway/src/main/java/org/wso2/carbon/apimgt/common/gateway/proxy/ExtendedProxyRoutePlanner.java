@@ -66,7 +66,10 @@ public class ExtendedProxyRoutePlanner extends DefaultProxyRoutePlanner {
         String uriScheme = target.getSchemeName();
         String[] nonProxyHosts = configuration.getNonProxyHosts();
         String[] targetProxyHosts = configuration.getTargetProxyHosts();
-        if (nonProxyHosts != null) {
+        int nonProxyHostsLength = nonProxyHosts != null ? nonProxyHosts.length : 0;
+        int targetProxyHostsLength = targetProxyHosts != null ? targetProxyHosts.length : 0;
+
+        if (nonProxyHostsLength > 0) {
             for (String nonProxyHost : nonProxyHosts) {
                 if ("*".equals(nonProxyHost)) {
                     return true;
@@ -81,24 +84,34 @@ public class ExtendedProxyRoutePlanner extends DefaultProxyRoutePlanner {
                 }
             }
         }
-        if (targetProxyHosts != null) {
+        if (targetProxyHostsLength > 0) {
             for (String targetProxyHost : targetProxyHosts) {
                 if ("*".equals(targetProxyHost)) {
+                    if (log.isDebugEnabled()) {
+                        log.debug(
+                                "scheme:'" + uriScheme + "', host:'" + uriHost + "' matches targetProxyHost '"
+                                        + targetProxyHost + "' : PROXY");
+                    }
                     return false;
                 }
                 if (uriHost.matches(targetProxyHost)) {
+                    if (log.isDebugEnabled()) {
+                        log.debug(
+                                "scheme:'" + uriScheme + "', host:'" + uriHost + "' matches targetProxyHost '"
+                                        + targetProxyHost + "' : PROXY");
+                    }
                     return false;
                 }
             }
             if (log.isDebugEnabled()) {
-                log.debug("sheme:'" + uriScheme + "', host:'" + uriHost + "' : DEFAULT  (no match of proxy hosts)");
+                log.debug("scheme:'" + uriScheme + "', host:'" + uriHost + "' : DEFAULT  (no match of proxy hosts)");
             }
             return true;
         }
         if (log.isDebugEnabled()) {
             log.debug(
                     "scheme:'" + uriScheme + "', host:'" + uriHost + "' : DEFAULT  (no match of "
-                            + nonProxyHosts.length + " non proxy host)");
+                            + nonProxyHostsLength + " non proxy host)");
         }
         return false;
     }

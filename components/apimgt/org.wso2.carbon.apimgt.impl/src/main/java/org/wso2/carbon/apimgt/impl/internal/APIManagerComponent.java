@@ -1117,8 +1117,8 @@ public class APIManagerComponent {
     }
 
     String[] getTargetProxyHostsListByTargetProxyHostsStringConfiguration(APIManagerConfiguration config) {
-        String nonProxyHostsString = config.getFirstProperty(APIConstants.TARGET_PROXY_HOSTS);
-        return nonProxyHostsString != null ? nonProxyHostsString.split("\\|") : null;
+        String targetProxyHostsString = config.getFirstProperty(APIConstants.TARGET_PROXY_HOSTS);
+        return targetProxyHostsString != null ? targetProxyHostsString.split("\\|") : null;
     }
 
     @Reference(
